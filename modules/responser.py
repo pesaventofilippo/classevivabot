@@ -1,0 +1,245 @@
+def parseDidattica(data):
+    result = ""
+    firstProf = True
+    for prof in data['didacticts']:
+        if firstProf:
+            firstProf = False
+            result += "\n\n👤 <b>{0}</b>".format(prof['teacherName'])
+        else:
+            result += "\n\n\n👤 <b>{0}</b>".format(prof['teacherName'])
+
+        firstFolder = True
+        for folder in prof['folders']:
+            folderName = "Altro" if folder['folderName'] == "Uncategorized" else folder['folderName']
+            if firstFolder:
+                firstFolder = False
+                result += "\n    📂 <b>{0}</b>".format(folderName)
+            else:
+                result += "\n\n    📂 <b>{0}</b>".format(folderName)
+
+            for file in folder['contents']:
+                result += "\n        📝 {0}".format(file['contentName'])
+
+    return result
+
+
+def parseInfo(data):
+    info = data['cards'][0]
+    result = "👤 Nome: <b>{1}</b>\n" \
+             "👤 Cognome: <b>{4}</b>\n" \
+             "📅 Nascita: <b>{0}</b>\n" \
+             "💳 Codice Fiscale: <b>{2}</b>\n" \
+             "👤 Username: <b>{3}</b>\n" \
+             "\n" \
+             "🏫 Nome Scuola: <b>{7}</b>\n" \
+             "🏫 Tipo Scuola: <b>{8}</b>\n" \
+             "🏫 ID Scuola: <b>{5}</b>\n" \
+             "🏛 Città: <b>{6}</b>\n" \
+             "📍 Provincia: <b>{9}</b>\n" \
+             "\n" \
+             "👤 UserID: <b>{10}</b>\n" \
+             "👤 Tipo Utente: <b>{11}</b>".format(info['birthDate'], info['firstName'], info['fiscalCode'],
+                                        info['ident'], info['lastName'], info['schCode'],
+                                        info['schCity'], info['schDedication'], info['schName'],
+                                        info['schProv'], info['usrId'], info['usrType'])
+    return result
+
+
+def parseMaterie(data):
+    result = ""
+    firstMateria = True
+    for materia in data['subjects']:
+        if firstMateria:
+            firstMateria = False
+            result += "\n\n\n📚 <b>{0}</b>".format(materia['description'])
+        else:
+            result += "\n\n📚 <b>{0}</b>".format(materia['description'])
+
+        for prof in materia['teachers']:
+            result += "\n    👤 {0}".format(prof['teacherName'])
+    return result
+
+
+def parseNote(data):
+    result = ""
+
+    if not data['NTCL'] and not data['NTWN'] and not data['NTTE']:
+        return "\n\n✅ Nessuna annotazione rilevata!"
+
+    for nota in data['NTCL']:
+        if not nota['readStatus']:
+            nota['evtText'] = "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione <i>annotazioni</i>" \
+                              "per leggere questa nota disciplinare."
+        result += "\n\n🚫 <b>Nota disciplinare</b> di <b>{0}</b> del {1}:\n" \
+                  "{2}".format(nota['authorName'].title(), nota['evtDate'], nota['evtText'])
+
+    for avviso in data['NTWN']:
+        if not avviso['readStatus']:
+            avviso['evtText'] = "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione \"annotazioni\"" \
+                                "per leggere questo avviso."
+        result += "\n\n⚠️ <b>Richiamo ({0})</b> di <b>{1}</b> del {2}:\n" \
+                  "{3}".format(avviso['warningType'].lower(), avviso['authorName'].title(), avviso['evtDate'], avviso['evtText'])
+
+    for annotazione in data['NTTE']:
+        if not annotazione['readStatus']:
+            annotazione['evtText'] = "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione \"annotazioni\"" \
+                                "per leggere questa annotazione."
+        result += "\n\nℹ️ <b>Annotazione</b> di <b>{0}</b> del {1}:\n" \
+                  "{2}".format(annotazione['authorName'].title(), annotazione['evtDate'], annotazione['evtText'])
+
+    return result
+
+
+def parseVoti(data):
+    if not data.get('grades'):
+        return "\n\n📕 Non hai ancora nessun voto!"
+
+    votiOrdinati = {}
+    for voto in data['grades']:
+        materia = voto['subjectDesc']
+        value = "Voto " + voto['displayValue']
+        tipo = voto['componentDesc']
+        if voto['color'] == "green":
+            colore = "📗"
+        elif voto['color'] == "red":
+            colore = "📕"
+        else:
+            colore = "📘"
+
+        if tipo == "":
+            str_voto = "\n\n{0} <b>{1}</b> • {3} ({4}){5}".format(colore, value, "",
+                        voto['evtDate'].lower(), str(voto['periodPos'])+" "+voto['periodDesc'].lower(),
+                        "\n<i>{0}</i>".format(voto['notesForFamily']) if voto['notesForFamily'] else "")
+        else:
+            str_voto = "\n\n{0} <b>{1}</b> • {2} • {3} ({4}){5}".format(colore, value, tipo,
+                        voto['evtDate'].lower(), str(voto['periodPos'])+" "+voto['periodDesc'].lower(),
+                        "\n<i>{0}</i>".format(voto['notesForFamily']) if voto['notesForFamily'] else "")
+
+        if materia not in votiOrdinati:
+            votiOrdinati[materia] = []
+        votiOrdinati[materia].append(str_voto)
+
+
+    result = ""
+    firstMateria = True
+    for materia, voti in votiOrdinati.items():
+        if firstMateria:
+            firstMateria = False
+            result += "\n\n📚 <b>{0}</b>".format(materia)
+        else:
+            result += "\n\n\n\n📚 <b>{0}</b>".format(materia)
+        for voto in voti:
+            result += voto
+    return result
+
+
+def parseAssenze(data):
+    if not data.get('events'):
+        return "\n\n✅ Nessuna assenza/ritardo rilevati!"
+
+    assenze = ""
+    ritardi = ""
+    ritardiBrevi = ""
+    usciteAnticipate = ""
+
+    for evento in data['events']:
+        if evento['evtCode'] == "ABA0":
+            if not assenze:
+                assenze = "\n\n\n❌ <b>Assenze</b>:"
+
+            assenze += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], evento['justifReasonDesc'].lower(),
+                                                     "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
+
+        elif evento['evtCode'] == "ABR0":
+            if not ritardi:
+                ritardi = "\n\n\n🏃 <b>Ritardi</b>:"
+
+            ritardi += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], evento['justifReasonDesc'].lower(),
+                                                     "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
+
+        elif evento['evtCode'] == "ABR1":
+            if not ritardiBrevi:
+                ritardiBrevi = "\n\n\n🚶 <b>Ritardi Brevi</b>:"
+
+                ritardiBrevi += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], evento['justifReasonDesc'].lower(),
+                                                     "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
+
+        elif evento['evtCode'] == "ABU0":
+            if not usciteAnticipate:
+                usciteAnticipate = "\n\n\n🚪 <b>Uscite Anticipate</b>:"
+
+                usciteAnticipate += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], evento['justifReasonDesc'].lower(),
+                                                     "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
+
+    return assenze + ritardi + ritardiBrevi + usciteAnticipate
+
+
+def parseAgenda(data):
+    if not data.get('agenda'):
+        return "\n🗓 L'agenda è ancora vuota."
+
+    result = ""
+    firstEvent = True
+    for event in data['agenda']:
+        date = str(event['evtDatetimeBegin']).split("T", 1)[0]
+        date = date.split("-", 2)
+        if firstEvent:
+            firstEvent = False
+            separator = "\n"
+        else:
+            separator = "\n\n\n"
+        result += separator + "📌 {0}/{1}/{2} • <b>{3}</b>\n{4}".format(date[2], date[1], date[0],
+                                                                event['authorName'].title(), event['notes'])
+
+    return result
+
+
+def parseLezioni(data):
+    if not data.get('lessons'):
+        return "🎈 Nessuna lezione, per oggi."
+
+    result = ""
+    for lezione in data['lessons']:
+        ora = lezione['evtHPos']
+        descrizione = lezione['lessonArg']
+        tipo = lezione['lessonType']
+        materia = lezione['subjectDesc']
+
+        if descrizione == "":
+            result += "✏️ {0}° ora • <b>{1}</b> di <b>{2}</b>\n\n".format(ora, tipo, materia)
+        else:
+            result += "✏️ {0}° ora • <b>{1}</b> di <b>{2}</b>\n{3}\n\n".format(ora, tipo, materia, descrizione)
+
+    return result
+
+
+
+
+def parseNoteNew(data):
+    result = ""
+
+    if not data['NTCL'] and not data['NTWN'] and not data['NTTE']:
+        return ""
+
+    for nota in data['NTCL']:
+        if not nota['readStatus']:
+            nota['evtText'] = "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione <i>annotazioni</i>" \
+                                "per leggere questa nota disciplinare."
+            result += "\n\n🚫 <b>Nota disciplinare</b> di <b>{0}</b> del {1}:\n" \
+                        "{2}".format(nota['authorName'].title(), nota['evtDate'], nota['evtText'])
+
+    for avviso in data['NTWN']:
+        if not avviso['readStatus']:
+            avviso['evtText'] = "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione \"annotazioni\"" \
+                                "per leggere questo avviso."
+            result += "\n\n⚠️ <b>Richiamo ({0})</b> di <b>{1}</b> del {2}:\n" \
+                        "{3}".format(avviso['warningType'].lower(), avviso['authorName'].title(), avviso['evtDate'], avviso['evtText'])
+
+    for annotazione in data['NTTE']:
+        if not annotazione['readStatus']:
+            annotazione['evtText'] = "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione \"annotazioni\"" \
+                                     "per leggere questa annotazione."
+            result += "\n\nℹ️ <b>Annotazione</b> di <b>{0}</b> del {1}:\n" \
+                        "{2}".format(annotazione['authorName'].title(), annotazione['evtDate'], annotazione['evtText'])
+
+    return result
