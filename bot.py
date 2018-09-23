@@ -1,4 +1,4 @@
-import telepot
+﻿import telepot
 from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton
 from time import sleep
 from datetime import datetime, timedelta
@@ -7,7 +7,7 @@ from modules.session import ClasseVivaAPI, AuthenticationFailedError
 import modules.responser as resp
 from modules.crypter import crypt, decrypt
 
-bot = telepot.Bot(open('token.txt', 'r').readline())
+bot = telepot.Bot(open('token.txt', 'r').readline().strip())
 api = ClasseVivaAPI()
 db = TinyDB('database.json')
 inizioScuola = "2018/09/10"
