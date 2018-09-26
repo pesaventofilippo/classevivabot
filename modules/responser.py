@@ -1,4 +1,6 @@
 def parseDidattica(data):
+    if not data.get('didacticts'):
+        return "\n\n📌 Nessun file caricato."
     result = ""
     firstProf = True
     for prof in data['didacticts']:
@@ -24,6 +26,8 @@ def parseDidattica(data):
 
 
 def parseInfo(data):
+    if not data.get('cards'):
+        return "📌 Nessuna info disponibile."
     info = data['cards'][0]
     result = "👤 Nome: <b>{1}</b>\n" \
              "👤 Cognome: <b>{4}</b>\n" \
@@ -46,6 +50,8 @@ def parseInfo(data):
 
 
 def parseMaterie(data):
+    if not data.get('subjects'):
+        return "\n\n📌 Nessun prof attualmente registrato."
     result = ""
     firstMateria = True
     for materia in data['subjects']:
@@ -92,7 +98,7 @@ def parseNote(data):
 
 def parseVoti(data):
     if not data.get('grades'):
-        return "\n\n📕 Non hai ancora nessun voto!"
+        return "\n📕 Non hai ancora nessun voto!"
 
     votiOrdinati = {}
     for voto in data['grades']:
@@ -209,37 +215,5 @@ def parseLezioni(data):
             result += "✏️ {0}° ora • <b>{1}</b> di <b>{2}</b>\n\n".format(ora, tipo, materia)
         else:
             result += "✏️ {0}° ora • <b>{1}</b> di <b>{2}</b>\n{3}\n\n".format(ora, tipo, materia, descrizione)
-
-    return result
-
-
-
-
-def parseNoteNew(data):
-    result = ""
-
-    if not data['NTCL'] and not data['NTWN'] and not data['NTTE']:
-        return ""
-
-    for nota in data['NTCL']:
-        if not nota['readStatus']:
-            nota['evtText'] = "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione <i>annotazioni</i>" \
-                                "per leggere questa nota disciplinare."
-            result += "\n\n🚫 <b>Nota disciplinare</b> di <b>{0}</b> del {1}:\n" \
-                        "{2}".format(nota['authorName'].title(), nota['evtDate'], nota['evtText'])
-
-    for avviso in data['NTWN']:
-        if not avviso['readStatus']:
-            avviso['evtText'] = "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione \"annotazioni\"" \
-                                "per leggere questo avviso."
-            result += "\n\n⚠️ <b>Richiamo ({0})</b> di <b>{1}</b> del {2}:\n" \
-                        "{3}".format(avviso['warningType'].lower(), avviso['authorName'].title(), avviso['evtDate'], avviso['evtText'])
-
-    for annotazione in data['NTTE']:
-        if not annotazione['readStatus']:
-            annotazione['evtText'] = "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione \"annotazioni\"" \
-                                     "per leggere questa annotazione."
-            result += "\n\nℹ️ <b>Annotazione</b> di <b>{0}</b> del {1}:\n" \
-                        "{2}".format(annotazione['authorName'].title(), annotazione['evtDate'], annotazione['evtText'])
 
     return result

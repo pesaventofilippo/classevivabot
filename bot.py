@@ -7,7 +7,17 @@ from modules.session import ClasseVivaAPI, AuthenticationFailedError
 import modules.responser as resp
 from modules.crypter import crypt, decrypt
 
-bot = telepot.Bot(open('token.txt', 'r').readline().strip())
+try:
+    f = open('token.txt', 'r')
+    token = f.readline().strip()
+    f.close()
+except FileNotFoundError:
+    token = input("File 'token.txt' not found. Please insert the bot Token: ")
+    f = open('token.txt', 'w')
+    f.write(token)
+    f.close()
+
+bot = telepot.Bot(token)
 api = ClasseVivaAPI()
 db = TinyDB('database.json')
 inizioScuola = "2018/09/10"
@@ -37,22 +47,19 @@ def updateUserDatabase(user_id, username=None, password=None, status=None):
 
 
 def isUserLogged(user_id):
-    data = db.search(where('id') == user_id)[0]
-    if (data['username'] == "") or (data['password'] == ""):
+    if db.search(where('id') == user_id)[0]['password'] == "":
         return False
     else:
         return True
 
 
 def runNotifications():
-    pendingUsers = db.search(where('id') > 0)
+    pendingUsers = db.search(where('password') != "")
     for user in pendingUsers:
         updateUserDatabase(user['id'], status="updating")
         api.login(user['username'], decrypt(user['password']))
 
-        note = resp.parseNoteNew(api.note())
-        if note != "":
-            bot.sendMessage(user['id'], "❗️<b>Hai ricevuto nuove note:</b>{0}".format(note), parse_mode="HTML")
+        # Do stuff
 
         api.logout()
         updateUserDatabase(user['id'], status="normal")
