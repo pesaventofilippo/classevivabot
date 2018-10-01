@@ -1,4 +1,4 @@
-﻿import telepot
+import telepot
 from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton
 from time import sleep
 from datetime import datetime, timedelta
@@ -67,13 +67,13 @@ def runNotifications():
         api.login(user['username'], decrypt(user['password']))
         userdata = data_db.search(where('id') == user['id'])[0]
 
-        newDidattica = api.didattica()
+        # newDidattica = api.didattica()
         newNote = api.note()
         newVoti = api.voti()
         newAssenze = api.assenze(inizioScuola.replace("/", ""))
         newAgenda = api.agenda(14)
 
-        oldDidattica = userdata['didattica']
+        # oldDidattica = userdata['didattica']
         oldNote = userdata['note']
         oldVoti = userdata['voti']
         oldAssenze = userdata['assenze']
@@ -84,6 +84,25 @@ def runNotifications():
         dataVoti = resp.parseNewVoti(oldVoti, newVoti)
         dataAssenze = resp.parseNewAssenze(oldAssenze, newAssenze)
         dataAgenda = resp.parseNewAgenda(oldAgenda, newAgenda)
+        
+        message = ""
+        
+        if dataNote is not None:
+            message += "❗️<b>Nuove note</b>{0}\n\n\n".format(dataNote)
+        
+        if dataVoti is not None:
+            message += "📝 <b>Nuovi voti</b>\n{0}\n\n\n".format(dataVoti)
+        
+        if dataAssenze is not None:
+            message += "🏫 <b>Nuove assenze</b>{0}\n\n\n".format(dataAssenze)
+        
+        if dataAgenda is not None:
+            message += "📆 <b>Nuovi impegni in agenda</b>\n{0}".format(dataAgenda)
+        
+        
+        if message != "":
+            bot.sendMessage(user['id'], "🔔 <b>Hai nuove notifiche!</b>\n\n"+message, parse_mode="HTML")
+        
 
         updateDataDatabase(user['id'], newDidattica, newNote, newVoti, newAssenze, newAgenda)
         api.logout()
