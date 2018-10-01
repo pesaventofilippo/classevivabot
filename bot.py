@@ -84,25 +84,25 @@ def runNotifications():
         dataVoti = resp.parseNewVoti(oldVoti, newVoti)
         dataAssenze = resp.parseNewAssenze(oldAssenze, newAssenze)
         dataAgenda = resp.parseNewAgenda(oldAgenda, newAgenda)
-        
+
         message = ""
-        
+
         if dataNote is not None:
             message += "❗️<b>Nuove note</b>{0}\n\n\n".format(dataNote)
-        
+
         if dataVoti is not None:
             message += "📝 <b>Nuovi voti</b>\n{0}\n\n\n".format(dataVoti)
-        
+
         if dataAssenze is not None:
             message += "🏫 <b>Nuove assenze</b>{0}\n\n\n".format(dataAssenze)
-        
+
         if dataAgenda is not None:
             message += "📆 <b>Nuovi impegni in agenda</b>\n{0}".format(dataAgenda)
-        
-        
+
+
         if message != "":
             bot.sendMessage(user['id'], "🔔 <b>Hai nuove notifiche!</b>\n\n"+message, parse_mode="HTML")
-        
+
 
         updateDataDatabase(user['id'], newDidattica, newNote, newVoti, newAssenze, newAgenda)
         api.logout()
@@ -158,7 +158,7 @@ def rispondi(msg):
                   "/info - Visualizza le tue info utente\n" \
                   "/prof - Visualizza la lista delle materie e dei prof\n" \
                   "\n\n" \
-                  "<b>Notifiche</b>: ogni ora, il bot ti invierà un messagio se ti sono arrivate nuove note."
+                  "<b>Notifiche</b>: ogni ora, ti invierò un messagio se ti sono arrivate nuovi voti, note, compiti o assenze."
         bot.sendMessage(chatId, message, parse_mode="HTML")
 
 
@@ -189,7 +189,7 @@ def rispondi(msg):
 
         elif text == "/info":
             bot.sendChatAction(chatId, "typing")
-            data = resp.parseDidattica(api.info())
+            data = resp.parseInfo(api.info())
             bot.sendMessage(chatId, "ℹ️ <b>Ecco le tue info</b>:\n\n"
                                     "{0}".format(data), parse_mode="HTML")
 
