@@ -20,7 +20,8 @@ def parseDidattica(data):
                 result += "\n\n    📂 <b>{0}</b>".format(folderName)
 
             for file in folder['contents']:
-                result += "\n        📝 {0}".format(file['contentName'])
+                fileName = "Senza nome" if file['contentName'] == "" else file['contentName']
+                result += "\n        📝 {0}".format(fileName)
 
     return result
 
@@ -217,3 +218,158 @@ def parseLezioni(data):
             result += "✏️ {0}° ora • <b>{1}</b> di <b>{2}</b>\n{3}\n\n".format(ora, tipo, materia, descrizione)
 
     return result
+
+
+
+def parseNewNote(oldData, newData):
+    result = ""
+
+    if not newData['NTCL'] and not newData['NTWN'] and not newData['NTTE']:
+        return None
+
+    for nota in newData['NTCL']:
+        if nota not in oldData['NTCL']:
+            if not nota['readStatus']:
+                nota[
+                    'evtText'] = "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione <i>annotazioni</i>" \
+                                 "per leggere questa nota disciplinare."
+            result += "\n\n🚫 <b>Nota disciplinare</b> di <b>{0}</b> del {1}:\n" \
+                      "{2}".format(nota['authorName'].title(), nota['evtDate'], nota['evtText'])
+
+    for avviso in newData['NTWN']:
+        if avviso not in oldData['NTWN']:
+            if not avviso['readStatus']:
+                avviso[
+                    'evtText'] = "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione \"annotazioni\"" \
+                                 "per leggere questo avviso."
+            result += "\n\n⚠️ <b>Richiamo ({0})</b> di <b>{1}</b> del {2}:\n" \
+                      "{3}".format(avviso['warningType'].lower(), avviso['authorName'].title(), avviso['evtDate'],
+                                   avviso['evtText'])
+
+    for annotazione in newData['NTTE']:
+        if annotazione not in oldData['NTTE']:
+            if not annotazione['readStatus']:
+                annotazione[
+                    'evtText'] = "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione \"annotazioni\"" \
+                                 "per leggere questa annotazione."
+            result += "\n\nℹ️ <b>Annotazione</b> di <b>{0}</b> del {1}:\n" \
+                      "{2}".format(annotazione['authorName'].title(), annotazione['evtDate'], annotazione['evtText'])
+
+    return result if result != "" else None
+
+
+def parseNewVoti(oldData, newData):
+    if not newData.get('grades'):
+        return None
+
+    votiOrdinati = {}
+    for voto in newData['grades']:
+        if voto not in oldData['grades']:
+            materia = voto['subjectDesc']
+            value = "Voto " + voto['displayValue']
+            tipo = voto['componentDesc']
+            if voto['color'] == "green":
+                colore = "📗"
+            elif voto['color'] == "red":
+                colore = "📕"
+            else:
+                colore = "📘"
+
+            if tipo == "":
+                str_voto = "\n\n{0} <b>{1}</b> • {3} ({4}){5}".format(colore, value, "",
+                            voto['evtDate'].lower(), str(voto['periodPos'])+" "+voto['periodDesc'].lower(),
+                            "\n<i>{0}</i>".format(voto['notesForFamily']) if voto['notesForFamily'] else "")
+            else:
+                str_voto = "\n\n{0} <b>{1}</b> • {2} • {3} ({4}){5}".format(colore, value, tipo,
+                            voto['evtDate'].lower(), str(voto['periodPos'])+" "+voto['periodDesc'].lower(),
+                            "\n<i>{0}</i>".format(voto['notesForFamily']) if voto['notesForFamily'] else "")
+
+            if materia not in votiOrdinati:
+                votiOrdinati[materia] = []
+            votiOrdinati[materia].append(str_voto)
+
+
+    result = ""
+    firstMateria = True
+    for materia, voti in votiOrdinati.items():
+        if firstMateria:
+            firstMateria = False
+            result += "\n\n📚 <b>{0}</b>".format(materia)
+        else:
+            result += "\n\n\n\n📚 <b>{0}</b>".format(materia)
+        for voto in voti:
+            result += voto
+
+    return result if result != "" else None
+
+
+def parseNewAssenze(oldData, newData):
+    if not newData.get('events'):
+        return None
+
+    assenze = ""
+    ritardi = ""
+    ritardiBrevi = ""
+    usciteAnticipate = ""
+
+    for evento in newData['events']:
+        if evento not in oldData['events']:
+            if evento['evtCode'] == "ABA0":
+                if not assenze:
+                    assenze = "\n\n\n❌ <b>Assenze</b>:"
+
+                assenze += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], evento['justifReasonDesc'].lower(),
+                                                         "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
+
+            elif evento['evtCode'] == "ABR0":
+                if not ritardi:
+                    ritardi = "\n\n\n🏃 <b>Ritardi</b>:"
+
+                ritardi += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], evento['justifReasonDesc'].lower(),
+                                                         "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
+
+            elif evento['evtCode'] == "ABR1":
+                if not ritardiBrevi:
+                    ritardiBrevi = "\n\n\n🚶 <b>Ritardi Brevi</b>:"
+
+                    ritardiBrevi += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], evento['justifReasonDesc'].lower(),
+                                                         "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
+
+            elif evento['evtCode'] == "ABU0":
+                if not usciteAnticipate:
+                    usciteAnticipate = "\n\n\n🚪 <b>Uscite Anticipate</b>:"
+
+                    usciteAnticipate += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], evento['justifReasonDesc'].lower(),
+                                                         "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
+
+    result = ""
+    if assenze != "":
+        result += assenze
+    if ritardi != "":
+        result += ritardi
+    if ritardiBrevi != "":
+        result += ritardiBrevi
+    if usciteAnticipate != "":
+        result += usciteAnticipate
+    return result if result != "" else None
+
+
+def parseNewAgenda(oldData, newData):
+    if not newData.get('agenda'):
+        return None
+
+    result = ""
+    firstEvent = True
+    for event in newData['agenda']:
+        if event not in oldData['agenda']:
+            date = str(event['evtDatetimeBegin']).split("T", 1)[0]
+            date = date.split("-", 2)
+            if firstEvent:
+                firstEvent = False
+                separator = "\n"
+            else:
+                separator = "\n\n\n"
+            result += separator + "📌 {0}/{1}/{2} • <b>{3}</b>\n{4}".format(date[2], date[1], date[0],
+                                                                            event['authorName'].title(), event['notes'])
+
+    return result if result != "" else None

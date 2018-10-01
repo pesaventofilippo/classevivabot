@@ -20,30 +20,37 @@ except FileNotFoundError:
 bot = telepot.Bot(token)
 api = ClasseVivaAPI()
 db = TinyDB('database.json')
+data_db = TinyDB('data.json')
 inizioScuola = "2018/09/10"
 
 
 def updateUserDatabase(user_id, username=None, password=None, status=None):
     password = crypt(password)
     if db.search(where('id') == user_id):
-        if (username is None) and (password is None) and (status is None):
-            return 0
-        elif (username is None) and (password is None):
-            db.update({'status': status}, where('id') == user_id)
-        elif (username is None) and (status is None):
-            db.update({'password': password}, where('id') == user_id)
-        elif (password is None) and (status is None):
+        if username is not None:
             db.update({'username': username}, where('id') == user_id)
-        elif username is None:
-            db.update({'password': password, 'status': status}, where('id') == user_id)
-        elif password is None:
-            db.update({'username': username, 'status': status}, where('id') == user_id)
-        elif status is None:
-            db.update({'username': username, 'password': password}, where('id') == user_id)
-        else:
-            db.update({'username': username, 'password': password, 'status': status}, where('id') == user_id)
+        elif password is not None:
+            db.update({'password': password}, where('id') == user_id)
+        elif status is not None:
+            db.update({'status': status}, where('id') == user_id)
     else:
         db.insert({'id': user_id, 'username': "", 'password': "", 'status': "normal"})
+
+
+def updateDataDatabase(user_id, didattica=None, note=None, voti=None, assenze=None, agenda=None):
+    if data_db.search(where('id') == user_id):
+        if didattica is not None:
+            data_db.update({'didattica': didattica}, where('id') == user_id)
+        elif note is not None:
+            data_db.update({'note': note}, where('id') == user_id)
+        elif voti is not None:
+            data_db.update({'voti': voti}, where('id') == user_id)
+        elif assenze is not None:
+            data_db.update({'assenze': assenze}, where('id') == user_id)
+        elif agenda is not None:
+            data_db.update({'agenda': agenda}, where('id') == user_id)
+    else:
+        data_db.insert({'id': user_id, 'didattica': {}, 'note': {}, 'voti': {}, 'assenze': {}, 'agenda': {}})
 
 
 def isUserLogged(user_id):
@@ -58,9 +65,27 @@ def runNotifications():
     for user in pendingUsers:
         updateUserDatabase(user['id'], status="updating")
         api.login(user['username'], decrypt(user['password']))
+        userdata = data_db.search(where('id') == user['id'])[0]
 
-        # Do stuff
+        newDidattica = api.didattica()
+        newNote = api.note()
+        newVoti = api.voti()
+        newAssenze = api.assenze(inizioScuola.replace("/", ""))
+        newAgenda = api.agenda(14)
 
+        oldDidattica = userdata['didattica']
+        oldNote = userdata['note']
+        oldVoti = userdata['voti']
+        oldAssenze = userdata['assenze']
+        oldAgenda = userdata['agenda']
+
+        # WIP dataDidattica = resp.parseNewDidattica(oldDidattica, newDidattica)
+        dataNote = resp.parseNewNote(oldNote, newNote)
+        dataVoti = resp.parseNewVoti(oldVoti, newVoti)
+        dataAssenze = resp.parseNewAssenze(oldAssenze, newAssenze)
+        dataAgenda = resp.parseNewAgenda(oldAgenda, newAgenda)
+
+        updateDataDatabase(user['id'], newDidattica, newNote, newVoti, newAssenze, newAgenda)
         api.logout()
         updateUserDatabase(user['id'], status="normal")
 
@@ -70,6 +95,7 @@ def rispondi(msg):
     text = msg['text']
     name = msg['from']['first_name']
     updateUserDatabase(chatId)
+    updateDataDatabase(chatId)
     status = db.search(where('id') == chatId)[0]['status']
 
     if status != "normal":
@@ -90,10 +116,10 @@ def rispondi(msg):
             except AuthenticationFailedError:
                 bot.sendMessage(chatId, "Errore: Username o password non corretti.\n"
                                         "Premi /login per riprovare.")
-                updateUserDatabase(chatId, "", "")
+                updateUserDatabase(chatId, username="", password="")
 
         elif status == "updating":
-            bot.sendMessage(chatId, "😴 Sto aggiornando il tuo profilo, torna fra un minuto.")
+            bot.sendMessage(chatId, "😴 Sto aggiornando il tuo profilo, aspetta un attimo.")
 
 
     elif text == "/help":
@@ -129,19 +155,22 @@ def rispondi(msg):
                                     "Premi /logout per uscire.")
 
         elif text == "/logout":
-            updateUserDatabase(chatId, "", "", "normal")
+            updateUserDatabase(chatId, username="", password="", status="normal")
+            updateDataDatabase(chatId, {}, {}, {}, {}, {})
             bot.sendMessage(chatId, "Fatto, sei stato disconnesso!\n"
                                     "Premi /login per entrare di nuovo.\n\n"
                                     "Premi /help se serve aiuto.")
 
         elif text == "/didattica":
             bot.sendChatAction(chatId, "typing")
-            data = resp.parseDidattica(api.didattica())
+            response = api.didattica()
+            updateDataDatabase(chatId, didattica=response)
+            data = resp.parseDidattica(response)
             bot.sendMessage(chatId, "📚 <b>Files caricati in didadttica</b>:{0}".format(data), parse_mode="HTML")
 
         elif text == "/info":
             bot.sendChatAction(chatId, "typing")
-            data = resp.parseInfo(api.info())
+            data = resp.parseDidattica(api.info())
             bot.sendMessage(chatId, "ℹ️ <b>Ecco le tue info</b>:\n\n"
                                     "{0}".format(data), parse_mode="HTML")
 
@@ -152,22 +181,30 @@ def rispondi(msg):
 
         elif text == "/note":
             bot.sendChatAction(chatId, "typing")
-            data = resp.parseNote(api.note())
+            response = api.note()
+            updateDataDatabase(chatId, note=response)
+            data = resp.parseNote(response)
             bot.sendMessage(chatId, "❗️<b>Le tue note:</b>{0}".format(data), parse_mode="HTML")
 
         elif text == "/voti":
             bot.sendChatAction(chatId, "typing")
-            data = resp.parseVoti(api.voti())
+            response = api.voti()
+            updateDataDatabase(chatId, voti=response)
+            data = resp.parseVoti(response)
             bot.sendMessage(chatId, "📝 <b>I tuoi voti</b>:\n{0}".format(data), parse_mode="HTML")
 
         elif text == "/assenze":
             bot.sendChatAction(chatId, "typing")
-            data = resp.parseAssenze(api.assenze(inizioScuola.replace("/", "")))
+            response = api.assenze(inizioScuola.replace("/", ""))
+            updateDataDatabase(chatId, assenze=response)
+            data = resp.parseAssenze(response)
             bot.sendMessage(chatId, "{0}".format(data), parse_mode="HTML")
 
         elif text == "/agenda":
             bot.sendChatAction(chatId, "typing")
-            data = resp.parseAgenda(api.agenda(14))
+            response = api.agenda(14)
+            updateDataDatabase(chatId, agenda=response)
+            data = resp.parseAgenda(response)
             bot.sendMessage(chatId, "📆 <b>Agenda compiti delle prossime 2 settimane</b>:\n"
                                     "{0}".format(data), parse_mode="HTML")
 
@@ -233,9 +270,10 @@ def button_press(msg):
     api.logout()
 
 
+
 bot.message_loop({'chat': rispondi, 'callback_query': button_press})
 print("Bot started...")
 while True:
     sleep(60)
-    if datetime.now().strftime("%m") == "00":
+    if datetime.now().minute == 0:
         runNotifications()
