@@ -67,13 +67,13 @@ def runNotifications():
         api.login(user['username'], decrypt(user['password']))
         userdata = data_db.search(where('id') == user['id'])[0]
 
-        # newDidattica = api.didattica()
+        newDidattica = api.didattica()
         newNote = api.note()
         newVoti = api.voti()
         newAssenze = api.assenze(inizioScuola.replace("/", ""))
         newAgenda = api.agenda(14)
 
-        # oldDidattica = userdata['didattica']
+        oldDidattica = userdata['didattica']
         oldNote = userdata['note']
         oldVoti = userdata['voti']
         oldAssenze = userdata['assenze']
