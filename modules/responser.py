@@ -228,7 +228,7 @@ def parseNewNote(oldData, newData):
         return None
 
     for nota in newData['NTCL']:
-        if (not oldData.get['NTCL']) or (nota not in oldData['NTCL']):
+        if (not oldData.get('NTCL')) or (nota not in oldData['NTCL']):
             if not nota['readStatus']:
                 nota[
                     'evtText'] = "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione <i>annotazioni</i>" \
@@ -237,7 +237,7 @@ def parseNewNote(oldData, newData):
                       "{2}".format(nota['authorName'].title(), nota['evtDate'], nota['evtText'])
 
     for avviso in newData['NTWN']:
-        if (not oldData.get['NTWN']) or (avviso not in oldData['NTWN']):
+        if (not oldData.get('NTWN')) or (avviso not in oldData['NTWN']):
             if not avviso['readStatus']:
                 avviso[
                     'evtText'] = "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione \"annotazioni\"" \
@@ -247,7 +247,7 @@ def parseNewNote(oldData, newData):
                                    avviso['evtText'])
 
     for annotazione in newData['NTTE']:
-        if (not oldData.get['NTTE']) or (annotazione not in oldData['NTTE']):
+        if (not oldData.get('NTTE')) or (annotazione not in oldData['NTTE']):
             if not annotazione['readStatus']:
                 annotazione[
                     'evtText'] = "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione \"annotazioni\"" \
@@ -264,7 +264,7 @@ def parseNewVoti(oldData, newData):
 
     votiOrdinati = {}
     for voto in newData['grades']:
-        if voto not in oldData['grades']:
+        if (not oldData.get('grades')) or (voto not in oldData['grades']):
             materia = voto['subjectDesc']
             value = "Voto " + voto['displayValue']
             tipo = voto['componentDesc']
@@ -313,7 +313,7 @@ def parseNewAssenze(oldData, newData):
     usciteAnticipate = ""
 
     for evento in newData['events']:
-        if evento not in oldData['events']:
+        if (not oldData.get('events')) or (evento not in oldData['events']):
             if evento['evtCode'] == "ABA0":
                 if not assenze:
                     assenze = "\n\n\n❌ <b>Assenze</b>:"
@@ -361,7 +361,7 @@ def parseNewAgenda(oldData, newData):
     result = ""
     firstEvent = True
     for event in newData['agenda']:
-        if event not in oldData['agenda']:
+        if (not oldData.get('agenda')) or (event not in oldData['agenda']):
             date = str(event['evtDatetimeBegin']).split("T", 1)[0]
             date = date.split("-", 2)
             if firstEvent:
