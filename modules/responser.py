@@ -228,7 +228,7 @@ def parseNewNote(oldData, newData):
         return None
 
     for nota in newData['NTCL']:
-        if nota not in oldData['NTCL']:
+        if (not oldData.get['NTCL']) or (nota not in oldData['NTCL']):
             if not nota['readStatus']:
                 nota[
                     'evtText'] = "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione <i>annotazioni</i>" \
@@ -237,7 +237,7 @@ def parseNewNote(oldData, newData):
                       "{2}".format(nota['authorName'].title(), nota['evtDate'], nota['evtText'])
 
     for avviso in newData['NTWN']:
-        if avviso not in oldData['NTWN']:
+        if (not oldData.get['NTWN']) or (avviso not in oldData['NTWN']):
             if not avviso['readStatus']:
                 avviso[
                     'evtText'] = "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione \"annotazioni\"" \
@@ -247,7 +247,7 @@ def parseNewNote(oldData, newData):
                                    avviso['evtText'])
 
     for annotazione in newData['NTTE']:
-        if annotazione not in oldData['NTTE']:
+        if (not oldData.get['NTTE']) or (annotazione not in oldData['NTTE']):
             if not annotazione['readStatus']:
                 annotazione[
                     'evtText'] = "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione \"annotazioni\"" \
