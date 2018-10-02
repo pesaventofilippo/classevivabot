@@ -1,5 +1,6 @@
 import telepot
 from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton
+from telepot.exception import TelegramError
 from time import sleep
 from datetime import datetime, timedelta
 from tinydb import TinyDB, where
@@ -64,48 +65,54 @@ def runNotifications():
     pendingUsers = db.search(where('password') != "")
     for user in pendingUsers:
         updateUserDatabase(user['id'], status="updating")
-        api.login(user['username'], decrypt(user['password']))
-        userdata = data_db.search(where('id') == user['id'])[0]
+        try:
+            api.login(user['username'], decrypt(user['password']))
+            userdata = data_db.search(where('id') == user['id'])[0]
 
-        newDidattica = api.didattica()
-        newNote = api.note()
-        newVoti = api.voti()
-        newAssenze = api.assenze(inizioScuola.replace("/", ""))
-        newAgenda = api.agenda(14)
+            newDidattica = api.didattica()
+            newNote = api.note()
+            newVoti = api.voti()
+            newAssenze = api.assenze(inizioScuola.replace("/", ""))
+            newAgenda = api.agenda(14)
 
-        oldDidattica = userdata['didattica']
-        oldNote = userdata['note']
-        oldVoti = userdata['voti']
-        oldAssenze = userdata['assenze']
-        oldAgenda = userdata['agenda']
+            oldDidattica = userdata['didattica']
+            oldNote = userdata['note']
+            oldVoti = userdata['voti']
+            oldAssenze = userdata['assenze']
+            oldAgenda = userdata['agenda']
 
-        # WIP dataDidattica = resp.parseNewDidattica(oldDidattica, newDidattica)
-        dataNote = resp.parseNewNote(oldNote, newNote)
-        dataVoti = resp.parseNewVoti(oldVoti, newVoti)
-        dataAssenze = resp.parseNewAssenze(oldAssenze, newAssenze)
-        dataAgenda = resp.parseNewAgenda(oldAgenda, newAgenda)
+            # WIP dataDidattica = resp.parseNewDidattica(oldDidattica, newDidattica)
+            dataNote = resp.parseNewNote(oldNote, newNote)
+            dataVoti = resp.parseNewVoti(oldVoti, newVoti)
+            dataAssenze = resp.parseNewAssenze(oldAssenze, newAssenze)
+            dataAgenda = resp.parseNewAgenda(oldAgenda, newAgenda)
 
-        message = ""
+            message = ""
 
-        if dataNote is not None:
-            message += "❗️<b>Nuove note</b>{0}\n\n\n".format(dataNote)
+            if dataNote is not None:
+                message += "❗️<b>Nuove note</b>{0}\n\n\n".format(dataNote)
 
-        if dataVoti is not None:
-            message += "📝 <b>Nuovi voti</b>\n{0}\n\n\n".format(dataVoti)
+            if dataVoti is not None:
+                message += "📝 <b>Nuovi voti</b>\n{0}\n\n\n".format(dataVoti)
 
-        if dataAssenze is not None:
-            message += "🏫 <b>Nuove assenze</b>{0}\n\n\n".format(dataAssenze)
+            if dataAssenze is not None:
+                message += "🏫 <b>Nuove assenze</b>{0}\n\n\n".format(dataAssenze)
 
-        if dataAgenda is not None:
-            message += "📆 <b>Nuovi impegni in agenda</b>\n{0}".format(dataAgenda)
-
-
-        if message != "":
-            bot.sendMessage(user['id'], "🔔 <b>Hai nuove notifiche!</b>\n\n"+message, parse_mode="HTML")
+            if dataAgenda is not None:
+                message += "📆 <b>Nuovi impegni in agenda</b>\n{0}".format(dataAgenda)
 
 
-        updateDataDatabase(user['id'], newDidattica, newNote, newVoti, newAssenze, newAgenda)
-        api.logout()
+            if message != "":
+                bot.sendMessage(user['id'], "🔔 <b>Hai nuove notifiche!</b>\n\n"+message, parse_mode="HTML")
+
+
+            updateDataDatabase(user['id'], newDidattica, newNote, newVoti, newAssenze, newAgenda)
+            api.logout()
+
+        except AuthenticationFailedError:
+            pass
+        except TelegramError:
+            pass
         updateUserDatabase(user['id'], status="normal")
 
 
