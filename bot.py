@@ -23,6 +23,8 @@ api = ClasseVivaAPI()
 db = TinyDB('database.json')
 data_db = TinyDB('data.json')
 inizioScuola = "2018/09/10"
+updatesStartHour = 7
+updatesStopHour = 21
 
 
 def updateUserDatabase(user_id, username=None, password=None, status=None):
@@ -110,9 +112,14 @@ def runNotifications():
             api.logout()
 
         except AuthenticationFailedError:
-            pass
+            updateUserDatabase(user['id'], username="", password="")
+            updateDataDatabase(user['id'], {}, {}, {}, {}, {})
+            bot.sendMessage(user['id'], "Le tue credenziali di accesso sono cambiate o sono errate.\n"
+                                        "Esegui nuovamente il /login")
         except TelegramError:
             pass
+        except IndexError:
+            updateDataDatabase(user['id'])
         updateUserDatabase(user['id'], status="normal")
 
 
@@ -301,5 +308,6 @@ bot.message_loop({'chat': rispondi, 'callback_query': button_press})
 print("Bot started...")
 while True:
     sleep(60)
-    if datetime.now().minute == 0:
-        runNotifications()
+    if datetime.now().hour in range(updatesStartHour, updatesStopHour):
+        if datetime.now().minute == 0:
+            runNotifications()

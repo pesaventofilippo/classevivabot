@@ -106,6 +106,10 @@ def parseVoti(data):
         materia = voto['subjectDesc']
         value = "Voto " + voto['displayValue']
         tipo = voto['componentDesc']
+        time = voto['evtDate'].lower().split("-", 2)
+        day = time[2]
+        month = time[1]
+        year = time[0]
         if voto['color'] == "green":
             colore = "📗"
         elif voto['color'] == "red":
@@ -114,12 +118,10 @@ def parseVoti(data):
             colore = "📘"
 
         if tipo == "":
-            str_voto = "\n\n{0} <b>{1}</b> • {3} ({4}){5}".format(colore, value, "",
-                        voto['evtDate'].lower(), str(voto['periodPos'])+" "+voto['periodDesc'].lower(),
+            str_voto = "\n\n{0} <b>{1}</b> • {3} {4}".format(colore, value, "", "{0}/{1}/{2}".format(day, month, year),
                         "\n<i>{0}</i>".format(voto['notesForFamily']) if voto['notesForFamily'] else "")
         else:
-            str_voto = "\n\n{0} <b>{1}</b> • {2} • {3} ({4}){5}".format(colore, value, tipo,
-                        voto['evtDate'].lower(), str(voto['periodPos'])+" "+voto['periodDesc'].lower(),
+            str_voto = "\n\n{0} <b>{1}</b> • {2} • {3} {4}".format(colore, value, tipo, "{0}/{1}/{2}".format(day, month, year),
                         "\n<i>{0}</i>".format(voto['notesForFamily']) if voto['notesForFamily'] else "")
 
         if materia not in votiOrdinati:
@@ -268,6 +270,10 @@ def parseNewVoti(oldData, newData):
             materia = voto['subjectDesc']
             value = "Voto " + voto['displayValue']
             tipo = voto['componentDesc']
+            time = voto['evtDate'].lower().split("-", 2)
+            day = time[2]
+            month = time[1]
+            year = time[0]
             if voto['color'] == "green":
                 colore = "📗"
             elif voto['color'] == "red":
@@ -276,12 +282,10 @@ def parseNewVoti(oldData, newData):
                 colore = "📘"
 
             if tipo == "":
-                str_voto = "\n\n{0} <b>{1}</b> • {3} ({4}){5}".format(colore, value, "",
-                            voto['evtDate'].lower(), str(voto['periodPos'])+" "+voto['periodDesc'].lower(),
+                str_voto = "\n\n{0} <b>{1}</b> • {3} {4}".format(colore, value, "", "{0}/{1}/{2}".format(day, month, year),
                             "\n<i>{0}</i>".format(voto['notesForFamily']) if voto['notesForFamily'] else "")
             else:
-                str_voto = "\n\n{0} <b>{1}</b> • {2} • {3} ({4}){5}".format(colore, value, tipo,
-                            voto['evtDate'].lower(), str(voto['periodPos'])+" "+voto['periodDesc'].lower(),
+                str_voto = "\n\n{0} <b>{1}</b> • {2} • {3} {4}".format(colore, value, tipo, "{0}/{1}/{2}".format(day, month, year),
                             "\n<i>{0}</i>".format(voto['notesForFamily']) if voto['notesForFamily'] else "")
 
             if materia not in votiOrdinati:
