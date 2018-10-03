@@ -1,4 +1,5 @@
 token.txt
-*.json
+database.json
+data.json
 modules/crypter.py
 *__pycache__/

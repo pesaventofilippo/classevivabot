@@ -1,5 +1,6 @@
-﻿import telepot
+import telepot
 from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton
+from telepot.exception import TelegramError
 from time import sleep
 from datetime import datetime, timedelta
 from tinydb import TinyDB, where
@@ -22,6 +23,8 @@ api = ClasseVivaAPI()
 db = TinyDB('database.json')
 data_db = TinyDB('data.json')
 inizioScuola = "2018/09/10"
+updatesStartHour = 7
+updatesStopHour = 21
 
 
 def updateUserDatabase(user_id, username=None, password=None, status=None):
@@ -64,29 +67,59 @@ def runNotifications():
     pendingUsers = db.search(where('password') != "")
     for user in pendingUsers:
         updateUserDatabase(user['id'], status="updating")
-        api.login(user['username'], decrypt(user['password']))
-        userdata = data_db.search(where('id') == user['id'])[0]
+        try:
+            api.login(user['username'], decrypt(user['password']))
+            userdata = data_db.search(where('id') == user['id'])[0]
 
-        newDidattica = api.didattica()
-        newNote = api.note()
-        newVoti = api.voti()
-        newAssenze = api.assenze(inizioScuola.replace("/", ""))
-        newAgenda = api.agenda(14)
+            newDidattica = api.didattica()
+            newNote = api.note()
+            newVoti = api.voti()
+            newAssenze = api.assenze(inizioScuola.replace("/", ""))
+            newAgenda = api.agenda(14)
 
-        oldDidattica = userdata['didattica']
-        oldNote = userdata['note']
-        oldVoti = userdata['voti']
-        oldAssenze = userdata['assenze']
-        oldAgenda = userdata['agenda']
+            oldDidattica = userdata['didattica']
+            oldNote = userdata['note']
+            oldVoti = userdata['voti']
+            oldAssenze = userdata['assenze']
+            oldAgenda = userdata['agenda']
 
-        # WIP dataDidattica = resp.parseNewDidattica(oldDidattica, newDidattica)
-        dataNote = resp.parseNewNote(oldNote, newNote)
-        dataVoti = resp.parseNewVoti(oldVoti, newVoti)
-        dataAssenze = resp.parseNewAssenze(oldAssenze, newAssenze)
-        dataAgenda = resp.parseNewAgenda(oldAgenda, newAgenda)
+            # WIP dataDidattica = resp.parseNewDidattica(oldDidattica, newDidattica)
+            dataNote = resp.parseNewNote(oldNote, newNote)
+            dataVoti = resp.parseNewVoti(oldVoti, newVoti)
+            dataAssenze = resp.parseNewAssenze(oldAssenze, newAssenze)
+            dataAgenda = resp.parseNewAgenda(oldAgenda, newAgenda)
 
-        updateDataDatabase(user['id'], newDidattica, newNote, newVoti, newAssenze, newAgenda)
-        api.logout()
+            message = ""
+
+            if dataNote is not None:
+                message += "❗️<b>Nuove note</b>{0}\n\n\n".format(dataNote)
+
+            if dataVoti is not None:
+                message += "📝 <b>Nuovi voti</b>\n{0}\n\n\n".format(dataVoti)
+
+            if dataAssenze is not None:
+                message += "🏫 <b>Nuove assenze</b>{0}\n\n\n".format(dataAssenze)
+
+            if dataAgenda is not None:
+                message += "📆 <b>Nuovi impegni in agenda</b>\n{0}".format(dataAgenda)
+
+
+            if message != "":
+                bot.sendMessage(user['id'], "🔔 <b>Hai nuove notifiche!</b>\n\n"+message, parse_mode="HTML")
+
+
+            updateDataDatabase(user['id'], newDidattica, newNote, newVoti, newAssenze, newAgenda)
+            api.logout()
+
+        except AuthenticationFailedError:
+            updateUserDatabase(user['id'], username="", password="")
+            updateDataDatabase(user['id'], {}, {}, {}, {}, {})
+            bot.sendMessage(user['id'], "Le tue credenziali di accesso sono cambiate o sono errate.\n"
+                                        "Esegui nuovamente il /login")
+        except TelegramError:
+            pass
+        except IndexError:
+            updateDataDatabase(user['id'])
         updateUserDatabase(user['id'], status="normal")
 
 
@@ -139,7 +172,7 @@ def rispondi(msg):
                   "/info - Visualizza le tue info utente\n" \
                   "/prof - Visualizza la lista delle materie e dei prof\n" \
                   "\n\n" \
-                  "<b>Notifiche</b>: ogni ora, il bot ti invierà un messagio se ti sono arrivate nuove note."
+                  "<b>Notifiche</b>: ogni ora, ti invierò un messagio se ti sono arrivate nuovi voti, note, compiti o assenze."
         bot.sendMessage(chatId, message, parse_mode="HTML")
 
 
@@ -170,7 +203,7 @@ def rispondi(msg):
 
         elif text == "/info":
             bot.sendChatAction(chatId, "typing")
-            data = resp.parseDidattica(api.info())
+            data = resp.parseInfo(api.info())
             bot.sendMessage(chatId, "ℹ️ <b>Ecco le tue info</b>:\n\n"
                                     "{0}".format(data), parse_mode="HTML")
 
@@ -275,5 +308,6 @@ bot.message_loop({'chat': rispondi, 'callback_query': button_press})
 print("Bot started...")
 while True:
     sleep(60)
-    if datetime.now().minute == 0:
-        runNotifications()
+#    if datetime.now().hour in range(updatesStartHour, updatesStopHour):
+#        if datetime.now().minute == 0:
+#            runNotifications()
