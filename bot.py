@@ -21,7 +21,7 @@ except FileNotFoundError:
 bot = telepot.Bot(token)
 api = ClasseVivaAPI()
 db = TinyDB('database.json')
-data_db = TinyDB('data.json')
+data_db = TinyDB('userdata.json')
 inizioScuola = "2018/09/10"
 updatesStartHour = 7
 updatesStopHour = 21
@@ -32,9 +32,9 @@ def updateUserDatabase(user_id, username=None, password=None, status=None):
     if db.search(where('id') == user_id):
         if username is not None:
             db.update({'username': username}, where('id') == user_id)
-        elif password is not None:
+        if password is not None:
             db.update({'password': password}, where('id') == user_id)
-        elif status is not None:
+        if status is not None:
             db.update({'status': status}, where('id') == user_id)
     else:
         db.insert({'id': user_id, 'username': "", 'password': "", 'status': "normal"})
@@ -44,13 +44,13 @@ def updateDataDatabase(user_id, didattica=None, note=None, voti=None, assenze=No
     if data_db.search(where('id') == user_id):
         if didattica is not None:
             data_db.update({'didattica': didattica}, where('id') == user_id)
-        elif note is not None:
+        if note is not None:
             data_db.update({'note': note}, where('id') == user_id)
-        elif voti is not None:
+        if voti is not None:
             data_db.update({'voti': voti}, where('id') == user_id)
-        elif assenze is not None:
+        if assenze is not None:
             data_db.update({'assenze': assenze}, where('id') == user_id)
-        elif agenda is not None:
+        if agenda is not None:
             data_db.update({'agenda': agenda}, where('id') == user_id)
     else:
         data_db.insert({'id': user_id, 'didattica': {}, 'note': {}, 'voti': {}, 'assenze': {}, 'agenda': {}})
@@ -115,11 +115,13 @@ def runNotifications():
             updateUserDatabase(user['id'], username="", password="")
             updateDataDatabase(user['id'], {}, {}, {}, {}, {})
             bot.sendMessage(user['id'], "Le tue credenziali di accesso sono cambiate o sono errate.\n"
-                                        "Esegui nuovamente il /login")
+                                        "Esegui nuovamente il /login per favore.")
         except TelegramError:
             pass
+
         except IndexError:
             updateDataDatabase(user['id'])
+
         updateUserDatabase(user['id'], status="normal")
 
 
@@ -134,7 +136,7 @@ def rispondi(msg):
     if status != "normal":
         if text == "/annulla":
             updateUserDatabase(chatId, status="normal")
-            bot.sendMessage(chatId, "Comando annullato.")
+            bot.sendMessage(chatId, "Comando annullato!")
 
         elif status == "login_0":
             updateUserDatabase(chatId, username=text, status="login_1")
@@ -147,8 +149,8 @@ def rispondi(msg):
                 bot.sendMessage(chatId, "Fatto!")
                 api.logout()
             except AuthenticationFailedError:
-                bot.sendMessage(chatId, "Errore: Username o password non corretti.\n"
-                                        "Premi /login per riprovare.")
+                bot.sendMessage(chatId, "Le tue credenziali di accesso sono cambiate o sono errate.\n"
+                                        "Effettua nuovamente il /login per favore.")
                 updateUserDatabase(chatId, username="", password="")
 
         elif status == "updating":
@@ -172,12 +174,17 @@ def rispondi(msg):
                   "/info - Visualizza le tue info utente\n" \
                   "/prof - Visualizza la lista delle materie e dei prof\n" \
                   "\n\n" \
-                  "<b>Notifiche</b>: ogni ora, ti invierò un messagio se ti sono arrivate nuovi voti, note, compiti o assenze."
+                  "<b>Notifiche</b>: ogni ora, ti invierò un messagio se ti sono arrivati nuovi voti, note, compiti o assenze."
         bot.sendMessage(chatId, message, parse_mode="HTML")
 
 
     elif isUserLogged(chatId):
-        api.login(db.search(where('id') == chatId)[0]['username'], decrypt(db.search(where('id') == chatId)[0]['password']))
+        try:
+            api.login(db.search(where('id') == chatId)[0]['username'], decrypt(db.search(where('id') == chatId)[0]['password']))
+        except AuthenticationFailedError:
+            updateUserDatabase(chatId, username="", password="")
+            bot.sendMessage(chatId, "Le tue credenziali di accesso sono cambiate o sono errate.\nEsegui nuovamente il /login per favore.")
+            return 0
 
         if text == "/start":
             bot.sendMessage(chatId, "Bentornato, <b>{0}</b>!\n"
@@ -308,6 +315,6 @@ bot.message_loop({'chat': rispondi, 'callback_query': button_press})
 print("Bot started...")
 while True:
     sleep(60)
-#    if datetime.now().hour in range(updatesStartHour, updatesStopHour):
-#        if datetime.now().minute == 0:
-#            runNotifications()
+    if datetime.now().hour in range(updatesStartHour, updatesStopHour):
+        if datetime.now().minute == 0:
+            # DISABLED # runNotifications()
