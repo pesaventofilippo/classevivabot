@@ -317,4 +317,4 @@ while True:
     sleep(60)
     if datetime.now().hour in range(updatesStartHour, updatesStopHour):
         if datetime.now().minute == 0:
-            # DISABLED # runNotifications()
+            runNotifications()
