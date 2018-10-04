@@ -74,25 +74,37 @@ def parseNote(data):
         return "\n\n✅ Nessuna annotazione rilevata!"
 
     for nota in data['NTCL']:
+        time = nota['evtDate'].lower().split("-", 2)
+        day = time[2]
+        month = time[1]
+        year = time[0]
         if not nota['readStatus']:
             nota['evtText'] = "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione <i>annotazioni</i>" \
                               "per leggere questa nota disciplinare."
         result += "\n\n🚫 <b>Nota disciplinare</b> di <b>{0}</b> del {1}:\n" \
-                  "{2}".format(nota['authorName'].title(), nota['evtDate'], nota['evtText'])
+                  "{2}".format(nota['authorName'].title(), "{0}/{1}/{2}".format(day, month, year), nota['evtText'])
 
     for avviso in data['NTWN']:
+        time = avviso['evtDate'].lower().split("-", 2)
+        day = time[2]
+        month = time[1]
+        year = time[0]
         if not avviso['readStatus']:
             avviso['evtText'] = "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione \"annotazioni\"" \
                                 "per leggere questo avviso."
         result += "\n\n⚠️ <b>Richiamo ({0})</b> di <b>{1}</b> del {2}:\n" \
-                  "{3}".format(avviso['warningType'].lower(), avviso['authorName'].title(), avviso['evtDate'], avviso['evtText'])
+                  "{3}".format(avviso['warningType'].lower(), avviso['authorName'].title(), "{0}/{1}/{2}".format(day, month, year), avviso['evtText'])
 
     for annotazione in data['NTTE']:
+        time = annotazione['evtDate'].lower().split("-", 2)
+        day = time[2]
+        month = time[1]
+        year = time[0]
         if not annotazione['readStatus']:
             annotazione['evtText'] = "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione \"annotazioni\"" \
                                 "per leggere questa annotazione."
         result += "\n\nℹ️ <b>Annotazione</b> di <b>{0}</b> del {1}:\n" \
-                  "{2}".format(annotazione['authorName'].title(), annotazione['evtDate'], annotazione['evtText'])
+                  "{2}".format(annotazione['authorName'].title(), "{0}/{1}/{2}".format(day, month, year), annotazione['evtText'])
 
     return result
 
@@ -232,31 +244,43 @@ def parseNewNote(oldData, newData):
 
     for nota in newData['NTCL']:
         if (not oldData.get('NTCL')) or (nota not in oldData['NTCL']):
+            time = nota['evtDate'].lower().split("-", 2)
+            day = time[2]
+            month = time[1]
+            year = time[0]
             if not nota['readStatus']:
                 nota[
                     'evtText'] = "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione <i>annotazioni</i>" \
                                  "per leggere questa nota disciplinare."
             result += "\n\n🚫 <b>Nota disciplinare</b> di <b>{0}</b> del {1}:\n" \
-                      "{2}".format(nota['authorName'].title(), nota['evtDate'], nota['evtText'])
+                      "{2}".format(nota['authorName'].title(), "{0}/{1}/{2}".format(day, month, year), nota['evtText'])
 
     for avviso in newData['NTWN']:
         if (not oldData.get('NTWN')) or (avviso not in oldData['NTWN']):
+            time = avviso['evtDate'].lower().split("-", 2)
+            day = time[2]
+            month = time[1]
+            year = time[0]
             if not avviso['readStatus']:
                 avviso[
                     'evtText'] = "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione \"annotazioni\"" \
                                  "per leggere questo avviso."
             result += "\n\n⚠️ <b>Richiamo ({0})</b> di <b>{1}</b> del {2}:\n" \
-                      "{3}".format(avviso['warningType'].lower(), avviso['authorName'].title(), avviso['evtDate'],
+                      "{3}".format(avviso['warningType'].lower(), avviso['authorName'].title(), "{0}/{1}/{2}".format(day, month, year),
                                    avviso['evtText'])
 
     for annotazione in newData['NTTE']:
         if (not oldData.get('NTTE')) or (annotazione not in oldData['NTTE']):
+            time = annotazione['evtDate'].lower().split("-", 2)
+            day = time[2]
+            month = time[1]
+            year = time[0]
             if not annotazione['readStatus']:
                 annotazione[
                     'evtText'] = "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione \"annotazioni\"" \
                                  "per leggere questa annotazione."
             result += "\n\nℹ️ <b>Annotazione</b> di <b>{0}</b> del {1}:\n" \
-                      "{2}".format(annotazione['authorName'].title(), annotazione['evtDate'], annotazione['evtText'])
+                      "{2}".format(annotazione['authorName'].title(), "{0}/{1}/{2}".format(day, month, year), annotazione['evtText'])
 
     return result if result != "" else None
 
