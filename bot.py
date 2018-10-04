@@ -1,6 +1,6 @@
 import telepot
 from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton
-from telepot.exception import TelegramError
+from telepot.exception import TelegramError, BotWasBlockedError
 from time import sleep
 from datetime import datetime, timedelta
 from tinydb import TinyDB, where
@@ -116,9 +116,13 @@ def runNotifications():
 
         except AuthenticationFailedError:
             updateUserDatabase(user['id'], username="", password="")
-            bot.sendMessage(user['id'], "Le tue credenziali di accesso sono cambiate o sono errate.\n"
-                                        "Effettua nuovamente il /login per favore.")
-        except TelegramError:
+            try:
+                bot.sendMessage(user['id'], "Le tue credenziali di accesso sono cambiate o sono errate.\n"
+                                            "Effettua nuovamente il /login per favore.")
+            except (TelegramError, BotWasBlockedError):
+                pass
+
+        except (TelegramError, BotWasBlockedError):
             pass
 
         except IndexError:
@@ -126,8 +130,11 @@ def runNotifications():
 
         except KeyError:
             updateUserDatabase(user['id'], username="", password="")
-            bot.sendMessage(user['id'], "Le tue credenziali di accesso sono cambiate o sono errate.\n"
-                                        "Effettua nuovamente il /login per favore.")
+            try:
+                bot.sendMessage(user['id'], "Le tue credenziali di accesso sono cambiate o sono errate.\n"
+                                            "Effettua nuovamente il /login per favore.")
+            except (TelegramError, BotWasBlockedError):
+                pass
 
         updateUserDatabase(user['id'], status="normal")
 
