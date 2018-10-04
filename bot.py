@@ -27,6 +27,7 @@ updatesStartHour = 7
 updatesStopHour = 21
 
 
+# Update user data in database
 def updateUserDatabase(user_id, username=None, password=None, status=None):
     password = crypt(password)
     if db.search(where('id') == user_id):
@@ -40,6 +41,7 @@ def updateUserDatabase(user_id, username=None, password=None, status=None):
         db.insert({'id': user_id, 'username': "", 'password': "", 'status': "normal"})
 
 
+# Update general data in db, data like note, absences and other
 def updateDataDatabase(user_id, didattica=None, note=None, voti=None, assenze=None, agenda=None):
     if data_db.search(where('id') == user_id):
         if didattica is not None:
@@ -56,6 +58,7 @@ def updateDataDatabase(user_id, didattica=None, note=None, voti=None, assenze=No
         data_db.insert({'id': user_id, 'didattica': {}, 'note': {}, 'voti': {}, 'assenze': {}, 'agenda': {}})
 
 
+# Verify if the user if logged in, then return true, except it return false
 def isUserLogged(user_id):
     try:
         if db.search(where('id') == user_id)[0]['password'] == "":
@@ -66,6 +69,7 @@ def isUserLogged(user_id):
         return False
 
 
+# send notification to every user who is logged in
 def runNotifications():
     pendingUsers = db.search(where('password') != "")
     for user in pendingUsers:
@@ -114,11 +118,10 @@ def runNotifications():
                 bot.sendMessage(user['id'], header + "📆 <b>Nuovi impegni in agenda</b>\n{0}".format(dataAgenda), parse_mode="HTML")
                 firstMessage = False
 
-
             updateDataDatabase(user['id'], newDidattica, newNote, newVoti, newAssenze, newAgenda)
             api.logout()
 
-        except AuthenticationFailedError:
+        except AuthenticationFailedError: # If credentials are wrong
             updateUserDatabase(user['id'], username="", password="")
             try:
                 bot.sendMessage(user['id'], "Le tue credenziali di accesso sono cambiate o sono errate.\n"
@@ -143,7 +146,8 @@ def runNotifications():
         updateUserDatabase(user['id'], status="normal")
 
 
-def rispondi(msg):
+# "Main Function", this function reply to every message
+def reply(msg):
     msgType, chatType, chatId = telepot.glance(msg)
     text = msg['text']
     name = msg['from']['first_name']
@@ -175,7 +179,6 @@ def rispondi(msg):
         elif status == "updating":
             bot.sendMessage(chatId, "😴 Sto aggiornando il tuo profilo, aspetta un attimo.")
 
-
     elif text == "/help":
         message = "Sono il bot di <b>ClasseViva</b>.\n" \
                   "Posso aiutarti a <b>navigare</b> nel registro e posso mandarti <b>notifiche</b>, se vuoi.\n\n" \
@@ -195,7 +198,6 @@ def rispondi(msg):
                   "\n\n" \
                   "<b>Notifiche</b>: ogni ora, ti invierò un messagio se ti sono arrivati nuovi voti, note, compiti o assenze."
         bot.sendMessage(chatId, message, parse_mode="HTML")
-
 
     elif isUserLogged(chatId):
         try:
@@ -297,6 +299,7 @@ def rispondi(msg):
                                     "Premi /help se serve aiuto.".format(name), parse_mode="HTML")
 
 
+# This function is activate every time an user press an inline button
 def button_press(msg):
     query_id, fromId, query_data = telepot.glance(msg, flavor="callback_query")
     query_split = query_data.split("#")
@@ -329,9 +332,11 @@ def button_press(msg):
     api.logout()
 
 
-
-bot.message_loop({'chat': rispondi, 'callback_query': button_press})
+# This start the main loop
+bot.message_loop({'chat': reply, 'callback_query': button_press})
 print("Bot started...")
+
+#keep the bot alive
 while True:
     sleep(60)
     if datetime.now().hour in range(updatesStartHour, updatesStopHour):
