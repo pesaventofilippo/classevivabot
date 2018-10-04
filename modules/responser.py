@@ -30,6 +30,11 @@ def parseInfo(data):
     if not data.get('cards'):
         return "📌 Nessuna info disponibile."
     info = data['cards'][0]
+    time = info['birthDate'].lower().split("-", 2)
+    day = time[2]
+    month = time[1]
+    year = time[0]
+
     result = "👤 Nome: <b>{1}</b>\n" \
              "👤 Cognome: <b>{4}</b>\n" \
              "📅 Nascita: <b>{0}</b>\n" \
@@ -43,7 +48,7 @@ def parseInfo(data):
              "📍 Provincia: <b>{9}</b>\n" \
              "\n" \
              "👤 UserID: <b>{10}</b>\n" \
-             "👤 Tipo Utente: <b>{11}</b>".format(info['birthDate'], info['firstName'], info['fiscalCode'],
+             "👤 Tipo Utente: <b>{11}</b>".format("{0}/{1}/{2}".format(day, month, year), info['firstName'], info['fiscalCode'],
                                         info['ident'], info['lastName'], info['schCode'],
                                         info['schCity'], info['schDedication'], info['schName'],
                                         info['schProv'], info['usrId'], info['usrType'])
