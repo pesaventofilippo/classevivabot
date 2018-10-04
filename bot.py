@@ -116,7 +116,6 @@ def runNotifications():
 
         except AuthenticationFailedError:
             updateUserDatabase(user['id'], username="", password="")
-            updateDataDatabase(user['id'], {}, {}, {}, {}, {})
             bot.sendMessage(user['id'], "Le tue credenziali di accesso sono cambiate o sono errate.\n"
                                         "Effettua nuovamente il /login per favore.")
         except TelegramError:
@@ -124,6 +123,11 @@ def runNotifications():
 
         except IndexError:
             updateDataDatabase(user['id'])
+
+        except KeyError:
+            updateUserDatabase(user['id'], username="", password="")
+            bot.sendMessage(user['id'], "Le tue credenziali di accesso sono cambiate o sono errate.\n"
+                                        "Effettua nuovamente il /login per favore.")
 
         updateUserDatabase(user['id'], status="normal")
 
