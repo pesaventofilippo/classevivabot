@@ -92,23 +92,27 @@ def runNotifications():
             dataAssenze = resp.parseNewAssenze(oldAssenze, newAssenze)
             dataAgenda = resp.parseNewAgenda(oldAgenda, newAgenda)
 
-            message = ""
+            firstMessage = True
 
             if dataNote is not None:
-                message += "❗️<b>Nuove note</b>{0}\n\n\n".format(dataNote)
+                header = "🔔 <b>Hai nuove notifiche!</b>\n\n" if firstMessage else ""
+                bot.sendMessage(user['id'], header + "❗️<b>Nuove note</b>{0}\n\n\n".format(dataNote), parse_mode="HTML")
+                firstMessage = False
 
             if dataVoti is not None:
-                message += "📝 <b>Nuovi voti</b>\n{0}\n\n\n".format(dataVoti)
+                header = "🔔 <b>Hai nuove notifiche!</b>\n\n" if firstMessage else ""
+                bot.sendMessage(user['id'], header + "📝 <b>Nuovi voti</b>\n{0}\n\n\n".format(dataVoti), parse_mode="HTML")
+                firstMessage = False
 
             if dataAssenze is not None:
-                message += "🏫 <b>Nuove assenze</b>{0}\n\n\n".format(dataAssenze)
+                header = "🔔 <b>Hai nuove notifiche!</b>\n\n" if firstMessage else ""
+                bot.sendMessage(user['id'], header + "🏫 <b>Nuove assenze</b>{0}\n\n\n".format(dataAssenze), parse_mode="HTML")
+                firstMessage = False
 
             if dataAgenda is not None:
-                message += "📆 <b>Nuovi impegni in agenda</b>\n{0}".format(dataAgenda)
-
-
-            if message != "":
-                bot.sendMessage(user['id'], "🔔 <b>Hai nuove notifiche!</b>\n\n"+message, parse_mode="HTML")
+                header = "🔔 <b>Hai nuove notifiche!</b>\n\n" if firstMessage else ""
+                bot.sendMessage(user['id'], header + "📆 <b>Nuovi impegni in agenda</b>\n{0}".format(dataAgenda), parse_mode="HTML")
+                firstMessage = False
 
 
             updateDataDatabase(user['id'], newDidattica, newNote, newVoti, newAssenze, newAgenda)
