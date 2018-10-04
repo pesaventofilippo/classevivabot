@@ -192,12 +192,13 @@ def parseAgenda(data):
     for event in data['agenda']:
         date = str(event['evtDatetimeBegin']).split("T", 1)[0]
         date = date.split("-", 2)
+        type = "📌" if event['evtCode'] == "AGNT" else "📝"
         if firstEvent:
             firstEvent = False
             separator = "\n"
         else:
             separator = "\n\n\n"
-        result += separator + "📌 {0}/{1}/{2} • <b>{3}</b>\n{4}".format(date[2], date[1], date[0],
+        result += separator + "{0} {1}/{2}/{3} • <b>{4}</b>\n{5}".format(type, date[2], date[1], date[0],
                                                                 event['authorName'].title(), event['notes'])
 
     return result
@@ -368,12 +369,13 @@ def parseNewAgenda(oldData, newData):
         if (not oldData.get('agenda')) or (event not in oldData['agenda']):
             date = str(event['evtDatetimeBegin']).split("T", 1)[0]
             date = date.split("-", 2)
+            type = "📌" if event['evtCode'] == "AGNT" else "📝"
             if firstEvent:
                 firstEvent = False
                 separator = "\n"
             else:
                 separator = "\n\n\n"
-            result += separator + "📌 {0}/{1}/{2} • <b>{3}</b>\n{4}".format(date[2], date[1], date[0],
+            result += separator + "{0} {1}/{2}/{3} • <b>{4}</b>\n{5}".format(type, date[2], date[1], date[0],
                                                                             event['authorName'].title(), event['notes'])
 
     return result if result != "" else None
