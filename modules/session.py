@@ -16,9 +16,6 @@ class ClasseVivaAPI:
 
 
     def __init__(self):
-        self.logged_in = False
-        self.first_name = None
-        self.last_name = None
         self.id = None
         self.username = None
         self.password = None
@@ -43,23 +40,15 @@ class ClasseVivaAPI:
         if 'authentication failed' in result.get('error', ''):
             raise AuthenticationFailedError()
 
-        self.logged_in = True
-        self.first_name = result['firstName']
-        self.last_name = result['lastName']
         self.token = result['token']
         self.id = re.sub(r"\D", "", result['ident'])
 
         return {
-            "id": self.id,
-            "first_name": self.first_name,
-            "last_name": self.last_name,
+            "id": self.id
         }
 
 
     def logout(self):
-        self.logged_in = False
-        self.first_name = None
-        self.last_name = None
         self.token = None
         return True
 

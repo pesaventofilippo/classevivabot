@@ -57,10 +57,13 @@ def updateDataDatabase(user_id, didattica=None, note=None, voti=None, assenze=No
 
 
 def isUserLogged(user_id):
-    if db.search(where('id') == user_id)[0]['password'] == "":
+    try:
+        if db.search(where('id') == user_id)[0]['password'] == "":
+            return False
+        else:
+            return True
+    except IndexError:
         return False
-    else:
-        return True
 
 
 def runNotifications():
@@ -115,7 +118,7 @@ def runNotifications():
             updateUserDatabase(user['id'], username="", password="")
             updateDataDatabase(user['id'], {}, {}, {}, {}, {})
             bot.sendMessage(user['id'], "Le tue credenziali di accesso sono cambiate o sono errate.\n"
-                                        "Esegui nuovamente il /login per favore.")
+                                        "Effettua nuovamente il /login per favore.")
         except TelegramError:
             pass
 
@@ -146,12 +149,13 @@ def rispondi(msg):
             updateUserDatabase(chatId, password=text, status="normal")
             try:
                 api.login(db.search(where('id') == chatId)[0]['username'], text)
-                bot.sendMessage(chatId, "Fatto!")
+                bot.sendMessage(chatId, "Fatto!\n"
+                                        "Premi /help per vedere la lista dei comandi disponibili.")
                 api.logout()
             except AuthenticationFailedError:
+                updateUserDatabase(chatId, username="", password="")
                 bot.sendMessage(chatId, "Le tue credenziali di accesso sono cambiate o sono errate.\n"
                                         "Effettua nuovamente il /login per favore.")
-                updateUserDatabase(chatId, username="", password="")
 
         elif status == "updating":
             bot.sendMessage(chatId, "😴 Sto aggiornando il tuo profilo, aspetta un attimo.")
