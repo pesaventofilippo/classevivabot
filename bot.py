@@ -27,7 +27,7 @@ updatesStartHour = 7
 updatesStopHour = 21
 
 
-# Update user data in database
+# Update user data in the database
 def updateUserDatabase(user_id, username=None, password=None, status=None):
     password = crypt(password)
     if db.search(where('id') == user_id):
@@ -41,7 +41,7 @@ def updateUserDatabase(user_id, username=None, password=None, status=None):
         db.insert({'id': user_id, 'username': "", 'password': "", 'status': "normal"})
 
 
-# Update general data in db, data like note, absences and other
+# Update general data in db, data like notes, absences and others
 def updateDataDatabase(user_id, didattica=None, note=None, voti=None, assenze=None, agenda=None):
     if data_db.search(where('id') == user_id):
         if didattica is not None:
@@ -58,7 +58,7 @@ def updateDataDatabase(user_id, didattica=None, note=None, voti=None, assenze=No
         data_db.insert({'id': user_id, 'didattica': {}, 'note': {}, 'voti': {}, 'assenze': {}, 'agenda': {}})
 
 
-# Verify if the user if logged in, then return true, except it return false
+# Verify if the user if logged in
 def isUserLogged(user_id):
     try:
         if db.search(where('id') == user_id)[0]['password'] == "":
@@ -69,7 +69,7 @@ def isUserLogged(user_id):
         return False
 
 
-# send notification to every user who is logged in
+# Send notifications to every user who's logged in
 def runNotifications():
     pendingUsers = db.search(where('password') != "")
     for user in pendingUsers:
@@ -146,7 +146,7 @@ def runNotifications():
         updateUserDatabase(user['id'], status="normal")
 
 
-# "Main Function", this function reply to every message
+# "Main Function", this function replies to every message
 def reply(msg):
     msgType, chatType, chatId = telepot.glance(msg)
     text = msg['text']
@@ -299,7 +299,7 @@ def reply(msg):
                                     "Premi /help se serve aiuto.".format(name), parse_mode="HTML")
 
 
-# This function is activate every time an user press an inline button
+# This function is activated every time an user presses an inline button
 def button_press(msg):
     query_id, fromId, query_data = telepot.glance(msg, flavor="callback_query")
     query_split = query_data.split("#")
@@ -332,13 +332,14 @@ def button_press(msg):
     api.logout()
 
 
-# This start the main loop
+# This starts the main loop
 bot.message_loop({'chat': reply, 'callback_query': button_press})
 print("Bot started...")
 
-#keep the bot alive
+# Keep the bot alive
 while True:
     sleep(60)
+    # Check for notifications' time
     if datetime.now().hour in range(updatesStartHour, updatesStopHour):
         if datetime.now().minute == 0:
             runNotifications()
