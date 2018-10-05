@@ -169,32 +169,37 @@ def parseAssenze(data):
     usciteAnticipate = ""
 
     for evento in data['events']:
+        if evento['justifReasonDesc'] is None:
+            desc = "Altro"
+        else:
+            desc = evento['justifReasonDesc'].lower()
+
         if evento['evtCode'] == "ABA0":
             if not assenze:
                 assenze = "\n\n\n❌ <b>Assenze</b>:"
 
-            assenze += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], evento['justifReasonDesc'].lower(),
+            assenze += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], desc,
                                                      "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
 
         elif evento['evtCode'] == "ABR0":
             if not ritardi:
                 ritardi = "\n\n\n🏃 <b>Ritardi</b>:"
 
-            ritardi += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], evento['justifReasonDesc'].lower(),
+            ritardi += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], desc,
                                                      "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
 
         elif evento['evtCode'] == "ABR1":
             if not ritardiBrevi:
                 ritardiBrevi = "\n\n\n🚶 <b>Ritardi Brevi</b>:"
 
-                ritardiBrevi += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], evento['justifReasonDesc'].lower(),
+                ritardiBrevi += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], desc,
                                                      "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
 
         elif evento['evtCode'] == "ABU0":
             if not usciteAnticipate:
                 usciteAnticipate = "\n\n\n🚪 <b>Uscite Anticipate</b>:"
 
-                usciteAnticipate += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], evento['justifReasonDesc'].lower(),
+                usciteAnticipate += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], desc,
                                                      "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
 
     return assenze + ritardi + ritardiBrevi + usciteAnticipate
@@ -348,32 +353,38 @@ def parseNewAssenze(oldData, newData):
 
     for evento in newData['events']:
         if (not oldData.get('events')) or (evento not in oldData['events']):
+
+            if evento['justifReasonDesc'] is None:
+                desc = "Altro"
+            else:
+                desc = evento['justifReasonDesc'].lower()
+
             if evento['evtCode'] == "ABA0":
                 if not assenze:
                     assenze = "\n\n\n❌ <b>Assenze</b>:"
 
-                assenze += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], evento['justifReasonDesc'].lower(),
+                assenze += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], desc,
                                                          "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
 
             elif evento['evtCode'] == "ABR0":
                 if not ritardi:
                     ritardi = "\n\n\n🏃 <b>Ritardi</b>:"
 
-                ritardi += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], evento['justifReasonDesc'].lower(),
+                ritardi += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], desc,
                                                          "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
 
             elif evento['evtCode'] == "ABR1":
                 if not ritardiBrevi:
                     ritardiBrevi = "\n\n\n🚶 <b>Ritardi Brevi</b>:"
 
-                    ritardiBrevi += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], evento['justifReasonDesc'].lower(),
+                    ritardiBrevi += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], desc,
                                                          "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
 
             elif evento['evtCode'] == "ABU0":
                 if not usciteAnticipate:
                     usciteAnticipate = "\n\n\n🚪 <b>Uscite Anticipate</b>:"
 
-                    usciteAnticipate += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], evento['justifReasonDesc'].lower(),
+                    usciteAnticipate += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], desc,
                                                          "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
 
     result = ""
