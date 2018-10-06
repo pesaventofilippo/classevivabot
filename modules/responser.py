@@ -149,12 +149,16 @@ def parseVoti(data):
             media[materia] = []
 
         votiOrdinati[materia].append(str_voto)
+        
         if colore != "📘":
-            try:
-                media[materia].append(float(value[5:]))
-            except ValueError:
-                if value[5:][-1] == "-":
+            if value[5:][-1] == "½":
+                    media[materia].append(float(value[5:][:-1]) + 0.5)
+            elif value[5:][-1] == "+":
+                    media[materia].append(float(value[5:][:-1]) + 0.25)
+            elif value[5:][-1] == "-":
                     media[materia].append(float(value[5:][:-1]) - 0.25)
+            else:
+                media[materia].append(float(value[5:]))
 
     result = ""
     firstMateria = True
