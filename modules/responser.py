@@ -166,7 +166,7 @@ def parseVoti(data):
         for voto in voti:
             materie[materia] += voto
 
-        if len(media[materia]), 2) == 0:
+        if len(media[materia]) == 0:
             media[materia] = False
         else:
             media[materia] = round(sum(media[materia]) / len(media[materia]), 2)
