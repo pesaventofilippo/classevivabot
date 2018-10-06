@@ -149,10 +149,10 @@ def parseVoti(data):
             media[materia] = []
 
         votiOrdinati[materia].append(str_voto)
-        if not colore == "📘":
+        if colore != "📘":
             try:
                 media[materia].append(float(value[5:]))
-            except:
+            except ValueError:
                 if value[5:][-1] == "-":
                     media[materia].append(float(value[5:][:-1]) - 0.25)
 
@@ -160,23 +160,23 @@ def parseVoti(data):
     firstMateria = True
     materie = {}
     for materia, voti in votiOrdinati.items():
-        if not materia in materie:
+        if materia not in materie:
             materie[materia] = ""
 
         for voto in voti:
             materie[materia] += voto
 
-        try:
-            media[materia] = round(sum(media[materia]) / len(media[materia]), 2)
-        except:
+        if len(media[materia]), 2) == 0:
             media[materia] = False
+        else:
+            media[materia] = round(sum(media[materia]) / len(media[materia]), 2)
 
         if media[materia]:
             if firstMateria:
                 firstMateria = False
-                materie[materia] = "\n\n📚 <b>{0} (media: {1}) </b>".format(materia, media[materia]) + materie[materia]
+                materie[materia] = "\n\n📚 <b>{0}\n    Media: {1} </b>".format(materia, media[materia]) + materie[materia]
             else:
-                materie[materia] = "\n\n\n\n📚 <b>{0} (media: {1}) </b>".format(materia, media[materia]) + materie[materia]
+                materie[materia] = "\n\n\n\n📚 <b>{0}\n    Media: {1} </b>".format(materia, media[materia]) + materie[materia]
 
         else:
             if firstMateria:
