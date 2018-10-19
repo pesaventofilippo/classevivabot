@@ -183,20 +183,20 @@ def reply(msg):
     elif text == "/help":
         message = "Ciao, sono il bot di <b>ClasseViva</b>!\n" \
                   "Posso aiutarti a <b>navigare</b> nel registro e posso mandarti <b>notifiche</b> quando hai nuovi avvisi.\n\n" \
-                  "<b>Lista dei comandi</b>:\n" \
-                  "/start\nAvvia il bot\n\n" \
-                  "/help\nVisualizza questo messaggio\n\n" \
-                  "/login\nEffettua il login\n\n" \
-                  "/logout\nDisconnettiti\n\n" \
-                  "/aggiorna\nAggiorna manualmente tutti i dati, per controllare se ci sono nuovi avvisi\n\n" \
-                  "/agenda\nVisualizza agenda (compiti e verifiche)\n\n" \
-                  "/assenze\nVisualizza assenze, ritardi e uscite anticipate\n\n" \
-                  "/didattica\nVisualizza la lista dei file in didattica\n\n" \
-                  "/lezioni\nVisualizza la lista delle lezioni\n\n" \
-                  "/voti\nVisualizza la lista dei voti\n\n" \
-                  "/note\nVisualizza la lista delle note\n\n" \
-                  "/info\nVisualizza le tue info utente\n\n" \
-                  "/prof\nVisualizza la lista delle materie e dei prof\n\n" \
+                  "<b>Lista dei comandi</b>:\n\n" \
+                  "/start - Avvia il bot\n\n" \
+                  "/help - Visualizza questo messaggio\n\n" \
+                  "/login - Effettua il login\n\n" \
+                  "/logout - Disconnettiti\n\n" \
+                  "/aggiorna - Aggiorna manualmente tutti i dati, per controllare se ci sono nuovi avvisi\n\n" \
+                  "/agenda - Visualizza agenda (compiti e verifiche)\n\n" \
+                  "/assenze - Visualizza assenze, ritardi e uscite anticipate\n\n" \
+                  "/didattica - Visualizza la lista dei file in didattica\n\n" \
+                  "/lezioni - Visualizza la lista delle lezioni\n\n" \
+                  "/voti - Visualizza la lista dei voti\n\n" \
+                  "/note - Visualizza la lista delle note\n\n" \
+                  "/info - Visualizza le tue info utente\n\n" \
+                  "/prof - Visualizza la lista delle materie e dei prof\n\n" \
                   "\n" \
                   "<b>Notifiche</b>: ogni ora, ti invierò un messagio se ti sono arrivati nuovi voti, note, compiti o assenze."
         bot.sendMessage(chatId, message, parse_mode="HTML")
@@ -227,64 +227,77 @@ def reply(msg):
 
         elif text == "/didattica":
             bot.sendChatAction(chatId, "typing")
+            sent = bot.sendMessage(chatId, "Carico...\nAspetta qualche secondo.")
             response = api.didattica()
             updateDataDatabase(chatId, didattica=response)
             data = resp.parseDidattica(response)
-            bot.sendMessage(chatId, "📚 <b>Files caricati in didadttica</b>:{0}".format(data), parse_mode="HTML")
+            bot.editMessageText((chatId, sent['message_id']),
+                                "📚 <b>Files caricati in didadttica</b>:{0}".format(data), parse_mode="HTML")
 
         elif text == "/info":
             bot.sendChatAction(chatId, "typing")
+            sent = bot.sendMessage(chatId, "Carico...\nAspetta qualche secondo.")
             data = resp.parseInfo(api.info())
-            bot.sendMessage(chatId, "ℹ️ <b>Ecco le tue info</b>:\n\n"
+            bot.editMessageText((chatId, sent['message_id']), "ℹ️ <b>Ecco le tue info</b>:\n\n"
                                     "{0}".format(data), parse_mode="HTML")
 
         elif text == "/prof":
             bot.sendChatAction(chatId, "typing")
+            sent = bot.sendMessage(chatId, "Carico...\nAspetta qualche secondo.")
             data = resp.parseMaterie(api.materie())
-            bot.sendMessage(chatId, "📚 <b>Lista materie e prof</b>:{0}".format(data), parse_mode="HTML")
+            bot.editMessageText((chatId, sent['message_id']),
+                            "📚 <b>Lista materie e prof</b>:{0}".format(data), parse_mode="HTML")
 
         elif text == "/note":
             bot.sendChatAction(chatId, "typing")
+            sent = bot.sendMessage(chatId, "Carico...\nAspetta qualche secondo.")
             response = api.note()
             updateDataDatabase(chatId, note=response)
             data = resp.parseNote(response)
-            bot.sendMessage(chatId, "❗️<b>Le tue note:</b>{0}".format(data), parse_mode="HTML")
+            bot.editMessageText((chatId, sent['message_id']),
+                                "❗️<b>Le tue note:</b>{0}".format(data), parse_mode="HTML")
 
         elif text == "/voti":
             bot.sendChatAction(chatId, "typing")
+            sent = bot.sendMessage(chatId, "Carico...\nAspetta qualche secondo.")
             response = api.voti()
             updateDataDatabase(chatId, voti=response)
             data = resp.parseVoti(response)
-            bot.sendMessage(chatId, "📝 <b>I tuoi voti</b>:\n{0}".format(data), parse_mode="HTML")
+            bot.editMessageText((chatId, sent['message_id']),
+                            "📝 <b>I tuoi voti</b>:\n{0}".format(data), parse_mode="HTML")
 
         elif text == "/assenze":
             bot.sendChatAction(chatId, "typing")
+            sent = bot.sendMessage(chatId, "Carico...\nAspetta qualche secondo.")
             response = api.assenze(inizioScuola.replace("/", ""))
             updateDataDatabase(chatId, assenze=response)
             data = resp.parseAssenze(response)
-            bot.sendMessage(chatId, "{0}".format(data), parse_mode="HTML")
+            bot.editMessageText((chatId, sent['message_id']), "{0}".format(data), parse_mode="HTML")
 
         elif text == "/agenda":
             bot.sendChatAction(chatId, "typing")
+            sent = bot.sendMessage(chatId, "Carico...\nAspetta qualche secondo.")
             response = api.agenda(14)
             updateDataDatabase(chatId, agenda=response)
             data = resp.parseAgenda(response)
-            bot.sendMessage(chatId, "📆 <b>Agenda compiti delle prossime 2 settimane</b>:\n"
+            bot.editMessageText((chatId, sent['message_id']), "📆 <b>Agenda compiti delle prossime 2 settimane</b>:\n"
                                     "{0}".format(data), parse_mode="HTML")
 
         elif text == "/lezioni":
             bot.sendChatAction(chatId, "typing")
+            sent = bot.sendMessage(chatId, "Carico...\nAspetta qualche secondo.")
             data = resp.parseLezioni(api.lezioni())
-            message_id = bot.sendMessage(chatId, "📚 <b>Lezioni di oggi</b>:\n\n"
-                                              "{0}".format(data), parse_mode="HTML", reply_markup=None)['message_id']
+            bot.editMessageText((chatId, sent['message_id']), "📚 <b>Lezioni di oggi</b>:\n\n"
+                                              "{0}".format(data), parse_mode="HTML", reply_markup=None)
             keyboard = InlineKeyboardMarkup(inline_keyboard=[[
-                InlineKeyboardButton(text="⬅️ Prima", callback_data="lezioni_prima#{0}#0".format(message_id)),
-                InlineKeyboardButton(text="Dopo ➡️", callback_data="lezioni_dopo#{0}#0".format(message_id))
+                InlineKeyboardButton(text="⬅️ Prima", callback_data="lezioni_prima#{0}#0".format(sent['message_id'])),
+                InlineKeyboardButton(text="Dopo ➡️", callback_data="lezioni_dopo#{0}#0".format(sent['message_id']))
             ]])
-            bot.editMessageReplyMarkup((chatId, message_id), reply_markup=keyboard)
+            bot.editMessageReplyMarkup((chatId, sent['message_id']), reply_markup=keyboard)
 
         elif text == "/aggiorna":
             bot.sendChatAction(chatId, "typing")
+            sent = bot.sendMessage(chatId, "Carico...\nAspetta qualche secondo.")
             updateUserDatabase(chatId, status="updating")
             try:
                 userdata = data_db.search(where('id') == chatId)[0]
@@ -308,6 +321,7 @@ def reply(msg):
                 dataAgenda = resp.parseNewAgenda(oldAgenda, newAgenda)
 
                 firstMessage = True
+                bot.deleteMessage((chatId, sent['message_id']))
 
                 if dataNote is not None:
                     header = "🔔 <b>Hai nuove notifiche!</b>\n\n" if firstMessage else ""
@@ -327,8 +341,9 @@ def reply(msg):
                 if dataAgenda is not None:
                     header = "🔔 <b>Hai nuove notifiche!</b>\n\n" if firstMessage else ""
                     bot.sendMessage(chatId, header + "📆 <b>Nuovi impegni in agenda</b>\n{0}".format(dataAgenda), parse_mode="HTML")
+                    firstMessage = False
 
-                if (dataNote is None) and (dataVoti is None) and (dataAssenze is None) and (dataAgenda is None):
+                if firstMessage:
                     bot.sendMessage(chatId, "✅ Nessuna novità!")
 
                 updateDataDatabase(chatId, newDidattica, newNote, newVoti, newAssenze, newAgenda)
