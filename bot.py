@@ -84,7 +84,7 @@ def runNotifications():
             newAssenze = api.assenze(inizioScuola.replace("/", ""))
             newAgenda = api.agenda(14)
 
-            oldDidattica = userdata['didattica']
+            # oldDidattica = userdata['didattica']
             oldNote = userdata['note']
             oldVoti = userdata['voti']
             oldAssenze = userdata['assenze']
@@ -116,15 +116,14 @@ def runNotifications():
             if dataAgenda is not None:
                 header = "🔔 <b>Hai nuove notifiche!</b>\n\n" if firstMessage else ""
                 bot.sendMessage(user['id'], header + "📆 <b>Nuovi impegni in agenda</b>\n{0}".format(dataAgenda), parse_mode="HTML")
-                firstMessage = False
 
             updateDataDatabase(user['id'], newDidattica, newNote, newVoti, newAssenze, newAgenda)
             api.logout()
 
-        except AuthenticationFailedError: # If credentials are wrong
+        except AuthenticationFailedError:
             updateUserDatabase(user['id'], username="", password="")
             try:
-                bot.sendMessage(user['id'], "Le tue credenziali di accesso sono cambiate o sono errate.\n"
+                bot.sendMessage(user['id'], "😯 Le tue credenziali di accesso sono cambiate o sono errate.\n"
                                             "Effettua nuovamente il /login per favore.")
             except (TelegramError, BotWasBlockedError):
                 pass
@@ -138,12 +137,13 @@ def runNotifications():
         except KeyError:
             updateUserDatabase(user['id'], username="", password="")
             try:
-                bot.sendMessage(user['id'], "Le tue credenziali di accesso sono cambiate o sono errate.\n"
+                bot.sendMessage(user['id'], "😯 Le tue credenziali di accesso sono cambiate o sono errate.\n"
                                             "Effettua nuovamente il /login per favore.")
             except (TelegramError, BotWasBlockedError):
                 pass
 
         updateUserDatabase(user['id'], status="normal")
+
 
 
 # "Main Function", this function replies to every message
@@ -162,40 +162,42 @@ def reply(msg):
 
         elif status == "login_0":
             updateUserDatabase(chatId, username=text, status="login_1")
-            bot.sendMessage(chatId, "Ottimo. Adesso inviami la password.")
+            bot.sendMessage(chatId, "👍 Ottimo. Adesso inviami la password.\n"
+                                    "Ricorda che la password viene salvata solo per te e viene criptata, nessuno potrà leggerla.")
 
         elif status == "login_1":
             updateUserDatabase(chatId, password=text, status="normal")
             try:
                 api.login(db.search(where('id') == chatId)[0]['username'], text)
-                bot.sendMessage(chatId, "Fatto!\n"
+                bot.sendMessage(chatId, "Fatto 😊\n"
                                         "Premi /help per vedere la lista dei comandi disponibili.")
                 api.logout()
             except AuthenticationFailedError:
                 updateUserDatabase(chatId, username="", password="")
-                bot.sendMessage(chatId, "Le tue credenziali di accesso sono cambiate o sono errate.\n"
+                bot.sendMessage(chatId, "😯 Le tue credenziali di accesso sono errate.\n"
                                         "Effettua nuovamente il /login per favore.")
 
         elif status == "updating":
             bot.sendMessage(chatId, "😴 Sto aggiornando il tuo profilo, aspetta un attimo.")
 
     elif text == "/help":
-        message = "Sono il bot di <b>ClasseViva</b>.\n" \
-                  "Posso aiutarti a <b>navigare</b> nel registro e posso mandarti <b>notifiche</b>, se vuoi.\n\n" \
+        message = "Ciao, sono il bot di <b>ClasseViva</b>!\n" \
+                  "Posso aiutarti a <b>navigare</b> nel registro e posso mandarti <b>notifiche</b> quando hai nuovi avvisi.\n\n" \
                   "<b>Lista dei comandi</b>:\n" \
-                  "/start - Avvia il bot\n" \
-                  "/help - Visualizza questo messaggio\n" \
-                  "/login - Effettua il login\n" \
-                  "/logout - Disconnettiti\n" \
-                  "/agenda - Visualizza agenda (compiti e verifiche)\n" \
-                  "/assenze - Visualizza assenze, ritardi e uscite anticipate\n" \
-                  "/didattica - Visualizza la lista dei file in didattica\n" \
-                  "/lezioni - Visualizza la lista delle lezioni\n" \
-                  "/voti - Visualizza la lista dei voti\n" \
-                  "/note - Visualizza la lista delle note\n" \
-                  "/info - Visualizza le tue info utente\n" \
-                  "/prof - Visualizza la lista delle materie e dei prof\n" \
-                  "\n\n" \
+                  "/start\nAvvia il bot\n\n" \
+                  "/help\nVisualizza questo messaggio\n\n" \
+                  "/login\nEffettua il login\n\n" \
+                  "/logout\nDisconnettiti\n\n" \
+                  "/aggiorna\nAggiorna manualmente tutti i dati, per controllare se ci sono nuovi avvisi\n\n" \
+                  "/agenda\nVisualizza agenda (compiti e verifiche)\n\n" \
+                  "/assenze\nVisualizza assenze, ritardi e uscite anticipate\n\n" \
+                  "/didattica\nVisualizza la lista dei file in didattica\n\n" \
+                  "/lezioni\nVisualizza la lista delle lezioni\n\n" \
+                  "/voti\nVisualizza la lista dei voti\n\n" \
+                  "/note\nVisualizza la lista delle note\n\n" \
+                  "/info\nVisualizza le tue info utente\n\n" \
+                  "/prof\nVisualizza la lista delle materie e dei prof\n\n" \
+                  "\n" \
                   "<b>Notifiche</b>: ogni ora, ti invierò un messagio se ti sono arrivati nuovi voti, note, compiti o assenze."
         bot.sendMessage(chatId, message, parse_mode="HTML")
 
@@ -204,12 +206,13 @@ def reply(msg):
             api.login(db.search(where('id') == chatId)[0]['username'], decrypt(db.search(where('id') == chatId)[0]['password']))
         except AuthenticationFailedError:
             updateUserDatabase(chatId, username="", password="")
-            bot.sendMessage(chatId, "Le tue credenziali di accesso sono cambiate o sono errate.\nEsegui nuovamente il /login per favore.")
+            bot.sendMessage(chatId, "😯 Le tue credenziali di accesso sono cambiate o sono errate.\n"
+                                    "Esegui nuovamente il /login per favore.")
             return 0
 
         if text == "/start":
             bot.sendMessage(chatId, "Bentornato, <b>{0}</b>!\n"
-                                    "Cosa posso fare per te?".format(name), parse_mode="HTML")
+                                    "Cosa posso fare per te? 😊".format(name), parse_mode="HTML")
 
         elif text == "/login":
             bot.sendMessage(chatId, "Sei già loggato.\n"
@@ -218,7 +221,7 @@ def reply(msg):
         elif text == "/logout":
             updateUserDatabase(chatId, username="", password="", status="normal")
             updateDataDatabase(chatId, {}, {}, {}, {}, {})
-            bot.sendMessage(chatId, "Fatto, sei stato disconnesso!\n"
+            bot.sendMessage(chatId, "😯 Fatto, sei stato disconnesso!\n"
                                     "Premi /login per entrare di nuovo.\n\n"
                                     "Premi /help se serve aiuto.")
 
@@ -279,6 +282,62 @@ def reply(msg):
                 InlineKeyboardButton(text="Dopo ➡️", callback_data="lezioni_dopo#{0}#0".format(message_id))
             ]])
             bot.editMessageReplyMarkup((chatId, message_id), reply_markup=keyboard)
+
+        elif text == "/aggiorna":
+            bot.sendChatAction(chatId, "typing")
+            updateUserDatabase(chatId, status="updating")
+            try:
+                userdata = data_db.search(where('id') == chatId)[0]
+
+                newDidattica = api.didattica()
+                newNote = api.note()
+                newVoti = api.voti()
+                newAssenze = api.assenze(inizioScuola.replace("/", ""))
+                newAgenda = api.agenda(14)
+
+                # oldDidattica = userdata['didattica']
+                oldNote = userdata['note']
+                oldVoti = userdata['voti']
+                oldAssenze = userdata['assenze']
+                oldAgenda = userdata['agenda']
+
+                # WIP dataDidattica = resp.parseNewDidattica(oldDidattica, newDidattica)
+                dataNote = resp.parseNewNote(oldNote, newNote)
+                dataVoti = resp.parseNewVoti(oldVoti, newVoti)
+                dataAssenze = resp.parseNewAssenze(oldAssenze, newAssenze)
+                dataAgenda = resp.parseNewAgenda(oldAgenda, newAgenda)
+
+                firstMessage = True
+
+                if dataNote is not None:
+                    header = "🔔 <b>Hai nuove notifiche!</b>\n\n" if firstMessage else ""
+                    bot.sendMessage(chatId, header + "❗️<b>Nuove note</b>{0}\n\n\n".format(dataNote), parse_mode="HTML")
+                    firstMessage = False
+
+                if dataVoti is not None:
+                    header = "🔔 <b>Hai nuove notifiche!</b>\n\n" if firstMessage else ""
+                    bot.sendMessage(chatId, header + "📝 <b>Nuovi voti</b>\n{0}\n\n\n".format(dataVoti), parse_mode="HTML")
+                    firstMessage = False
+
+                if dataAssenze is not None:
+                    header = "🔔 <b>Hai nuove notifiche!</b>\n\n" if firstMessage else ""
+                    bot.sendMessage(chatId, header + "🏫 <b>Nuove assenze</b>{0}\n\n\n".format(dataAssenze), parse_mode="HTML")
+                    firstMessage = False
+
+                if dataAgenda is not None:
+                    header = "🔔 <b>Hai nuove notifiche!</b>\n\n" if firstMessage else ""
+                    bot.sendMessage(chatId, header + "📆 <b>Nuovi impegni in agenda</b>\n{0}".format(dataAgenda), parse_mode="HTML")
+
+                if (dataNote is None) and (dataVoti is None) and (dataAssenze is None) and (dataAgenda is None):
+                    bot.sendMessage(chatId, "✅ Nessuna novità!")
+
+                updateDataDatabase(chatId, newDidattica, newNote, newVoti, newAssenze, newAgenda)
+
+            except IndexError:
+                updateDataDatabase(chatId)
+                bot.sendMessage(chatId, "😯 Errore!\nRiprova, per favore.")
+
+            updateUserDatabase(chatId, status="normal")
 
         else:
             bot.sendMessage(chatId, "Non ho capito...\n"
