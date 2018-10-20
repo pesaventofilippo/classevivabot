@@ -27,7 +27,6 @@ updatesStartHour = 7
 updatesStopHour = 21
 
 
-# Update user data in the database
 def updateUserDatabase(user_id, username=None, password=None, status=None):
     password = crypt(password)
     if db.search(where('id') == user_id):
@@ -41,7 +40,6 @@ def updateUserDatabase(user_id, username=None, password=None, status=None):
         db.insert({'id': user_id, 'username': "", 'password': "", 'status': "normal"})
 
 
-# Update general data in db, data like notes, absences and others
 def updateDataDatabase(user_id, didattica=None, note=None, voti=None, assenze=None, agenda=None):
     if data_db.search(where('id') == user_id):
         if didattica is not None:
@@ -58,7 +56,6 @@ def updateDataDatabase(user_id, didattica=None, note=None, voti=None, assenze=No
         data_db.insert({'id': user_id, 'didattica': {}, 'note': {}, 'voti': {}, 'assenze': {}, 'agenda': {}})
 
 
-# Verify if the user if logged in
 def isUserLogged(user_id):
     try:
         if db.search(where('id') == user_id)[0]['password'] == "":
@@ -69,7 +66,6 @@ def isUserLogged(user_id):
         return False
 
 
-# Send notifications to every user who's logged in
 def runNotifications():
     pendingUsers = db.search(where('password') != "")
     for user in pendingUsers:
@@ -90,7 +86,7 @@ def runNotifications():
             oldAssenze = userdata['assenze']
             oldAgenda = userdata['agenda']
 
-            # WIP dataDidattica = resp.parseNewDidattica(oldDidattica, newDidattica)
+            # dataDidattica = resp.parseNewDidattica(oldDidattica, newDidattica)
             dataNote = resp.parseNewNote(oldNote, newNote)
             dataVoti = resp.parseNewVoti(oldVoti, newVoti)
             dataAssenze = resp.parseNewAssenze(oldAssenze, newAssenze)
@@ -146,7 +142,6 @@ def runNotifications():
 
 
 
-# "Main Function", this function replies to every message
 def reply(msg):
     msgType, chatType, chatId = telepot.glance(msg)
     text = msg['text']
@@ -226,8 +221,7 @@ def reply(msg):
                                     "Premi /help se serve aiuto.")
 
         elif text == "/didattica":
-            bot.sendChatAction(chatId, "typing")
-            sent = bot.sendMessage(chatId, "Carico...\nAspetta qualche secondo.")
+            sent = bot.sendMessage(chatId, "Carico...\nAspetta qualche secondo")
             response = api.didattica()
             updateDataDatabase(chatId, didattica=response)
             data = resp.parseDidattica(response)
@@ -235,22 +229,19 @@ def reply(msg):
                                 "📚 <b>Files caricati in didadttica</b>:{0}".format(data), parse_mode="HTML")
 
         elif text == "/info":
-            bot.sendChatAction(chatId, "typing")
-            sent = bot.sendMessage(chatId, "Carico...\nAspetta qualche secondo.")
+            sent = bot.sendMessage(chatId, "Carico...\nAspetta qualche secondo")
             data = resp.parseInfo(api.info())
             bot.editMessageText((chatId, sent['message_id']), "ℹ️ <b>Ecco le tue info</b>:\n\n"
                                     "{0}".format(data), parse_mode="HTML")
 
         elif text == "/prof":
-            bot.sendChatAction(chatId, "typing")
-            sent = bot.sendMessage(chatId, "Carico...\nAspetta qualche secondo.")
+            sent = bot.sendMessage(chatId, "Carico...\nAspetta qualche secondo")
             data = resp.parseMaterie(api.materie())
             bot.editMessageText((chatId, sent['message_id']),
                             "📚 <b>Lista materie e prof</b>:{0}".format(data), parse_mode="HTML")
 
         elif text == "/note":
-            bot.sendChatAction(chatId, "typing")
-            sent = bot.sendMessage(chatId, "Carico...\nAspetta qualche secondo.")
+            sent = bot.sendMessage(chatId, "Carico...\nAspetta qualche secondo")
             response = api.note()
             updateDataDatabase(chatId, note=response)
             data = resp.parseNote(response)
@@ -258,8 +249,7 @@ def reply(msg):
                                 "❗️<b>Le tue note:</b>{0}".format(data), parse_mode="HTML")
 
         elif text == "/voti":
-            bot.sendChatAction(chatId, "typing")
-            sent = bot.sendMessage(chatId, "Carico...\nAspetta qualche secondo.")
+            sent = bot.sendMessage(chatId, "Carico...\nAspetta qualche secondo")
             response = api.voti()
             updateDataDatabase(chatId, voti=response)
             data = resp.parseVoti(response)
@@ -267,16 +257,14 @@ def reply(msg):
                             "📝 <b>I tuoi voti</b>:\n{0}".format(data), parse_mode="HTML")
 
         elif text == "/assenze":
-            bot.sendChatAction(chatId, "typing")
-            sent = bot.sendMessage(chatId, "Carico...\nAspetta qualche secondo.")
+            sent = bot.sendMessage(chatId, "Carico...\nAspetta qualche secondo")
             response = api.assenze(inizioScuola.replace("/", ""))
             updateDataDatabase(chatId, assenze=response)
             data = resp.parseAssenze(response)
             bot.editMessageText((chatId, sent['message_id']), "{0}".format(data), parse_mode="HTML")
 
         elif text == "/agenda":
-            bot.sendChatAction(chatId, "typing")
-            sent = bot.sendMessage(chatId, "Carico...\nAspetta qualche secondo.")
+            sent = bot.sendMessage(chatId, "Carico...\nAspetta qualche secondo")
             response = api.agenda(14)
             updateDataDatabase(chatId, agenda=response)
             data = resp.parseAgenda(response)
@@ -284,8 +272,7 @@ def reply(msg):
                                     "{0}".format(data), parse_mode="HTML")
 
         elif text == "/lezioni":
-            bot.sendChatAction(chatId, "typing")
-            sent = bot.sendMessage(chatId, "Carico...\nAspetta qualche secondo.")
+            sent = bot.sendMessage(chatId, "Carico...\nAspetta qualche secondo")
             data = resp.parseLezioni(api.lezioni())
             bot.editMessageText((chatId, sent['message_id']), "📚 <b>Lezioni di oggi</b>:\n\n"
                                               "{0}".format(data), parse_mode="HTML", reply_markup=None)
@@ -296,8 +283,7 @@ def reply(msg):
             bot.editMessageReplyMarkup((chatId, sent['message_id']), reply_markup=keyboard)
 
         elif text == "/aggiorna":
-            bot.sendChatAction(chatId, "typing")
-            sent = bot.sendMessage(chatId, "Carico...\nAspetta qualche secondo.")
+            sent = bot.sendMessage(chatId, "Carico...\nAspetta qualche secondo")
             updateUserDatabase(chatId, status="updating")
             try:
                 userdata = data_db.search(where('id') == chatId)[0]
@@ -314,7 +300,7 @@ def reply(msg):
                 oldAssenze = userdata['assenze']
                 oldAgenda = userdata['agenda']
 
-                # WIP dataDidattica = resp.parseNewDidattica(oldDidattica, newDidattica)
+                # dataDidattica = resp.parseNewDidattica(oldDidattica, newDidattica)
                 dataNote = resp.parseNewNote(oldNote, newNote)
                 dataVoti = resp.parseNewVoti(oldVoti, newVoti)
                 dataAssenze = resp.parseNewAssenze(oldAssenze, newAssenze)
@@ -373,13 +359,19 @@ def reply(msg):
                                     "Premi /help se serve aiuto.".format(name), parse_mode="HTML")
 
 
-# This function is activated every time an user presses an inline button
 def button_press(msg):
-    query_id, fromId, query_data = telepot.glance(msg, flavor="callback_query")
+    query_id, chatId, query_data = telepot.glance(msg, flavor="callback_query")
     query_split = query_data.split("#")
     message_id = int(query_split[1])
     button = query_split[0]
-    api.login(db.search(where('id') == fromId)[0]['username'], decrypt(db.search(where('id') == fromId)[0]['password']))
+
+    try:
+        api.login(db.search(where('id') == chatId)[0]['username'], decrypt(db.search(where('id') == chatId)[0]['password']))
+    except AuthenticationFailedError:
+        updateUserDatabase(chatId, username="", password="")
+        bot.sendMessage(chatId, "😯 Le tue credenziali di accesso sono cambiate o sono errate.\n"
+                                "Esegui nuovamente il /login per favore.")
+        return 0
 
     if button == "lezioni_prima":
         selectedDay = int(query_split[2]) - 1
@@ -389,7 +381,7 @@ def button_press(msg):
             InlineKeyboardButton(text="⬅️ Prima", callback_data="lezioni_prima#{0}#{1}".format(message_id, selectedDay)),
             InlineKeyboardButton(text="Dopo ➡️", callback_data="lezioni_dopo#{0}#{1}".format(message_id, selectedDay))
         ]])
-        bot.editMessageText((fromId, message_id), "📚 <b>Lezioni del {0}</b>:\n\n"
+        bot.editMessageText((chatId, message_id), "📚 <b>Lezioni del {0}</b>:\n\n"
                                                   "{1}".format(dateformat, data), parse_mode="HTML", reply_markup=keyboard)
 
     elif button == "lezioni_dopo":
@@ -400,20 +392,17 @@ def button_press(msg):
             InlineKeyboardButton(text="⬅️ Prima", callback_data="lezioni_prima#{0}#{1}".format(message_id, selectedDay)),
             InlineKeyboardButton(text="Dopo ➡️", callback_data="lezioni_dopo#{0}#{1}".format(message_id, selectedDay))
         ]])
-        bot.editMessageText((fromId, message_id), "📚 <b>Lezioni del {0}</b>:\n\n"
+        bot.editMessageText((chatId, message_id), "📚 <b>Lezioni del {0}</b>:\n\n"
                                                   "{1}".format(dateformat, data), parse_mode="HTML", reply_markup=keyboard)
 
     api.logout()
 
 
-# This starts the main loop
 bot.message_loop({'chat': reply, 'callback_query': button_press})
 print("Bot started...")
 
-# Keep the bot alive
 while True:
     sleep(60)
-    # Check for notifications' time
     if datetime.now().hour in range(updatesStartHour, updatesStopHour):
         if datetime.now().minute == 0:
             runNotifications()
