@@ -26,6 +26,8 @@ inizioScuola = "2018/09/10"
 updatesStartHour = 7
 updatesStopHour = 21
 
+botStatus = "running"
+
 
 def updateUserDatabase(user_id, username=None, password=None, status=None):
     password = crypt(password)
@@ -69,7 +71,6 @@ def isUserLogged(user_id):
 def runNotifications():
     pendingUsers = db.search(where('password') != "")
     for user in pendingUsers:
-        updateUserDatabase(user['id'], status="updating")
         try:
             api.login(user['username'], decrypt(user['password']))
             userdata = data_db.search(where('id') == user['id'])[0]
@@ -138,17 +139,20 @@ def runNotifications():
             except (TelegramError, BotWasBlockedError):
                 pass
 
-        updateUserDatabase(user['id'], status="normal")
-
 
 
 def reply(msg):
     msgType, chatType, chatId = telepot.glance(msg)
     text = msg['text']
     name = msg['from']['first_name']
+    status = db.search(where('id') == chatId)[0]['status']
     updateUserDatabase(chatId)
     updateDataDatabase(chatId)
-    status = db.search(where('id') == chatId)[0]['status']
+
+    if botStatus != "running":
+        bot.sendMessage(chatId, "😴 Al momento sono impegnato, per favore riprova fra qualche minuto.")
+        return 0
+
 
     if status != "normal":
         if text == "/annulla":
@@ -172,8 +176,6 @@ def reply(msg):
                 bot.sendMessage(chatId, "😯 Le tue credenziali di accesso sono errate.\n"
                                         "Effettua nuovamente il /login per favore.")
 
-        elif status == "updating":
-            bot.sendMessage(chatId, "😴 Sto aggiornando il tuo profilo, aspetta un attimo.")
 
     elif text == "/help":
         message = "Ciao, sono il bot di <b>ClasseViva</b>!\n" \
@@ -183,7 +185,8 @@ def reply(msg):
                   "/help - Visualizza questo messaggio\n\n" \
                   "/login - Effettua il login\n\n" \
                   "/logout - Disconnettiti\n\n" \
-                  "/aggiorna - Aggiorna manualmente tutti i dati, per controllare se ci sono nuovi avvisi\n\n" \
+                  "/aggiorna - Aggiorna manualmente tutti i dati, per controllare se ci sono nuovi avvisi.\n" \
+                                "Oppure, puoi lasciarlo fare a me, ogni ora :)\n\n" \
                   "/agenda - Visualizza agenda (compiti e verifiche)\n\n" \
                   "/assenze - Visualizza assenze, ritardi e uscite anticipate\n\n" \
                   "/didattica - Visualizza la lista dei file in didattica\n\n" \
@@ -284,7 +287,6 @@ def reply(msg):
 
         elif text == "/aggiorna":
             sent = bot.sendMessage(chatId, "Carico...\nAspetta qualche secondo")
-            updateUserDatabase(chatId, status="updating")
             try:
                 userdata = data_db.search(where('id') == chatId)[0]
 
@@ -311,7 +313,7 @@ def reply(msg):
 
                 if dataNote is not None:
                     header = "🔔 <b>Hai nuove notifiche!</b>\n\n" if firstMessage else ""
-                    bot.sendMessage(chatId, header + "❗️<b>Nuove note</b>{0}\n\n\n".format(dataNote), parse_mode="HTML")
+                    bot.editMessageText(chatId, header + "❗️<b>Nuove note</b>{0}\n\n\n".format(dataNote), parse_mode="HTML")
                     firstMessage = False
 
                 if dataVoti is not None:
@@ -338,7 +340,6 @@ def reply(msg):
                 updateDataDatabase(chatId)
                 bot.sendMessage(chatId, "😯 Errore!\nRiprova, per favore.")
 
-            updateUserDatabase(chatId, status="normal")
 
         else:
             bot.sendMessage(chatId, "Non ho capito...\n"
@@ -405,4 +406,6 @@ while True:
     sleep(60)
     if datetime.now().hour in range(updatesStartHour, updatesStopHour):
         if datetime.now().minute == 0:
+            botStatus = "notifying"
             runNotifications()
+            botStatus = "running"
