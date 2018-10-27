@@ -1,5 +1,5 @@
 import telepot
-from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton
+from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton, InlineQueryResultArticle, InputTextMessageContent
 from telepot.exception import TelegramError, BotWasBlockedError
 from time import sleep
 from datetime import datetime, timedelta
@@ -399,7 +399,138 @@ def button_press(msg):
     api.logout()
 
 
-bot.message_loop({'chat': reply, 'callback_query': button_press})
+def inline_query(msg):
+    query_id, chatId, text = telepot.glance(msg, flavor='inline_query')
+
+    if botStatus != "running":
+        result = InlineQueryResultArticle(
+            id=query_id,
+            title="Errore",
+            input_message_content=InputTextMessageContent(
+                message_text="😴 Al momento sono impegnato, per favore riprova fra qualche minuto."
+            )
+        )
+        options = [result]
+        bot.answerInlineQuery(query_id, options, cache_time=10, is_personal=True, next_offset="")
+        return 0
+
+    try:
+        api.login(db.search(where('id') == chatId)[0]['username'], decrypt(db.search(where('id') == chatId)[0]['password']))
+    except AuthenticationFailedError:
+        updateUserDatabase(chatId, username="", password="")
+        result = InlineQueryResultArticle(
+            id=query_id,
+            title="Errore",
+            input_message_content=InputTextMessageContent(
+                message_text="Errore con le credenziali. Torna in chat per effettuare il login."
+            )
+        )
+        options = [result]
+        bot.answerInlineQuery(query_id, options, cache_time=10, is_personal=True, next_offset="")
+        return 0
+
+
+    if text == "didattica":
+        data = resp.parseDidattica(api.didattica())
+        result = InlineQueryResultArticle(
+            id=query_id,
+            title="Didattica",
+            input_message_content=InputTextMessageContent(
+                message_text="📚 <b>Files caricati in didadttica</b>:{0}".format(data),
+                parse_mode="HTML"
+            )
+        )
+        options = [result]
+
+    elif text == "info":
+        data = resp.parseInfo(api.info())
+        result = InlineQueryResultArticle(
+            id=query_id,
+            title="Info",
+            input_message_content=InputTextMessageContent(
+                message_text="ℹ️ <b>Ecco le tue info</b>:\n\n{0}".format(data),
+                parse_mode="HTML"
+            )
+        )
+        options = [result]
+
+    elif text == "prof":
+        data = resp.parseMaterie(api.materie())
+        result = InlineQueryResultArticle(
+            id=query_id,
+            title="Prof e materie",
+            input_message_content=InputTextMessageContent(
+                message_text="📚 <b>Lista materie e prof</b>:{0}".format(data),
+                parse_mode="HTML"
+            )
+        )
+        options = [result]
+
+    elif text == "note":
+        data = resp.parseNote(api.note())
+        result = InlineQueryResultArticle(
+            id=query_id,
+            title="Note",
+            input_message_content=InputTextMessageContent(
+                message_text="❗️<b>Le tue note:</b>{0}".format(data),
+                parse_mode="HTML"
+            )
+        )
+        options = [result]
+
+    elif text == "voti":
+        data = resp.parseVoti(api.voti())
+        result = InlineQueryResultArticle(
+            id=query_id,
+            title="Voti",
+            input_message_content=InputTextMessageContent(
+                message_text="📝 <b>I tuoi voti</b>:\n{0}".format(data),
+                parse_mode="HTML"
+            )
+        )
+        options = [result]
+
+    elif text == "assenze":
+        data = resp.parseAssenze(api.assenze(inizioScuola.replace("/", "")))
+        result = InlineQueryResultArticle(
+            id=query_id,
+            title="Assenze",
+            input_message_content=InputTextMessageContent(
+                message_text="{0}".format(data),
+                parse_mode="HTML"
+            )
+        )
+        options = [result]
+
+    elif text == "agenda":
+        data = resp.parseAgenda(api.agenda(14))
+        result = InlineQueryResultArticle(
+            id=query_id,
+            title="Agenda",
+            input_message_content=InputTextMessageContent(
+                message_text="📆 <b>Agenda compiti delle prossime 2 settimane</b>:\n"
+                                                          "{0}".format(data),
+                parse_mode="HTML"
+            )
+        )
+        options = [result]
+
+    else:
+        result = InlineQueryResultArticle(
+            id=query_id,
+            title="Cosa vuoi sapere?",
+            input_message_content=InputTextMessageContent(
+                message_text="<i>Errore: nessun input specificato</i>",
+                parse_mode="HTML"
+            )
+        )
+        options = [result]
+
+    bot.answerInlineQuery(query_id, options, cache_time=10, is_personal=True, next_offset="")
+    api.logout()
+
+
+bot.message_loop({'chat': reply, 'callback_query': button_press, 'inline_query': inline_query})
 print("Bot started...")
 
 while True:
