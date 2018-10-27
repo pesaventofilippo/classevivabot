@@ -1,5 +1,12 @@
+# Settings Files
 token.txt
+
+# Databases
 database.json
 userdata.json
+
+# Password Crypting Module
 modules/crypter.py
+
+# Other stuff
 *__pycache__/
