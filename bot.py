@@ -143,11 +143,11 @@ def runNotifications():
 
 def reply(msg):
     msgType, chatType, chatId = telepot.glance(msg)
+    updateUserDatabase(chatId)
+    updateDataDatabase(chatId)
     text = msg['text']
     name = msg['from']['first_name']
     status = db.search(where('id') == chatId)[0]['status']
-    updateUserDatabase(chatId)
-    updateDataDatabase(chatId)
 
     if botStatus != "running":
         bot.sendMessage(chatId, "😴 Al momento sono impegnato, per favore riprova fra qualche minuto.")
