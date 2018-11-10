@@ -1,4 +1,4 @@
-import telepot
+﻿import telepot
 from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton
 from telepot.exception import TelegramError, BotWasBlockedError
 from time import sleep
@@ -299,7 +299,7 @@ def reply(msg):
                 newDomani = api.agenda(1)
                 newLezioni = api.lezioni()
 
-                userLogout(use_support=True)
+                userLogout()
 
                 oldNote = userdata.note
                 oldVoti = userdata.voti
