@@ -1,12 +1,11 @@
 # Settings Files
 token.txt
 
-# Databases
-database.json
-userdata.json
+# Database
+classevivabot.db
 
 # Password Crypting Module
 modules/crypter.py
 
-# Other stuff
+# Python Compiled Cache
 *__pycache__/
