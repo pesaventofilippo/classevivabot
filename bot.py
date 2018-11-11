@@ -37,6 +37,13 @@ def isUserLogged(user):
 
 
 @db_session
+def clearUserData(user):
+    user.username = ""
+    user.password = ""
+    user.status = "normal"
+
+
+@db_session
 def userLogin(user, use_support=False):
     try:
         if use_support:
@@ -45,7 +52,7 @@ def userLogin(user, use_support=False):
             api.login(user.username, decrypt(user.password))
         return True
     except AuthenticationFailedError:
-        clearUserData(user.chatId)
+        clearUserData(user)
         try:
             bot.sendMessage(user.chatId, "😯 Le tue credenziali di accesso sono errate.\n"
                                          "Effettua nuovamente il /login per favore.")
@@ -70,15 +77,15 @@ def runUpdates():
             userdata = Data.get(chatId=currentUser.chatId)
             stored = ParsedData.get(chatId=currentUser.chatId)
 
-            newDidattica = api.didattica()
-            newInfo = api.info()
-            newProf = api.materie()
-            newNote = api.note()
-            newVoti = api.voti()
-            newAssenze = api.assenze(inizioScuola.replace("/", ""))
-            newAgenda = api.agenda(14)
-            newDomani = api.agenda(1)
-            newLezioni = api.lezioni()
+            newDidattica = supportApi.didattica()
+            newInfo = supportApi.info()
+            newProf = supportApi.materie()
+            newNote = supportApi.note()
+            newVoti = supportApi.voti()
+            newAssenze = supportApi.assenze(inizioScuola.replace("/", ""))
+            newAgenda = supportApi.agenda(14)
+            newDomani = supportApi.agenda(1)
+            newLezioni = supportApi.lezioni()
 
             userLogout(use_support=True)
 
@@ -133,35 +140,6 @@ def runUpdates():
                 pass
 
 
-@db_session
-def clearUserData(chatId):
-    user = User.get(chatId=chatId)
-    userdata = Data.get(chatId=chatId)
-    parseddata = ParsedData.get(chatId=chatId)
-
-    user.username = ""
-    user.password = ""
-    user.status = "normal"
-    userdata.didattica = {}
-    userdata.info = {}
-    userdata.prof = {}
-    userdata.note = {}
-    userdata.voti = {}
-    userdata.assenze = {}
-    userdata.agenda = {}
-    userdata.domani = {}
-    userdata.lezioni = {}
-    parseddata.didattica = ""
-    parseddata.info = ""
-    parseddata.prof = ""
-    parseddata.note = ""
-    parseddata.voti = ""
-    parseddata.assenze = ""
-    parseddata.agenda = ""
-    parseddata.domani = ""
-    parseddata.lezioni = ""
-
-
 
 @db_session
 def reply(msg):
@@ -211,8 +189,6 @@ def reply(msg):
         message = "Ciao, sono il bot di <b>ClasseViva</b>!\n" \
                   "Posso aiutarti a <b>navigare</b> nel registro e posso mandarti <b>notifiche</b> quando hai nuovi avvisi.\n\n" \
                   "<b>Lista dei comandi</b>:\n\n" \
-                  "/start - Avvia il bot\n\n" \
-                  "/help - Visualizza questo messaggio\n\n" \
                   "/login - Effettua il login\n\n" \
                   "/logout - Disconnettiti\n\n" \
                   "/aggiorna - Aggiorna manualmente tutti i dati, per controllare se ci sono nuovi avvisi.\n" \
@@ -241,7 +217,7 @@ def reply(msg):
                                     "Premi /logout per uscire.")
 
         elif text == "/logout":
-            clearUserData(chatId)
+            clearUserData(user)
             bot.sendMessage(chatId, "😯 Fatto, sei stato disconnesso!\n"
                                     "Premi /login per entrare di nuovo.\n\n"
                                     "Premi /help se serve aiuto.")
