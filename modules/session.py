@@ -53,10 +53,11 @@ class ClasseVivaAPI:
         return True
 
 
-    def _request(self, *path, use_api_schema=True):
-        url = self.rest_api_url + '/' + ('students' + '/' + self.id) if use_api_schema else ''
+    def _request(self, *path):
+        url = "{0}/students/{1}".format(self.rest_api_url, self.id)
+
         for x in path:
-            url += '/' + quote_plus(x)
+            url += "/{0}".format(quote_plus(x))
 
         r = requests.get(
             url=url,

@@ -45,8 +45,7 @@ def userLogin(user, use_support=False):
             api.login(user.username, decrypt(user.password))
         return True
     except AuthenticationFailedError:
-        user.username = ""
-        user.password = ""
+        clearUserData(user.chatId)
         try:
             bot.sendMessage(user.chatId, "😯 Le tue credenziali di accesso sono errate.\n"
                                          "Effettua nuovamente il /login per favore.")

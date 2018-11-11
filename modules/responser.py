@@ -2,7 +2,7 @@ from datetime import datetime
 
 
 def parseDidattica(data):
-    if not data.get('didacticts'):
+    if (data is None) or (not data.get('didacticts')):
         return "\n\n📌 Nessun file caricato."
     result = ""
     firstProf = True
@@ -30,7 +30,7 @@ def parseDidattica(data):
 
 
 def parseInfo(data):
-    if not data.get('cards'):
+    if (data is None) or (not data.get('cards')):
         return "📌 Nessuna info disponibile."
     info = data['cards'][0]
     time = info['birthDate'].lower().split("-", 2)
@@ -59,7 +59,7 @@ def parseInfo(data):
 
 
 def parseMaterie(data):
-    if not data.get('subjects'):
+    if (data is None) or (not data.get('subjects')):
         return "\n\n📌 Nessun prof attualmente registrato."
     result = ""
     firstMateria = True
@@ -78,7 +78,7 @@ def parseMaterie(data):
 def parseNote(data):
     result = ""
 
-    if not data['NTCL'] and not data['NTWN'] and not data['NTTE']:
+    if (data is None) or (not data.get('NTCL') and not data.get('NTWN') and not data.get('NTTE')):
         return "\n\n✅ Nessuna annotazione rilevata!"
 
     for nota in data['NTCL']:
@@ -118,7 +118,7 @@ def parseNote(data):
 
 
 def parseVoti(data):
-    if not data.get('grades'):
+    if (data is None) or (not data.get('grades')):
         return "\n📕 Non hai ancora nessun voto!"
 
     votiOrdinati = {}
@@ -152,7 +152,7 @@ def parseVoti(data):
             media[materia] = []
 
         votiOrdinati[materia].append(str_voto)
-        
+
         if colore != "📘":
             if value[5:][-1] == "½":
                     media[materia].append(float(value[5:][:-1]) + 0.5)
@@ -199,7 +199,7 @@ def parseVoti(data):
 
 
 def parseAssenze(data):
-    if not data.get('events'):
+    if (data is None) or (not data.get('events')):
         return "\n\n✅ Nessuna assenza/ritardo rilevati!"
 
     assenze = ""
@@ -245,7 +245,7 @@ def parseAssenze(data):
 
 
 def parseAgenda(data):
-    if not data.get('agenda'):
+    if (data is None) or (not data.get('agenda')):
         return "\n🗓 L'agenda è ancora vuota."
 
     result = ""
@@ -266,7 +266,7 @@ def parseAgenda(data):
 
 
 def parseDomani(data):
-    if not data.get('agenda'):
+    if (data is None) or (not data.get('agenda')):
         return "\n🗓 L'agenda è ancora vuota."
 
     result = ""
@@ -291,7 +291,7 @@ def parseDomani(data):
 
 
 def parseLezioni(data):
-    if not data.get('lessons'):
+    if (data is None) or (not data.get('lessons')):
         return "🎈 Nessuna lezione, per oggi."
 
     result = ""
@@ -312,7 +312,7 @@ def parseLezioni(data):
 def parseNewNote(oldData, newData):
     result = ""
 
-    if not newData['NTCL'] and not newData['NTWN'] and not newData['NTTE']:
+    if (newData is None) or (not newData.get('NTCL') and not newData.get('NTWN') and not newData.get('NTTE')):
         return None
 
     for nota in newData['NTCL']:
@@ -359,7 +359,7 @@ def parseNewNote(oldData, newData):
 
 
 def parseNewVoti(oldData, newData):
-    if not newData.get('grades'):
+    if (newData is None) or (not newData.get('grades')):
         return None
 
     votiOrdinati = {}
@@ -405,7 +405,7 @@ def parseNewVoti(oldData, newData):
 
 
 def parseNewAssenze(oldData, newData):
-    if not newData.get('events'):
+    if (newData is None) or (not newData.get('events')):
         return None
 
     assenze = ""
@@ -462,7 +462,7 @@ def parseNewAssenze(oldData, newData):
 
 
 def parseNewAgenda(oldData, newData):
-    if not newData.get('agenda'):
+    if (newData is None) or (not newData.get('agenda')):
         return None
 
     result = ""
