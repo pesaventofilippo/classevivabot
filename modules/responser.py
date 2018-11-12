@@ -161,7 +161,10 @@ def parseVoti(data):
             elif value[5:][-1] == "-":
                     media[materia].append(float(value[5:][:-1]) - 0.25)
             else:
-                media[materia].append(float(value[5:]))
+                try:
+                    media[materia].append(float(value[5:]))
+                except ValueError:
+                    pass
 
     firstMateria = True
     materie = {}
