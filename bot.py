@@ -22,10 +22,8 @@ except FileNotFoundError:
 bot = telepot.Bot(token)
 api = ClasseVivaAPI()
 supportApi = ClasseVivaAPI()
-inizioScuola = "2018/09/10"
 updatesStartHour = 7
 updatesStopHour = 21
-botStatus = "running"
 
 
 @db_session
@@ -82,9 +80,8 @@ def runUpdates():
             newProf = supportApi.materie()
             newNote = supportApi.note()
             newVoti = supportApi.voti()
-            newAssenze = supportApi.assenze(inizioScuola.replace("/", ""))
+            newAssenze = supportApi.assenze()
             newAgenda = supportApi.agenda(14)
-            newDomani = supportApi.agenda(1)
             newLezioni = supportApi.lezioni()
 
             userLogout(use_support=True)
@@ -111,34 +108,29 @@ def runUpdates():
             stored.voti = resp.parseVoti(newVoti)
             stored.assenze = resp.parseAssenze(newAssenze)
             stored.agenda = resp.parseAgenda(newAgenda)
-            stored.domani = resp.parseDomani(newDomani)
+            stored.domani = resp.parseDomani(newAgenda)
             stored.lezioni = resp.parseLezioni(newLezioni)
 
             try:
-                firstMessage = True
+                header = "🔔 <b>Hai nuove notifiche!</b>\n\n"
 
                 if dataNote is not None:
-                    header = "🔔 <b>Hai nuove notifiche!</b>\n\n" if firstMessage else ""
-                    bot.sendMessage(currentUser.chatId, header + "❗️<b>Nuove note</b>{0}\n\n\n".format(dataNote), parse_mode="HTML")
-                    firstMessage = False
+                    bot.sendMessage(currentUser.chatId, header + "❗️<b>Nuove note</b>{0}".format(dataNote), parse_mode="HTML")
+                    header = ""
 
                 if dataVoti is not None:
-                    header = "🔔 <b>Hai nuove notifiche!</b>\n\n" if firstMessage else ""
-                    bot.sendMessage(currentUser.chatId, header + "📝 <b>Nuovi voti</b>\n{0}\n\n\n".format(dataVoti), parse_mode="HTML")
-                    firstMessage = False
+                    bot.sendMessage(currentUser.chatId, header + "📝 <b>Nuovi voti</b>\n{0}".format(dataVoti), parse_mode="HTML")
+                    header = ""
 
                 if dataAssenze is not None:
-                    header = "🔔 <b>Hai nuove notifiche!</b>\n\n" if firstMessage else ""
-                    bot.sendMessage(currentUser.chatId, header + "🏫 <b>Nuove assenze</b>{0}\n\n\n".format(dataAssenze), parse_mode="HTML")
-                    firstMessage = False
+                    bot.sendMessage(currentUser.chatId, header + "🏫 <b>Nuove assenze</b>{0}".format(dataAssenze), parse_mode="HTML")
+                    header = ""
 
                 if dataAgenda is not None:
-                    header = "🔔 <b>Hai nuove notifiche!</b>\n\n" if firstMessage else ""
                     bot.sendMessage(currentUser.chatId, header + "📆 <b>Nuovi impegni in agenda</b>\n{0}".format(dataAgenda), parse_mode="HTML")
 
             except (TelegramError, BotWasBlockedError):
                 pass
-
 
 
 @db_session
@@ -159,10 +151,6 @@ def reply(msg):
     user = User.get(chatId=chatId)
     userdata = Data.get(chatId=chatId)
     stored = ParsedData.get(chatId=chatId)
-
-    if botStatus != "running":
-        bot.sendMessage(chatId, "😴 Al momento sono impegnato, per favore riprova fra qualche minuto.")
-        return 0
 
     if user.status != "normal":
         if text == "/annulla":
@@ -186,13 +174,13 @@ def reply(msg):
 
 
     elif text == "/help":
-        message = "Ciao, sono il bot di <b>ClasseViva</b>!\n" \
+        message = "Ciao, sono il bot di <b>ClasseViva</b>! 👋🏻\n" \
                   "Posso aiutarti a <b>navigare</b> nel registro e posso mandarti <b>notifiche</b> quando hai nuovi avvisi.\n\n" \
                   "<b>Lista dei comandi</b>:\n\n" \
                   "/login - Effettua il login\n\n" \
                   "/logout - Disconnettiti\n\n" \
                   "/aggiorna - Aggiorna manualmente tutti i dati, per controllare se ci sono nuovi avvisi.\n" \
-                                "Oppure, puoi lasciarlo fare a me, ogni mezz'ora :)\n\n" \
+                               "Oppure, puoi lasciarlo fare a me, ogni mezz'ora :)\n\n" \
                   "/agenda - Visualizza agenda (compiti e verifiche)\n\n" \
                   "/domani - Vedi i compiti che hai per domani\n\n" \
                   "/assenze - Visualizza assenze, ritardi e uscite anticipate\n\n" \
@@ -202,7 +190,6 @@ def reply(msg):
                   "/note - Visualizza la lista delle note\n\n" \
                   "/info - Visualizza le tue info utente\n\n" \
                   "/prof - Visualizza la lista delle materie e dei prof\n\n" \
-                  "\n" \
                   "<b>Notifiche</b>: ogni mezz'ora, ti invierò un messagio se ti sono arrivati nuovi voti, note, compiti o assenze."
         bot.sendMessage(chatId, message, parse_mode="HTML")
 
@@ -223,36 +210,39 @@ def reply(msg):
                                     "Premi /help se serve aiuto.")
 
         elif text == "/didattica":
-            bot.sendMessage(chatId, "📚 <b>Files caricati in didadttica</b>:{0}".format(stored.didattica), parse_mode="HTML")
+            bot.sendMessage(chatId, "📚 <b>Files caricati in didadttica</b>:\n\n"
+                                    "{0}".format(stored.didattica), parse_mode="HTML")
 
         elif text == "/info":
             bot.sendMessage(chatId, "ℹ️ <b>Ecco le tue info</b>:\n\n"
                                     "{0}".format(stored.info), parse_mode="HTML")
 
         elif text == "/prof":
-            bot.sendMessage(chatId, "📚 <b>Lista materie e prof</b>:{0}".format(stored.prof), parse_mode="HTML")
+            bot.sendMessage(chatId, "📚 <b>Lista materie e prof</b>:\n\n"
+                                    "{0}".format(stored.prof), parse_mode="HTML")
 
         elif text == "/note":
-            bot.sendMessage(chatId, "❗️<b>Le tue note:</b>{0}".format(stored.note), parse_mode="HTML")
+            bot.sendMessage(chatId, "❗️<b>Le tue note</b>:\n\n"
+                                    "{0}".format(stored.note), parse_mode="HTML")
 
         elif text == "/voti":
-            bot.sendMessage(chatId, "📝 <b>I tuoi voti</b>:\n"
+            bot.sendMessage(chatId, "📝 <b>I tuoi voti</b>:\n\n"
                                     "{0}".format(stored.voti), parse_mode="HTML")
 
         elif text == "/assenze":
             bot.sendMessage(chatId, "{0}".format(stored.assenze), parse_mode="HTML")
 
         elif text == "/agenda":
-            bot.sendMessage(chatId, "📆 <b>Agenda compiti delle prossime 2 settimane</b>:\n"
+            bot.sendMessage(chatId, "📆 <b>Agenda compiti delle prossime 2 settimane</b>:\n\n"
                                     "{0}".format(stored.agenda), parse_mode="HTML")
 
         elif text == "/domani":
-            bot.sendMessage(chatId, "📆 <b>Compiti e verifiche per domani</b>:\n"
+            bot.sendMessage(chatId, "📆 <b>Compiti e verifiche per domani</b>:\n\n"
                                     "{0}".format(stored.domani), parse_mode="HTML")
 
         elif text == "/lezioni":
             sent = bot.sendMessage(chatId, "📚 <b>Lezioni di oggi</b>:\n\n"
-                                    "{0}".format(stored.lezioni), parse_mode="HTML", reply_markup=None)
+                                           "{0}".format(stored.lezioni), parse_mode="HTML", reply_markup=None)
             keyboard = InlineKeyboardMarkup(inline_keyboard=[[
                 InlineKeyboardButton(text="⬅️ Prima", callback_data="lezioni_prima#{0}#0".format(sent['message_id'])),
                 InlineKeyboardButton(text="Dopo ➡️", callback_data="lezioni_dopo#{0}#0".format(sent['message_id']))
@@ -269,9 +259,8 @@ def reply(msg):
                 newProf = api.materie()
                 newNote = api.note()
                 newVoti = api.voti()
-                newAssenze = api.assenze(inizioScuola.replace("/", ""))
+                newAssenze = api.assenze()
                 newAgenda = api.agenda(14)
-                newDomani = api.agenda(1)
                 newLezioni = api.lezioni()
 
                 userLogout()
@@ -298,32 +287,33 @@ def reply(msg):
                 stored.voti = resp.parseVoti(newVoti)
                 stored.assenze = resp.parseAssenze(newAssenze)
                 stored.agenda = resp.parseAgenda(newAgenda)
-                stored.domani = resp.parseDomani(newDomani)
+                stored.domani = resp.parseDomani(newAgenda)
                 stored.lezioni = resp.parseLezioni(newLezioni)
 
-                firstMessage = True
                 bot.deleteMessage((chatId, sent['message_id']))
+                header = "🔔 <b>Hai nuove notifiche!</b>\n\n"
 
                 if dataNote is not None:
-                    header = "🔔 <b>Hai nuove notifiche!</b>\n\n" if firstMessage else ""
-                    bot.sendMessage(chatId, header + "❗️<b>Nuove note</b>{0}\n\n\n".format(dataNote), parse_mode="HTML")
-                    firstMessage = False
+                    bot.sendMessage(chatId, header + "❗️<b>Nuove note</b>\n\n"
+                                                     "{0}".format(dataNote), parse_mode="HTML")
+                    header = ""
 
                 if dataVoti is not None:
-                    header = "🔔 <b>Hai nuove notifiche!</b>\n\n" if firstMessage else ""
-                    bot.sendMessage(chatId, header + "📝 <b>Nuovi voti</b>\n{0}\n\n\n".format(dataVoti), parse_mode="HTML")
-                    firstMessage = False
+                    bot.sendMessage(chatId, header + "📝 <b>Nuovi voti</b>\n\n"
+                                                     "{0}".format(dataVoti), parse_mode="HTML")
+                    header = ""
 
                 if dataAssenze is not None:
-                    header = "🔔 <b>Hai nuove notifiche!</b>\n\n" if firstMessage else ""
-                    bot.sendMessage(chatId, header + "🏫 <b>Nuove assenze</b>{0}\n\n\n".format(dataAssenze), parse_mode="HTML")
-                    firstMessage = False
+                    bot.sendMessage(chatId, header + "🏫 <b>Nuove assenze</b>\n\n"
+                                                     "{0}".format(dataAssenze), parse_mode="HTML")
+                    header = ""
 
                 if dataAgenda is not None:
-                    header = "🔔 <b>Hai nuove notifiche!</b>\n\n" if firstMessage else ""
-                    bot.sendMessage(chatId, header + "📆 <b>Nuovi impegni in agenda</b>\n{0}".format(dataAgenda), parse_mode="HTML")
+                    bot.sendMessage(chatId, header + "📆 <b>Nuovi impegni in agenda</b>\n\n"
+                                                     "{0}".format(dataAgenda), parse_mode="HTML")
+                    header = ""
 
-                if firstMessage:
+                if header == "":
                     bot.sendMessage(chatId, "✅ Dati aggiornati!\n"
                                             "✅ Nessuna novità!")
 

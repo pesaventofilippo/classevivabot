@@ -267,25 +267,22 @@ def parseAgenda(data):
 
 def parseDomani(data):
     if (data is None) or (not data.get('agenda')):
-        return "\n🗓 L'agenda è ancora vuota."
+        return "\n🗓 Non hai compiti per domani."
 
     result = ""
-    firstEvent = True
+    separator = "\n"
     for event in data['agenda']:
-        date = str(event['evtDatetimeBegin']).split("T", 1)[0]
-        date = date.split("-", 2)
-        today = datetime.now().day
-        if int(date[2]) != today:
+        evtDate = str(event['evtDatetimeBegin']).split("T", 1)[0]
+        evtDay = int(evtDate.split("-", 2)[2])
+        dayToCheck = datetime.now().day + 1
+
+        if evtDay == dayToCheck:
             evtType = "📌" if event['evtCode'] == "AGNT" else "📝"
-            if firstEvent:
-                firstEvent = False
-                separator = "\n"
-            else:
-                separator = "\n\n\n"
-            result += separator + "{0} <b>{1}</b>\n{2}".format(evtType, event['authorName'].title(), event['notes'])
+            result += "{0}{1} <b>{2}</b>\n{3}".format(separator, evtType, event['authorName'].title(), event['notes'])
+            separator = "\n\n\n"
 
     if result == "":
-        return "\n🗓 L'agenda è ancora vuota."
+        return "\n🗓 Non hai compiti per domani."
 
     return result
 

@@ -92,8 +92,9 @@ class ClasseVivaAPI:
             return r.text
 
 
-    def assenze(self, begin):
-        return self._request('absences', 'details', begin, datetime.today().strftime("%Y%m%d"))
+    def assenze(self):
+        return self._request('absences', 'details', str(datetime.now().year) + "0910",
+                                                    datetime.today().strftime("%Y%m%d"))
 
 
     def agenda(self, days):
