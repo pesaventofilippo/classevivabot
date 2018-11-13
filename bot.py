@@ -313,7 +313,7 @@ def reply(msg):
                                                      "{0}".format(dataAgenda), parse_mode="HTML")
                     header = ""
 
-                if header == "":
+                if header != "":
                     bot.sendMessage(chatId, "✅ Dati aggiornati!\n"
                                             "✅ Nessuna novità!")
 
