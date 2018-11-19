@@ -403,37 +403,62 @@ def button_press(msg):
 
     elif button == "settings_notif_yes":
         settings.wantsNotifications = True
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[[
+            InlineKeyboardButton(text="🔔 Attiva", callback_data="settings_notif_yes#{0}".format(message_id)),
+            InlineKeyboardButton(text="🔕 Disattiva", callback_data="settings_notif_no#{0}".format(message_id))
+        ], [
+            InlineKeyboardButton(text="◀️ Torna al menù", callback_data="settings_main#{0}".format(message_id))
+        ]])
         bot.editMessageText((chatId, message_id), "<b>Preferenze notifiche</b>\n"
                                                   "- Stato attuale: {0}\n\n"
                                                   "Vuoi che ti mandi notifiche se trovo novità?\n"
                                                   "<b>Nota</b>: Se non vuoi riceverle di notte, puoi impostarlo a parte."
                                                   "".format("🔔 Attivo" if settings.wantsNotifications else "🔕 Disattivo"),
-                                                    parse_mode="HTML")
+                                                    parse_mode="HTML", reply_markup=keyboard)
 
     elif button == "settings_notif_no":
         settings.wantsNotifications = False
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[[
+            InlineKeyboardButton(text="🔔 Attiva", callback_data="settings_notif_yes#{0}".format(message_id)),
+            InlineKeyboardButton(text="🔕 Disattiva", callback_data="settings_notif_no#{0}".format(message_id))
+        ], [
+            InlineKeyboardButton(text="◀️ Torna al menù", callback_data="settings_main#{0}".format(message_id))
+        ]])
         bot.editMessageText((chatId, message_id), "<b>Preferenze notifiche</b>\n"
                                                   "- Stato attuale: {0}\n\n"
                                                   "Vuoi che ti mandi notifiche se trovo novità?\n"
                                                   "<b>Nota</b>: Se non vuoi riceverle di notte, puoi impostarlo a parte."
                                                   "".format("🔔 Attivo" if settings.wantsNotifications else "🔕 Disattivo"),
-                                                    parse_mode="HTML")
+                                                    parse_mode="HTML", reply_markup=keyboard)
 
     elif button == "settings_night_yes":
         settings.doNotDisturb = True
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[[
+            InlineKeyboardButton(text="😴 Attiva", callback_data="settings_night_yes#{0}".format(message_id)),
+            InlineKeyboardButton(text="🔔 Suona", callback_data="settings_night_no#{0}".format(message_id))
+        ], [
+            InlineKeyboardButton(text="◀️ Torna al menù", callback_data="settings_main#{0}".format(message_id))
+        ]])
         bot.editMessageText((chatId, message_id), "<b>Preferenze modalità notturna</b>\n"
                                                   "- Stato attuale: {0}\n\n"
                                                   "Vuoi che silenzi le notifiche nella fascia oraria notturna (21:00 - 7:00)?"
                                                   "".format("😴 Attivo" if settings.doNotDisturb else "🔔 Suona"),
-                                                    parse_mode="HTML")
+                                                    parse_mode="HTML", reply_markup=keyboard)
 
     elif button == "settings_night_no":
         settings.doNotDisturb = False
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[[
+            InlineKeyboardButton(text="😴 Attiva", callback_data="settings_night_yes#{0}".format(message_id)),
+            InlineKeyboardButton(text="🔔 Suona", callback_data="settings_night_no#{0}".format(message_id))
+        ], [
+            InlineKeyboardButton(text="◀️ Torna al menù", callback_data="settings_main#{0}".format(message_id))
+        ]])
         bot.editMessageText((chatId, message_id), "<b>Preferenze modalità notturna</b>\n"
                                                   "- Stato attuale: {0}\n\n"
                                                   "Vuoi che silenzi le notifiche nella fascia oraria notturna (21:00 - 7:00)?"
                                                   "".format("😴 Attivo" if settings.doNotDisturb else "🔔 Suona"),
-                                                    parse_mode="HTML")
+                                                    parse_mode="HTML", reply_markup=keyboard)
+
 
     elif userLogin(user):
 
