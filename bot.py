@@ -72,6 +72,8 @@ def runUpdates():
         if userLogin(currentUser, use_support=True):
             userdata = Data.get(chatId=currentUser.chatId)
             stored = ParsedData.get(chatId=currentUser.chatId)
+            if not Settings.exists(lambda u: u.chatId == currentUser.chatId):
+                Settings(chatId=currentUser.chatId)
             settings = Settings.get(chatId=currentUser.chatId)
 
             newDidattica = supportApi.didattica()
@@ -401,31 +403,37 @@ def button_press(msg):
 
     elif button == "settings_notif_yes":
         settings.wantsNotifications = True
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[[
-            InlineKeyboardButton(text="◀️ Torna al menù", callback_data="settings_main#{0}".format(message_id))
-        ]])
-        bot.editMessageText((chatId, message_id), "OK, fatto!", reply_markup=keyboard)
+        bot.editMessageText((chatId, message_id), "<b>Preferenze notifiche</b>\n"
+                                                  "- Stato attuale: {0}\n\n"
+                                                  "Vuoi che ti mandi notifiche se trovo novità?\n"
+                                                  "<b>Nota</b>: Se non vuoi riceverle di notte, puoi impostarlo a parte."
+                                                  "".format("🔔 Attivo" if settings.wantsNotifications else "🔕 Disattivo"),
+                                                    parse_mode="HTML")
 
     elif button == "settings_notif_no":
         settings.wantsNotifications = False
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[[
-            InlineKeyboardButton(text="◀️ Torna al menù", callback_data="settings_main#{0}".format(message_id))
-        ]])
-        bot.editMessageText((chatId, message_id), "OK, fatto!", reply_markup=keyboard)
+        bot.editMessageText((chatId, message_id), "<b>Preferenze notifiche</b>\n"
+                                                  "- Stato attuale: {0}\n\n"
+                                                  "Vuoi che ti mandi notifiche se trovo novità?\n"
+                                                  "<b>Nota</b>: Se non vuoi riceverle di notte, puoi impostarlo a parte."
+                                                  "".format("🔔 Attivo" if settings.wantsNotifications else "🔕 Disattivo"),
+                                                    parse_mode="HTML")
 
     elif button == "settings_night_yes":
         settings.doNotDisturb = True
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[[
-            InlineKeyboardButton(text="◀️ Torna al menù", callback_data="settings_main#{0}".format(message_id))
-        ]])
-        bot.editMessageText((chatId, message_id), "OK, fatto!", reply_markup=keyboard)
+        bot.editMessageText((chatId, message_id), "<b>Preferenze modalità notturna</b>\n"
+                                                  "- Stato attuale: {0}\n\n"
+                                                  "Vuoi che silenzi le notifiche nella fascia oraria notturna (21:00 - 7:00)?"
+                                                  "".format("😴 Attivo" if settings.doNotDisturb else "🔔 Suona"),
+                                                    parse_mode="HTML")
 
     elif button == "settings_night_no":
         settings.doNotDisturb = False
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[[
-            InlineKeyboardButton(text="◀️ Torna al menù", callback_data="settings_main#{0}".format(message_id))
-        ]])
-        bot.editMessageText((chatId, message_id), "OK, fatto!", reply_markup=keyboard)
+        bot.editMessageText((chatId, message_id), "<b>Preferenze modalità notturna</b>\n"
+                                                  "- Stato attuale: {0}\n\n"
+                                                  "Vuoi che silenzi le notifiche nella fascia oraria notturna (21:00 - 7:00)?"
+                                                  "".format("😴 Attivo" if settings.doNotDisturb else "🔔 Suona"),
+                                                    parse_mode="HTML")
 
     elif userLogin(user):
 
