@@ -36,4 +36,10 @@ class ParsedData(db.Entity):
     lezioni = Optional(str)
 
 
+class Settings(db.Entity):
+    chatId = Required(int)
+    wantsNotifications = Required(bool, default=True)
+    doNotDisturb = Required(bool, default=True)
+
+
 db.generate_mapping(create_tables=True)
