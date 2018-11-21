@@ -504,8 +504,8 @@ def button_press(msg):
             InlineKeyboardButton(text="🔔 Attiva", callback_data="settings_daily_yes#{0}".format(message_id)),
             InlineKeyboardButton(text="🔕 Disattiva", callback_data="settings_daily_no#{0}".format(message_id))
         ], [
-            InlineKeyboardButton(text="🕙 +30 min.", callback_data="settings_daily_plus#{0}".format(message_id)),
-            InlineKeyboardButton(text="🕙 -30 min.", callback_data="settings_daily_minus#{0}".format(message_id))
+            InlineKeyboardButton(text="🕙 -30 min.", callback_data="settings_daily_minus#{0}".format(message_id)),
+            InlineKeyboardButton(text="🕙 +30 min.", callback_data="settings_daily_plus#{0}".format(message_id))
         ], [
             InlineKeyboardButton(text="◀️ Torna al menù", callback_data="settings_main#{0}".format(message_id))
         ]])
@@ -523,8 +523,8 @@ def button_press(msg):
             InlineKeyboardButton(text="🔔 Attiva", callback_data="settings_daily_yes#{0}".format(message_id)),
             InlineKeyboardButton(text="🔕 Disattiva", callback_data="settings_daily_no#{0}".format(message_id))
         ], [
-            InlineKeyboardButton(text="🕙 +30 min.", callback_data="settings_daily_plus#{0}".format(message_id)),
-            InlineKeyboardButton(text="🕙 -30 min.", callback_data="settings_daily_minus#{0}".format(message_id))
+            InlineKeyboardButton(text="🕙 -30 min.", callback_data="settings_daily_minus#{0}".format(message_id)),
+            InlineKeyboardButton(text="🕙 +30 min.", callback_data="settings_daily_plus#{0}".format(message_id))
         ], [
             InlineKeyboardButton(text="◀️ Torna al menù", callback_data="settings_main#{0}".format(message_id))
         ]])
@@ -544,15 +544,15 @@ def button_press(msg):
             m = "30"
         elif m == "30":
             m = "00"
-            h = "00" if h == "23" else str(int(h)+1)
+            h = "0" if h == "23" else str(int(h)+1)
         settings.dailyUpdatesHour = "{0}:{1}".format(h, m)
 
         keyboard = InlineKeyboardMarkup(inline_keyboard=[[
             InlineKeyboardButton(text="🔔 Attiva", callback_data="settings_daily_yes#{0}".format(message_id)),
             InlineKeyboardButton(text="🔕 Disattiva", callback_data="settings_daily_no#{0}".format(message_id))
         ], [
-            InlineKeyboardButton(text="🕙 +30 min.", callback_data="settings_daily_plus#{0}".format(message_id)),
-            InlineKeyboardButton(text="🕙 -30 min.", callback_data="settings_daily_minus#{0}".format(message_id))
+            InlineKeyboardButton(text="🕙 -30 min.", callback_data="settings_daily_minus#{0}".format(message_id)),
+            InlineKeyboardButton(text="🕙 +30 min.", callback_data="settings_daily_plus#{0}".format(message_id))
         ], [
             InlineKeyboardButton(text="◀️ Torna al menù", callback_data="settings_main#{0}".format(message_id))
         ]])
@@ -570,7 +570,7 @@ def button_press(msg):
         m = hoursplit[1]
         if m == "00":
             m = "30"
-            h = "23" if h == "00" else str(int(h)-1)
+            h = "23" if h == "0" else str(int(h)-1)
         elif m == "30":
             m = "00"
         settings.dailyUpdatesHour = "{0}:{1}".format(h, m)
@@ -579,8 +579,8 @@ def button_press(msg):
             InlineKeyboardButton(text="🔔 Attiva", callback_data="settings_daily_yes#{0}".format(message_id)),
             InlineKeyboardButton(text="🔕 Disattiva", callback_data="settings_daily_no#{0}".format(message_id))
         ], [
-            InlineKeyboardButton(text="🕙 +30 min.", callback_data="settings_daily_plus#{0}".format(message_id)),
-            InlineKeyboardButton(text="🕙 -30 min.", callback_data="settings_daily_minus#{0}".format(message_id))
+            InlineKeyboardButton(text="🕙 -30 min.", callback_data="settings_daily_minus#{0}".format(message_id)),
+            InlineKeyboardButton(text="🕙 +30 min.", callback_data="settings_daily_plus#{0}".format(message_id))
         ], [
             InlineKeyboardButton(text="◀️ Torna al menù", callback_data="settings_main#{0}".format(message_id))
         ]])
