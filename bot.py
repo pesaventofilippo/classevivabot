@@ -72,8 +72,6 @@ def runUpdates():
         if userLogin(currentUser, use_support=True):
             userdata = Data.get(chatId=currentUser.chatId)
             stored = ParsedData.get(chatId=currentUser.chatId)
-            if not Settings.exists(lambda u: u.chatId == currentUser.chatId):
-                Settings(chatId=currentUser.chatId)
             settings = Settings.get(chatId=currentUser.chatId)
 
             newDidattica = supportApi.didattica()
@@ -135,6 +133,25 @@ def runUpdates():
 
                     except (TelegramError, BotWasBlockedError):
                         pass
+
+
+@db_session
+def runDailyUpdates():
+    hour = datetime.now().hour
+    minute = datetime.now().minute
+    pendingUsers = select(user for user in User if user.password != "")[:]
+    for currentUser in pendingUsers:
+        stored = ParsedData.get(chatId=currentUser.chatId)
+        settings = Settings.get(chatId=currentUser.chatId)
+        if settings.wantsDailyUpdates:
+            hoursplit = settings.dailyUpdatesHour.split(":")
+            if (int(hoursplit[0]) == hour) and (int(hoursplit[1]) == minute):
+                bot.sendMessage(currentUser.chatId, "🕙 <b>Promemoria!</b>\n\n"
+                                                    "📆 <b>Cosa devi fare per domani</b>:\n\n"
+                                                    "{0}\n\n\n"
+                                                    "📚 <b>Le lezioni di oggi</b>:\n\n"
+                                                    "{1}".format(stored.domani, stored.lezioni), parse_mode="HTML")
+
 
 
 @db_session
@@ -264,6 +281,8 @@ def reply(msg):
                 InlineKeyboardButton(text="🔔 Ricevi notifiche", callback_data="settings_notifications#{0}".format(sent['message_id']))
             ], [
                 InlineKeyboardButton(text="😴 Mod. Non Disturbare", callback_data="settings_donotdisturb#{0}".format(sent['message_id']))
+            ], [
+                InlineKeyboardButton(text="🕑 Notifiche giornaliere", callback_data="settings_dailynotif#{0}".format(sent['message_id']))
             ]])
             bot.editMessageReplyMarkup((chatId, sent['message_id']), keyboard)
 
@@ -368,6 +387,8 @@ def button_press(msg):
             InlineKeyboardButton(text="🔔 Ricevi notifiche", callback_data="settings_notifications#{0}".format(message_id))
         ], [
             InlineKeyboardButton(text="😴 Mod. Non Disturbare", callback_data="settings_donotdisturb#{0}".format(message_id))
+        ], [
+            InlineKeyboardButton(text="🕑 Notifiche giornaliere", callback_data="settings_dailynotif#{0}".format(message_id))
         ]])
         bot.editMessageText((chatId, message_id), "🛠 <b>Impostazioni</b>\n"
                                                     "Ecco le impostazioni del bot. Cosa vuoi modificare?",
@@ -399,6 +420,24 @@ def button_press(msg):
                                                   "Vuoi che silenzi le notifiche nella fascia oraria notturna (21:00 - 7:00)?"
                                                   "".format("😴 Attivo" if settings.doNotDisturb else "🔔 Suona"),
                                                     parse_mode="HTML", reply_markup=keyboard)
+
+    elif button == "settings_dailynotif":
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[[
+            InlineKeyboardButton(text="🔔 Attiva", callback_data="settings_daily_yes#{0}".format(message_id)),
+            InlineKeyboardButton(text="🔕 Disattiva", callback_data="settings_daily_no#{0}".format(message_id))
+        ], [
+            InlineKeyboardButton(text="🕙 +30 min.", callback_data="settings_daily_plus#{0}".format(message_id)),
+            InlineKeyboardButton(text="🕙 -30 min.", callback_data="settings_daily_minus#{0}".format(message_id))
+        ], [
+            InlineKeyboardButton(text="◀️ Torna al menù", callback_data="settings_main#{0}".format(message_id))
+        ]])
+        bot.editMessageText((chatId, message_id), "<b>Preferenze notifiche giornaliere</b>\n"
+                                                  "- Stato attuale: {0}\n"
+                                                  "- Orario notifiche: {1}\n\n"
+                                                  "Vuoi che ti dica ogni giorno i compiti per il giorno successivo e le lezioni svolte?"
+                                                  "".format("🔔 Attiva" if settings.wantsDailyUpdates else "🔕 Disattiva",
+                                                            settings.dailyUpdatesHour),
+                            parse_mode="HTML", reply_markup=keyboard)
 
 
     elif button == "settings_notif_yes":
@@ -459,6 +498,100 @@ def button_press(msg):
                                                   "".format("😴 Attivo" if settings.doNotDisturb else "🔔 Suona"),
                                                     parse_mode="HTML", reply_markup=keyboard)
 
+    elif button == "settings_daily_yes":
+        settings.wantsDailyUpdates = True
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[[
+            InlineKeyboardButton(text="🔔 Attiva", callback_data="settings_daily_yes#{0}".format(message_id)),
+            InlineKeyboardButton(text="🔕 Disattiva", callback_data="settings_daily_no#{0}".format(message_id))
+        ], [
+            InlineKeyboardButton(text="🕙 +30 min.", callback_data="settings_daily_plus#{0}".format(message_id)),
+            InlineKeyboardButton(text="🕙 -30 min.", callback_data="settings_daily_minus#{0}".format(message_id))
+        ], [
+            InlineKeyboardButton(text="◀️ Torna al menù", callback_data="settings_main#{0}".format(message_id))
+        ]])
+        bot.editMessageText((chatId, message_id), "<b>Preferenze notifiche giornaliere</b>\n"
+                                                  "- Stato attuale: {0}\n"
+                                                  "- Orario notifiche: {1}\n\n"
+                                                  "Vuoi che ti dica ogni giorno i compiti per il giorno successivo e le lezioni svolte?"
+                                                  "".format("🔔 Attiva" if settings.wantsDailyUpdates else "🔕 Disattiva",
+                                                            settings.dailyUpdatesHour),
+                            parse_mode="HTML", reply_markup=keyboard)
+
+    elif button == "settings_daily_no":
+        settings.wantsDailyUpdates = False
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[[
+            InlineKeyboardButton(text="🔔 Attiva", callback_data="settings_daily_yes#{0}".format(message_id)),
+            InlineKeyboardButton(text="🔕 Disattiva", callback_data="settings_daily_no#{0}".format(message_id))
+        ], [
+            InlineKeyboardButton(text="🕙 +30 min.", callback_data="settings_daily_plus#{0}".format(message_id)),
+            InlineKeyboardButton(text="🕙 -30 min.", callback_data="settings_daily_minus#{0}".format(message_id))
+        ], [
+            InlineKeyboardButton(text="◀️ Torna al menù", callback_data="settings_main#{0}".format(message_id))
+        ]])
+        bot.editMessageText((chatId, message_id), "<b>Preferenze notifiche giornaliere</b>\n"
+                                                  "- Stato attuale: {0}\n"
+                                                  "- Orario notifiche: {1}\n\n"
+                                                  "Vuoi che ti dica ogni giorno i compiti per il giorno successivo e le lezioni svolte?"
+                                                  "".format("🔔 Attiva" if settings.wantsDailyUpdates else "🔕 Disattiva",
+                                                            settings.dailyUpdatesHour),
+                            parse_mode="HTML", reply_markup=keyboard)
+
+    elif button == "settings_daily_plus":
+        hoursplit = settings.dailyUpdatesHour.split(":")
+        h = hoursplit[0]
+        m = hoursplit[1]
+        if m == "00":
+            m = "30"
+        elif m == "30":
+            m = "00"
+            h = "00" if h == "23" else str(int(h)+1)
+        settings.dailyUpdatesHour = "{0}:{1}".format(h, m)
+
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[[
+            InlineKeyboardButton(text="🔔 Attiva", callback_data="settings_daily_yes#{0}".format(message_id)),
+            InlineKeyboardButton(text="🔕 Disattiva", callback_data="settings_daily_no#{0}".format(message_id))
+        ], [
+            InlineKeyboardButton(text="🕙 +30 min.", callback_data="settings_daily_plus#{0}".format(message_id)),
+            InlineKeyboardButton(text="🕙 -30 min.", callback_data="settings_daily_minus#{0}".format(message_id))
+        ], [
+            InlineKeyboardButton(text="◀️ Torna al menù", callback_data="settings_main#{0}".format(message_id))
+        ]])
+        bot.editMessageText((chatId, message_id), "<b>Preferenze notifiche giornaliere</b>\n"
+                                                  "- Stato attuale: {0}\n"
+                                                  "- Orario notifiche: {1}\n\n"
+                                                  "Vuoi che ti dica ogni giorno i compiti per il giorno successivo e le lezioni svolte?"
+                                                  "".format("🔔 Attiva" if settings.wantsDailyUpdates else "🔕 Disattiva",
+                                                            settings.dailyUpdatesHour),
+                            parse_mode="HTML", reply_markup=keyboard)
+
+    elif button == "settings_daily_minus":
+        hoursplit = settings.dailyUpdatesHour.split(":")
+        h = hoursplit[0]
+        m = hoursplit[1]
+        if m == "00":
+            m = "30"
+            h = "23" if h == "00" else str(int(h)-1)
+        elif m == "30":
+            m = "00"
+        settings.dailyUpdatesHour = "{0}:{1}".format(h, m)
+
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[[
+            InlineKeyboardButton(text="🔔 Attiva", callback_data="settings_daily_yes#{0}".format(message_id)),
+            InlineKeyboardButton(text="🔕 Disattiva", callback_data="settings_daily_no#{0}".format(message_id))
+        ], [
+            InlineKeyboardButton(text="🕙 +30 min.", callback_data="settings_daily_plus#{0}".format(message_id)),
+            InlineKeyboardButton(text="🕙 -30 min.", callback_data="settings_daily_minus#{0}".format(message_id))
+        ], [
+            InlineKeyboardButton(text="◀️ Torna al menù", callback_data="settings_main#{0}".format(message_id))
+        ]])
+        bot.editMessageText((chatId, message_id), "<b>Preferenze notifiche giornaliere</b>\n"
+                                                  "- Stato attuale: {0}\n"
+                                                  "- Orario notifiche: {1}\n\n"
+                                                  "Vuoi che ti dica ogni giorno i compiti per il giorno successivo e le lezioni svolte?"
+                                                  "".format("🔔 Attiva" if settings.wantsDailyUpdates else "🔕 Disattiva",
+                                                            settings.dailyUpdatesHour),
+                            parse_mode="HTML", reply_markup=keyboard)
+
 
     elif userLogin(user):
 
@@ -494,3 +627,4 @@ while True:
     sleep(60)
     if datetime.now().minute in [0, 30]:
         runUpdates()
+        runDailyUpdates()

@@ -40,6 +40,8 @@ class Settings(db.Entity):
     chatId = Required(int)
     wantsNotifications = Required(bool, default=True)
     doNotDisturb = Required(bool, default=True)
+    wantsDailyUpdates = Required(bool, default=True)
+    dailyUpdatesHour = Required(str, default="13:30")
 
 
 db.generate_mapping(create_tables=True)
