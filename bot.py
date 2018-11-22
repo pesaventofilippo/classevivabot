@@ -426,8 +426,8 @@ def button_press(msg):
             InlineKeyboardButton(text="🔔 Attiva", callback_data="settings_daily_yes#{0}".format(message_id)),
             InlineKeyboardButton(text="🔕 Disattiva", callback_data="settings_daily_no#{0}".format(message_id))
         ], [
-            InlineKeyboardButton(text="🕙 +30 min.", callback_data="settings_daily_plus#{0}".format(message_id)),
-            InlineKeyboardButton(text="🕙 -30 min.", callback_data="settings_daily_minus#{0}".format(message_id))
+            InlineKeyboardButton(text="🕙 -30 min.", callback_data="settings_daily_minus#{0}".format(message_id)),
+            InlineKeyboardButton(text="🕙 +30 min.", callback_data="settings_daily_plus#{0}".format(message_id))
         ], [
             InlineKeyboardButton(text="◀️ Torna al menù", callback_data="settings_main#{0}".format(message_id))
         ]])
