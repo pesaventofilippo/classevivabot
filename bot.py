@@ -145,7 +145,7 @@ def runDailyUpdates():
         settings = Settings.get(chatId=currentUser.chatId)
         if settings.wantsDailyUpdates:
             hoursplit = settings.dailyUpdatesHour.split(":")
-            if (int(hoursplit[0]) == hour) and (int(hoursplit[1]) == minute):
+            if (int(hoursplit[0]) == hour) and (int(hoursplit[1]) in range(minute, minute+10)):
                 bot.sendMessage(currentUser.chatId, "🕙 <b>Promemoria!</b>\n\n"
                                                     "📆 <b>Cosa devi fare per domani</b>:\n\n"
                                                     "{0}\n\n\n"
