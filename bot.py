@@ -59,9 +59,9 @@ def userLogin(user, use_support=False):
 
 def userLogout(use_support=False):
     if use_support:
-        return supportApi.logout()
+        supportApi.logout()
     else:
-        return api.logout()
+        api.logout()
 
 
 @db_session
@@ -141,11 +141,11 @@ def runDailyUpdates():
     minute = datetime.now().minute
     pendingUsers = select(user for user in User if user.password != "")[:]
     for currentUser in pendingUsers:
-        stored = ParsedData.get(chatId=currentUser.chatId)
         settings = Settings.get(chatId=currentUser.chatId)
         if settings.wantsDailyUpdates:
             hoursplit = settings.dailyUpdatesHour.split(":")
-            if (int(hoursplit[0]) == hour) and (int(hoursplit[1]) in range(minute, minute+10)):
+            if (int(hoursplit[0]) == hour) and (int(hoursplit[1]) == minute):
+                stored = ParsedData.get(chatId=currentUser.chatId)
                 bot.sendMessage(currentUser.chatId, "🕙 <b>Promemoria!</b>\n\n"
                                                     "📆 <b>Cosa devi fare per domani</b>:\n\n"
                                                     "{0}\n\n\n"
@@ -625,6 +625,8 @@ print("Bot started...")
 
 while True:
     sleep(60)
-    if datetime.now().minute in [0, 30]:
-        runUpdates()
+    minute = datetime.now().minute
+    if not minute % 10:
         runDailyUpdates()
+    if not minute % 30:
+        runUpdates()
