@@ -131,7 +131,10 @@ def runUpdates():
                         if dataAgenda is not None:
                             bot.sendMessage(currentUser.chatId, header + "📆 <b>Nuovi impegni in agenda</b>\n{0}".format(dataAgenda), parse_mode="HTML")
 
-                    except (TelegramError, BotWasBlockedError):
+                    except BotWasBlockedError:
+                        clearUserData(currentUser)
+
+                    except TelegramError:
                         pass
 
 
@@ -146,12 +149,18 @@ def runDailyUpdates():
             hoursplit = settings.dailyUpdatesHour.split(":")
             if (int(hoursplit[0]) == hour) and (int(hoursplit[1]) == minute):
                 stored = ParsedData.get(chatId=currentUser.chatId)
-                bot.sendMessage(currentUser.chatId, "🕙 <b>Promemoria!</b>\n\n"
-                                                    "📆 <b>Cosa devi fare per domani</b>:\n\n"
-                                                    "{0}\n\n\n"
-                                                    "📚 <b>Le lezioni di oggi</b>:\n\n"
-                                                    "{1}".format(stored.domani, stored.lezioni), parse_mode="HTML")
+                try:
+                    bot.sendMessage(currentUser.chatId, "🕙 <b>Promemoria!</b>\n\n"
+                                                        "📆 <b>Cosa devi fare per domani</b>:\n\n"
+                                                        "{0}\n\n\n"
+                                                        "📚 <b>Le lezioni di oggi</b>:\n\n"
+                                                        "{1}".format(stored.domani, stored.lezioni), parse_mode="HTML")
 
+                except BotWasBlockedError:
+                    clearUserData(currentUser)
+
+                except TelegramError:
+                    pass
 
 
 @db_session
@@ -626,7 +635,6 @@ print("Bot started...")
 while True:
     sleep(60)
     minute = datetime.now().minute
-    if not minute % 10:
-        runDailyUpdates()
     if not minute % 30:
+        runDailyUpdates()
         runUpdates()
