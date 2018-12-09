@@ -203,7 +203,30 @@ def reply(msg):
             if userLogin(user):
                 bot.sendMessage(chatId, "Fatto 😊\n"
                                         "Premi /help per vedere la lista dei comandi disponibili.")
+                sent = bot.sendMessage(chatId, "🔍 Aggiorno il profilo...")
+                newDidattica = api.didattica()
+                newInfo = api.info()
+                newProf = api.materie()
+                newNote = api.note()
+                newVoti = api.voti()
+                newAssenze = api.assenze()
+                newAgenda = api.agenda(14)
+                newLezioni = api.lezioni()
                 userLogout()
+                userdata.note = newNote
+                userdata.voti = newVoti
+                userdata.assenze = newAssenze
+                userdata.agenda = newAgenda
+                stored.didattica = resp.parseDidattica(newDidattica)
+                stored.info = resp.parseInfo(newInfo)
+                stored.prof = resp.parseMaterie(newProf)
+                stored.note = resp.parseNote(newNote)
+                stored.voti = resp.parseVoti(newVoti)
+                stored.assenze = resp.parseAssenze(newAssenze)
+                stored.agenda = resp.parseAgenda(newAgenda)
+                stored.domani = resp.parseDomani(newAgenda)
+                stored.lezioni = resp.parseLezioni(newLezioni)
+                bot.editMessageText((chatId, sent), "✅ Profilo aggiornato!")
 
 
     elif text == "/help":
