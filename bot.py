@@ -226,7 +226,7 @@ def reply(msg):
                 stored.agenda = resp.parseAgenda(newAgenda)
                 stored.domani = resp.parseDomani(newAgenda)
                 stored.lezioni = resp.parseLezioni(newLezioni)
-                bot.editMessageText((chatId, sent), "✅ Profilo aggiornato!")
+                bot.editMessageText((chatId, sent['message_id']), "✅ Profilo aggiornato!")
 
 
     elif text == "/help":
