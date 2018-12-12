@@ -1,4 +1,7 @@
 # classevivabot
+
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/5ff114f28777438196bf2e3bac131979)](https://app.codacy.com/app/pesaventofilippo/classevivabot?utm_source=github.com&utm_medium=referral&utm_content=pesaventofilippo/classevivabot&utm_campaign=Badge_Grade_Settings)
+
 A Telegram Bot for Spaggiari's ClasseViva school E-Register
 
 ## Telegram Public Bot
