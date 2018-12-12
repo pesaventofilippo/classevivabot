@@ -380,7 +380,7 @@ def parseNewVoti(oldData, newData):
                 colore = "📘"
 
             if tipo == "":
-                str_voto = "\n\n{0} <b>{1}</b> • {3} {4}".format(colore, value, "", "{0}/{1}/{2}".format(day, month, year),
+                str_voto = "\n\n{0} <b>{1}</b> • {2} {3}".format(colore, value, "{0}/{1}/{2}".format(day, month, year),
                                                                  "\n<i>{0}</i>".format(voto['notesForFamily']) if voto['notesForFamily'] else "")
             else:
                 str_voto = "\n\n{0} <b>{1}</b> • {2} • {3} {4}".format(colore, value, tipo, "{0}/{1}/{2}".format(day, month, year),

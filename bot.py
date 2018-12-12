@@ -3,11 +3,11 @@ from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton
 from telepot.exception import TelegramError, BotWasBlockedError
 from time import sleep
 from datetime import datetime, timedelta
-from pony.orm import db_session, select, exists
+from pony.orm import db_session, select
 from modules.session import ClasseVivaAPI, AuthenticationFailedError
 import modules.responser as resp
 from modules.crypter import crypt, decrypt
-from modules.database import User, Data, ParsedData, Settings, db
+from modules.database import User, Data, ParsedData, Settings
 
 try:
     f = open('token.txt', 'r')
@@ -165,7 +165,7 @@ def runDailyUpdates():
 
 @db_session
 def reply(msg):
-    msgType, chatType, chatId = telepot.glance(msg)
+    chatType, chatId = telepot.glance(msg)[1:3]
     text = msg['text']
     name = msg['from']['first_name']
 
@@ -406,7 +406,7 @@ def reply(msg):
 
 @db_session
 def button_press(msg):
-    query_id, chatId, query_data = telepot.glance(msg, flavor="callback_query")
+    chatId, query_data = telepot.glance(msg, flavor="callback_query")[1:3]
     user = User.get(chatId=chatId)
     query_split = query_data.split("#")
     message_id = int(query_split[1])
