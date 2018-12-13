@@ -165,7 +165,7 @@ def runDailyUpdates():
 
 @db_session
 def reply(msg):
-    chatType, chatId = telepot.glance(msg)[1:3]
+    chatId = msg['chat']['id']
     text = msg['text']
     name = msg['from']['first_name']
 

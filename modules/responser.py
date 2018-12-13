@@ -9,22 +9,22 @@ def parseDidattica(data):
     for prof in data['didacticts']:
         if firstProf:
             firstProf = False
-            result += "\n\n👤 <b>{0}</b>".format(prof['teacherName'])
+            result += f"\n\n👤 <b>{prof['teacherName']}</b>"
         else:
-            result += "\n\n\n👤 <b>{0}</b>".format(prof['teacherName'])
+            result += f"\n\n\n👤 <b>{prof['teacherName']}</b>"
 
         firstFolder = True
         for folder in prof['folders']:
             folderName = "Altro" if folder['folderName'] == "Uncategorized" else folder['folderName']
             if firstFolder:
                 firstFolder = False
-                result += "\n    📂 <b>{0}</b>".format(folderName)
+                result += f"\n    📂 <b>{folderName}</b>"
             else:
-                result += "\n\n    📂 <b>{0}</b>".format(folderName)
+                result += f"\n\n    📂 <b>{folderName}</b>"
 
             for file in folder['contents']:
                 fileName = "Senza nome" if file['contentName'] == "" else file['contentName']
-                result += "\n        📝 {0}".format(fileName)
+                result += f"\n        📝 {fileName}"
 
     return result
 
@@ -38,23 +38,20 @@ def parseInfo(data):
     month = time[1]
     year = time[0]
 
-    result = "👤 Nome: <b>{1}</b>\n" \
-             "👤 Cognome: <b>{4}</b>\n" \
-             "📅 Nascita: <b>{0}</b>\n" \
-             "💳 Codice Fiscale: <b>{2}</b>\n" \
-             "👤 Username: <b>{3}</b>\n" \
+    result = f"👤 Nome: <b>{info['firstName']}</b>\n" \
+             f"👤 Cognome: <b>{info['lastName']}</b>\n" \
+             f"📅 Nascita: <b>{day}/{month}/{year}</b>\n" \
+             f"💳 Codice Fiscale: <b>{info['fiscalCode']}</b>\n" \
+             f"👤 Username: <b>{info['ident']}</b>\n" \
              "\n" \
-             "🏫 Nome Scuola: <b>{7}</b>\n" \
-             "🏫 Tipo Scuola: <b>{8}</b>\n" \
-             "🏫 ID Scuola: <b>{5}</b>\n" \
-             "🏛 Città: <b>{6}</b>\n" \
-             "📍 Provincia: <b>{9}</b>\n" \
+             f"🏫 Nome Scuola: <b>{info['schName']}</b>\n" \
+             f"🏫 Tipo Scuola: <b>{info['schDedication']}</b>\n" \
+             f"🏫 ID Scuola: <b>{info['schCode']}</b>\n" \
+             f"🏛 Città: <b>{info['schCity']}</b>\n" \
+             f"📍 Provincia: <b>{info['schProv']}</b>\n" \
              "\n" \
-             "👤 UserID: <b>{10}</b>\n" \
-             "👤 Tipo Utente: <b>{11}</b>".format("{0}/{1}/{2}".format(day, month, year), info['firstName'], info['fiscalCode'],
-                                                 info['ident'], info['lastName'], info['schCode'],
-                                                 info['schCity'], info['schDedication'], info['schName'],
-                                                 info['schProv'], info['usrId'], info['usrType'])
+             f"👤 UserID: <b>{info['usrId']}</b>\n" \
+             f"👤 Tipo Utente: <b>{info['usrType']}</b>"
     return result
 
 
@@ -66,12 +63,12 @@ def parseMaterie(data):
     for materia in data['subjects']:
         if firstMateria:
             firstMateria = False
-            result += "\n\n\n📚 <b>{0}</b>".format(materia['description'])
+            result += f"\n\n\n📚 <b>{materia['description']}</b>"
         else:
-            result += "\n\n📚 <b>{0}</b>".format(materia['description'])
+            result += f"\n\n📚 <b>{materia['description']}</b>"
 
         for prof in materia['teachers']:
-            result += "\n    👤 {0}".format(prof['teacherName'])
+            result += f"\n    👤 {prof['teacherName']}"
     return result
 
 
@@ -89,8 +86,7 @@ def parseNote(data):
         if not nota['readStatus']:
             nota['evtText'] = "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione <i>annotazioni</i>" \
                               "per leggere questa nota disciplinare."
-        result += "\n\n🚫 <b>Nota disciplinare</b> di <b>{0}</b> del {1}:\n" \
-                  "{2}".format(nota['authorName'].title(), "{0}/{1}/{2}".format(day, month, year), nota['evtText'])
+        result += f"\n\n🚫 <b>Nota disciplinare</b> di <b>{nota['authorName'].title()}</b> del {day}/{month}/{year}:\n{nota['evtText']}"
 
     for avviso in data['NTWN']:
         time = avviso['evtDate'].lower().split("-", 2)
@@ -100,8 +96,7 @@ def parseNote(data):
         if not avviso['readStatus']:
             avviso['evtText'] = "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione \"annotazioni\"" \
                                 "per leggere questo avviso."
-        result += "\n\n⚠️ <b>Richiamo ({0})</b> di <b>{1}</b> del {2}:\n" \
-                  "{3}".format(avviso['warningType'].lower(), avviso['authorName'].title(), "{0}/{1}/{2}".format(day, month, year), avviso['evtText'])
+        result += f"\n\n⚠️ <b>Richiamo ({avviso['warningType'].lower()})</b> di <b>{avviso['authorName'].title()}</b> del {day}/{month}/{year}:\n{avviso['evtText']}"
 
     for annotazione in data['NTTE']:
         time = annotazione['evtDate'].lower().split("-", 2)
@@ -111,8 +106,7 @@ def parseNote(data):
         if not annotazione['readStatus']:
             annotazione['evtText'] = "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione \"annotazioni\"" \
                 "per leggere questa annotazione."
-        result += "\n\nℹ️ <b>Annotazione</b> di <b>{0}</b> del {1}:\n" \
-                  "{2}".format(annotazione['authorName'].title(), "{0}/{1}/{2}".format(day, month, year), annotazione['evtText'])
+        result += f"\n\nℹ️ <b>Annotazione</b> di <b>{annotazione['authorName'].title()}</b> del {day}/{month}/{year}:\n{annotazione['evtText']}"
 
     return result
 
@@ -139,7 +133,7 @@ def parseVoti(data):
             colore = "📘"
 
         if tipo == "":
-            str_voto = "\n\n{0} <b>{1}</b> • {3} {4}".format(colore, value, "", "{0}/{1}/{2}".format(day, month, year),
+            str_voto = "\n\n{0} <b>{1}</b> • {2} {3}".format(colore, value, "{0}/{1}/{2}".format(day, month, year),
                                                              "\n<i>{0}</i>".format(voto['notesForFamily']) if voto['notesForFamily'] else "")
         else:
             str_voto = "\n\n{0} <b>{1}</b> • {2} • {3} {4}".format(colore, value, tipo, "{0}/{1}/{2}".format(day, month, year),
