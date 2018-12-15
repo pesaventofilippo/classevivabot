@@ -250,14 +250,18 @@ def parseAgenda(data):
     for event in data['agenda']:
         date = str(event['evtDatetimeBegin']).split("T", 1)[0]
         date = date.split("-", 2)
-        evtType = "📌" if event['evtCode'] == "AGNT" else "📝"
-        if firstEvent:
-            firstEvent = False
-            separator = "\n"
-        else:
-            separator = "\n\n\n"
-        result += separator + "{0} {1}/{2}/{3} • <b>{4}</b>\n{5}".format(evtType, date[2], date[1], date[0],
-                                                                         event['authorName'].title(), event['notes'])
+        today = datetime.now().day
+        evtDay = int(evtDate.split("-", 2)[2])
+
+        if evtDay != today:
+            evtType = "📌" if event['evtCode'] == "AGNT" else "📝"
+            if firstEvent:
+                firstEvent = False
+                separator = "\n"
+            else:
+                separator = "\n\n\n"
+            result += separator + "{0} {1}/{2}/{3} • <b>{4}</b>\n{5}".format(evtType, date[2], date[1], date[0],
+                                                                             event['authorName'].title(), event['notes'])
 
     return result
 
