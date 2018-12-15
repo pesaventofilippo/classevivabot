@@ -1,9 +1,7 @@
-from datetime import datetime
-
-
 def parseDidattica(data):
     if (data is None) or (not data.get('didacticts')):
         return "\n\n📌 Nessun file caricato."
+
     result = ""
     firstProf = True
     for prof in data['didacticts']:
@@ -32,12 +30,12 @@ def parseDidattica(data):
 def parseInfo(data):
     if (data is None) or (not data.get('cards')):
         return "📌 Nessuna info disponibile."
+
     info = data['cards'][0]
     time = info['birthDate'].lower().split("-", 2)
     day = time[2]
     month = time[1]
     year = time[0]
-
     result = f"👤 Nome: <b>{info['firstName']}</b>\n" \
              f"👤 Cognome: <b>{info['lastName']}</b>\n" \
              f"📅 Nascita: <b>{day}/{month}/{year}</b>\n" \
@@ -58,6 +56,7 @@ def parseInfo(data):
 def parseMaterie(data):
     if (data is None) or (not data.get('subjects')):
         return "\n\n📌 Nessun prof attualmente registrato."
+
     result = ""
     firstMateria = True
     for materia in data['subjects']:
@@ -73,19 +72,17 @@ def parseMaterie(data):
 
 
 def parseNote(data):
-    result = ""
-
     if (data is None) or (not data.get('NTCL') and not data.get('NTWN') and not data.get('NTTE')):
         return "\n\n✅ Nessuna annotazione rilevata!"
 
+    result = ""
     for nota in data['NTCL']:
         time = nota['evtDate'].lower().split("-", 2)
         day = time[2]
         month = time[1]
         year = time[0]
         if not nota['readStatus']:
-            nota['evtText'] = "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione <i>annotazioni</i>" \
-                              "per leggere questa nota disciplinare."
+            nota['evtText'] = "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione <i>annotazioni</i> per leggere questa nota disciplinare."
         result += f"\n\n🚫 <b>Nota disciplinare</b> di <b>{nota['authorName'].title()}</b> del {day}/{month}/{year}:\n{nota['evtText']}"
 
     for avviso in data['NTWN']:
@@ -94,8 +91,7 @@ def parseNote(data):
         month = time[1]
         year = time[0]
         if not avviso['readStatus']:
-            avviso['evtText'] = "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione \"annotazioni\"" \
-                                "per leggere questo avviso."
+            avviso['evtText'] = "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione \"annotazioni\" per leggere questo avviso."
         result += f"\n\n⚠️ <b>Richiamo ({avviso['warningType'].lower()})</b> di <b>{avviso['authorName'].title()}</b> del {day}/{month}/{year}:\n{avviso['evtText']}"
 
     for annotazione in data['NTTE']:
@@ -104,8 +100,7 @@ def parseNote(data):
         month = time[1]
         year = time[0]
         if not annotazione['readStatus']:
-            annotazione['evtText'] = "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione \"annotazioni\"" \
-                "per leggere questa annotazione."
+            annotazione['evtText'] = "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione \"annotazioni\" per leggere questa annotazione."
         result += f"\n\nℹ️ <b>Annotazione</b> di <b>{annotazione['authorName'].title()}</b> del {day}/{month}/{year}:\n{annotazione['evtText']}"
 
     return result
@@ -125,12 +120,7 @@ def parseVoti(data):
         day = time[2]
         month = time[1]
         year = time[0]
-        if voto['color'] == "green":
-            colore = "📗"
-        elif voto['color'] == "red":
-            colore = "📕"
-        else:
-            colore = "📘"
+        colore = "📗" if voto['color'] == "green" else "📕" if voto['color'] == "red" else "📘"
 
         if tipo == "":
             str_voto = "\n\n{0} <b>{1}</b> • {2} {3}".format(colore, value, "{0}/{1}/{2}".format(day, month, year),
@@ -138,13 +128,10 @@ def parseVoti(data):
         else:
             str_voto = "\n\n{0} <b>{1}</b> • {2} • {3} {4}".format(colore, value, tipo, "{0}/{1}/{2}".format(day, month, year),
                                                                    "\n<i>{0}</i>".format(voto['notesForFamily']) if voto['notesForFamily'] else "")
-
         if materia not in votiOrdinati:
             votiOrdinati[materia] = []
-
         if materia not in media:
             media[materia] = []
-
         votiOrdinati[materia].append(str_voto)
 
         if colore != "📘":
@@ -165,10 +152,8 @@ def parseVoti(data):
     for materia, voti in votiOrdinati.items():
         if materia not in materie:
             materie[materia] = ""
-
         for voto in voti:
             materie[materia] += voto
-
         if len(media[materia]) == 0:
             media[materia] = False
         else:
@@ -180,7 +165,6 @@ def parseVoti(data):
                 materie[materia] = "\n\n📚 <b>{0}\n    Media: {1} </b>".format(materia, media[materia]) + materie[materia]
             else:
                 materie[materia] = "\n\n\n\n📚 <b>{0}\n    Media: {1} </b>".format(materia, media[materia]) + materie[materia]
-
         else:
             if firstMateria:
                 firstMateria = False
@@ -213,35 +197,28 @@ def parseAssenze(data):
         if evento['evtCode'] == "ABA0":
             if not assenze:
                 assenze = "\n\n\n❌ <b>Assenze</b>:"
-
-            assenze += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], desc,
-                                                             "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
+            assenze += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], desc, "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
 
         elif evento['evtCode'] == "ABR0":
             if not ritardi:
                 ritardi = "\n\n\n🏃 <b>Ritardi</b>:"
-
-            ritardi += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], desc,
-                                                             "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
+            ritardi += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], desc, "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
 
         elif evento['evtCode'] == "ABR1":
             if not ritardiBrevi:
                 ritardiBrevi = "\n\n\n🚶 <b>Ritardi Brevi</b>:"
-
-                ritardiBrevi += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], desc,
-                                                                      "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
+            ritardiBrevi += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], desc, "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
 
         elif evento['evtCode'] == "ABU0":
             if not usciteAnticipate:
                 usciteAnticipate = "\n\n\n🚪 <b>Uscite Anticipate</b>:"
-
-                usciteAnticipate += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], desc,
-                                                                          "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
+            usciteAnticipate += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], desc, "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
 
     return assenze + ritardi + ritardiBrevi + usciteAnticipate
 
 
 def parseAgenda(data):
+    from datetime import datetime
     if (data is None) or (not data.get('agenda')):
         return "\n🗓 L'agenda è ancora vuota."
 
@@ -269,6 +246,7 @@ def parseAgenda(data):
 
 
 def parseDomani(data):
+    from datetime import datetime
     if (data is None) or (not data.get('agenda')):
         return "\n🗓 Non hai compiti per domani."
 
@@ -310,11 +288,10 @@ def parseLezioni(data):
 
 
 def parseNewNote(oldData, newData):
-    result = ""
-
     if (newData is None) or (not newData.get('NTCL') and not newData.get('NTWN') and not newData.get('NTTE')):
         return None
 
+    result = ""
     for nota in newData['NTCL']:
         if (oldData is None) or (not oldData.get('NTCL')) or (nota not in oldData['NTCL']):
             time = nota['evtDate'].lower().split("-", 2)
@@ -322,11 +299,8 @@ def parseNewNote(oldData, newData):
             month = time[1]
             year = time[0]
             if not nota['readStatus']:
-                nota[
-                    'evtText'] = "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione <i>annotazioni</i>" \
-                                 "per leggere questa nota disciplinare."
-            result += "\n\n🚫 <b>Nota disciplinare</b> di <b>{0}</b> del {1}:\n" \
-                      "{2}".format(nota['authorName'].title(), "{0}/{1}/{2}".format(day, month, year), nota['evtText'])
+                nota['evtText'] = "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione <i>annotazioni</i> per leggere questa nota disciplinare."
+            result += "\n\n🚫 <b>Nota disciplinare</b> di <b>{0}</b> del {1}:\n {2}".format(nota['authorName'].title(), "{0}/{1}/{2}".format(day, month, year), nota['evtText'])
 
     for avviso in newData['NTWN']:
         if (oldData is None) or (not oldData.get('NTWN')) or (avviso not in oldData['NTWN']):
@@ -335,12 +309,8 @@ def parseNewNote(oldData, newData):
             month = time[1]
             year = time[0]
             if not avviso['readStatus']:
-                avviso[
-                    'evtText'] = "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione \"annotazioni\"" \
-                                 "per leggere questo avviso."
-            result += "\n\n⚠️ <b>Richiamo ({0})</b> di <b>{1}</b> del {2}:\n" \
-                      "{3}".format(avviso['warningType'].lower(), avviso['authorName'].title(), "{0}/{1}/{2}".format(day, month, year),
-                                   avviso['evtText'])
+                avviso['evtText'] = "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione \"annotazioni\" per leggere questo avviso."
+            result += "\n\n⚠️ <b>Richiamo ({0})</b> di <b>{1}</b> del {2}:\n{3}".format(avviso['warningType'].lower(), avviso['authorName'].title(), "{0}/{1}/{2}".format(day, month, year), avviso['evtText'])
 
     for annotazione in newData['NTTE']:
         if (oldData is None) or (not oldData.get('NTTE')) or (annotazione not in oldData['NTTE']):
@@ -349,11 +319,8 @@ def parseNewNote(oldData, newData):
             month = time[1]
             year = time[0]
             if not annotazione['readStatus']:
-                annotazione[
-                    'evtText'] = "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione \"annotazioni\"" \
-                                 "per leggere questa annotazione."
-            result += "\n\nℹ️ <b>Annotazione</b> di <b>{0}</b> del {1}:\n" \
-                      "{2}".format(annotazione['authorName'].title(), "{0}/{1}/{2}".format(day, month, year), annotazione['evtText'])
+                annotazione['evtText'] = "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione \"annotazioni\" per leggere questa annotazione."
+            result += "\n\nℹ️ <b>Annotazione</b> di <b>{0}</b> del {1}:\n{2}".format(annotazione['authorName'].title(), "{0}/{1}/{2}".format(day, month, year), annotazione['evtText'])
 
     return result if result != "" else None
 
@@ -372,19 +339,12 @@ def parseNewVoti(oldData, newData):
             day = time[2]
             month = time[1]
             year = time[0]
-            if voto['color'] == "green":
-                colore = "📗"
-            elif voto['color'] == "red":
-                colore = "📕"
-            else:
-                colore = "📘"
+            colore = "📗" if voto['color'] == "green" else "📕" if voto['color'] == "red" else "📘"
 
             if tipo == "":
-                str_voto = "\n\n{0} <b>{1}</b> • {2} {3}".format(colore, value, "{0}/{1}/{2}".format(day, month, year),
-                                                                 "\n<i>{0}</i>".format(voto['notesForFamily']) if voto['notesForFamily'] else "")
+                str_voto = "\n\n{0} <b>{1}</b> • {2} {3}".format(colore, value, "{0}/{1}/{2}".format(day, month, year), "\n<i>{0}</i>".format(voto['notesForFamily']) if voto['notesForFamily'] else "")
             else:
-                str_voto = "\n\n{0} <b>{1}</b> • {2} • {3} {4}".format(colore, value, tipo, "{0}/{1}/{2}".format(day, month, year),
-                                                                       "\n<i>{0}</i>".format(voto['notesForFamily']) if voto['notesForFamily'] else "")
+                str_voto = "\n\n{0} <b>{1}</b> • {2} • {3} {4}".format(colore, value, tipo, "{0}/{1}/{2}".format(day, month, year), "\n<i>{0}</i>".format(voto['notesForFamily']) if voto['notesForFamily'] else "")
 
             if materia not in votiOrdinati:
                 votiOrdinati[materia] = []
@@ -415,49 +375,28 @@ def parseNewAssenze(oldData, newData):
 
     for evento in newData['events']:
         if (oldData is None) or (not oldData.get('events')) or (evento not in oldData['events']):
-
-            if evento['justifReasonDesc'] is None:
-                desc = "Altro"
-            else:
-                desc = evento['justifReasonDesc'].lower()
-
+            desc = "Altro" if evento['justifReasonDesc'] is None else evento['justifReasonDesc'].lower()
             if evento['evtCode'] == "ABA0":
                 if not assenze:
                     assenze = "\n\n\n❌ <b>Assenze</b>:"
-
-                assenze += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], desc,
-                                                                 "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
+                assenze += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], desc, "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
 
             elif evento['evtCode'] == "ABR0":
                 if not ritardi:
                     ritardi = "\n\n\n🏃 <b>Ritardi</b>:"
-
-                ritardi += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], desc,
-                                                                 "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
+                ritardi += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], desc, "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
 
             elif evento['evtCode'] == "ABR1":
                 if not ritardiBrevi:
                     ritardiBrevi = "\n\n\n🚶 <b>Ritardi Brevi</b>:"
-
-                    ritardiBrevi += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], desc,
-                                                                          "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
+                ritardiBrevi += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], desc, "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
 
             elif evento['evtCode'] == "ABU0":
                 if not usciteAnticipate:
                     usciteAnticipate = "\n\n\n🚪 <b>Uscite Anticipate</b>:"
+                usciteAnticipate += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], desc, "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
 
-                    usciteAnticipate += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], desc,
-                                                                              "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
-
-    result = ""
-    if assenze != "":
-        result += assenze
-    if ritardi != "":
-        result += ritardi
-    if ritardiBrevi != "":
-        result += ritardiBrevi
-    if usciteAnticipate != "":
-        result += usciteAnticipate
+    result = assenze + ritardi + ritardiBrevi + usciteAnticipate
     return result if result != "" else None
 
 
@@ -477,7 +416,6 @@ def parseNewAgenda(oldData, newData):
                 separator = "\n"
             else:
                 separator = "\n\n\n"
-            result += separator + "{0} {1}/{2}/{3} • <b>{4}</b>\n{5}".format(evtType, date[2], date[1], date[0],
-                                                                             event['authorName'].title(), event['notes'])
+            result += separator + "{0} {1}/{2}/{3} • <b>{4}</b>\n{5}".format(evtType, date[2], date[1], date[0], event['authorName'].title(), event['notes'])
 
     return result if result != "" else None
