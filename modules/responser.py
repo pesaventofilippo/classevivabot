@@ -1,4 +1,4 @@
-def parseDidattica(data):
+﻿def parseDidattica(data):
     if (data is None) or (not data.get('didacticts')):
         return "\n\n📌 Nessun file caricato."
 
@@ -225,12 +225,12 @@ def parseAgenda(data):
     result = ""
     firstEvent = True
     eventslist = data['agenda']
-    eventslist.sort(key=lambda x: str(event['evtDatetimeBegin']).split("T", 1)[0])
+    eventslist.sort(key=lambda x: str(x['evtDatetimeBegin']).split("T", 1)[0])
     for event in eventslist:
         date = str(event['evtDatetimeBegin']).split("T", 1)[0]
         date = date.split("-", 2)
         today = datetime.now().day
-        evtDay = int(evtDate.split("-", 2)[2])
+        evtDay = int(date[2])
 
         if evtDay != today:
             evtType = "📌" if event['evtCode'] == "AGNT" else "📝"
