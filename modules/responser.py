@@ -247,7 +247,9 @@ def parseAgenda(data):
 
     result = ""
     firstEvent = True
-    for event in data['agenda']:
+    eventslist = data['agenda']
+    eventslist.sort(key=lambda x: str(event['evtDatetimeBegin']).split("T", 1)[0])
+    for event in eventslist:
         date = str(event['evtDatetimeBegin']).split("T", 1)[0]
         date = date.split("-", 2)
         today = datetime.now().day
