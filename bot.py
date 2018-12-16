@@ -57,28 +57,37 @@ def userLogout(api_type=api):
 
 @db_session
 def fetchAndStore(user, api_type):
-    stored = ParsedData.get(chatId=user.chatId)
-    stored.didattica = resp.parseDidattica(api_type.didattica())
-    stored.info = resp.parseInfo(api_type.info())
-    stored.prof = resp.parseMaterie(api_type.materie())
-    stored.note = resp.parseNote(api_type.note())
-    stored.voti = resp.parseVoti(api_type.voti())
-    stored.assenze = resp.parseAssenze(api_type.assenze())
-    agenda = api_type.agenda(14)
-    stored.agenda = resp.parseAgenda(agenda)
-    stored.domani = resp.parseDomani(agenda)
-    stored.lezioni = resp.parseLezioni(api_type.lezioni())
+    newDidattica = api_type.didattica()
+    newInfo = api_type.info()
+    newProf = api_type.materie()
+    newNote = api_type.note()
+    newVoti = api_type.voti()
+    newAssenze = api_type.assenze()
+    newAgenda = api_type.agenda(14)
+    newLezioni = api_type.lezioni()
     userLogout(api_type)
+
+    stored = ParsedData.get(chatId=user.chatId)
+    stored.didattica = resp.parseDidattica(newDidattica)
+    stored.info = resp.parseInfo(newInfo)
+    stored.prof = resp.parseMaterie(newProf)
+    stored.note = resp.parseNote(newNote)
+    stored.voti = resp.parseVoti(newVoti)
+    stored.assenze = resp.parseAssenze(newAssenze)
+    stored.agenda = resp.parseAgenda(newAgenda)
+    stored.domani = resp.parseDomani(newAgenda)
+    stored.lezioni = resp.parseLezioni(newLezioni)
+
+    return newNote, newVoti, newAssenze, newAgenda
 
 
 @db_session
-def updateUserdata(user):
+def updateUserdata(user, newNote, newVoti, newAssenze, newAgenda):
     userdata = Data.get(chatId=user.chatId)
-    stored = ParsedData.get(chatId=user.chatId)
-    userdata.note = stored.note
-    userdata.voti = stored.voti
-    userdata.assenze = stored.assenze
-    userdata.agenda = stored.agenda
+    userdata.note = newNote
+    userdata.voti = newVoti
+    userdata.assenze = newAssenze
+    userdata.agenda = newAgenda
 
 
 @db_session
@@ -88,17 +97,16 @@ def runUpdates():
 
         if userLogin(currentUser, supportApi):
             userdata = Data.get(chatId=currentUser.chatId)
-            stored = ParsedData.get(chatId=currentUser.chatId)
             settings = Settings.get(chatId=currentUser.chatId)
-            fetchAndStore(currentUser, supportApi)
+            newNote, newVoti, newAssenze, newAgenda = fetchAndStore(currentUser, supportApi)
 
             if settings.wantsNotifications is True:
                 if (settings.doNotDisturb is False) or (datetime.now().hour in range(7, 21)):
-                    dataNote = resp.parseNewNote(userdata.note, stored.note)
-                    dataVoti = resp.parseNewVoti(userdata.voti, stored.voti)
-                    dataAssenze = resp.parseNewAssenze(userdata.assenze, stored.assenze)
-                    dataAgenda = resp.parseNewAgenda(userdata.agenda, stored.agenda)
-                    updateUserdata(currentUser)
+                    dataNote = resp.parseNewNote(userdata.note, newNote)
+                    dataVoti = resp.parseNewVoti(userdata.voti, newVoti)
+                    dataAssenze = resp.parseNewAssenze(userdata.assenze, newAssenze)
+                    dataAgenda = resp.parseNewAgenda(userdata.agenda, newAgenda)
+                    updateUserdata(currentUser, newNote, newVoti, newAssenze, newAgenda)
 
                     try:
                         header = "🔔 <b>Hai nuove notifiche!</b>\n\n"
@@ -282,12 +290,12 @@ def reply(msg):
         elif text == "/aggiorna":
             sent = bot.sendMessage(chatId, "🔍 Cerco aggiornamenti...")
             if userLogin(user):
-                fetchAndStore(user, api)
-                dataNote = resp.parseNewNote(userdata.note, stored.note)
-                dataVoti = resp.parseNewVoti(userdata.voti, stored.voti)
-                dataAssenze = resp.parseNewAssenze(userdata.assenze, stored.assenze)
-                dataAgenda = resp.parseNewAgenda(userdata.agenda, stored.agenda)
-                updateUserdata(user)
+                newNote, newVoti, newAssenze, newAgenda = fetchAndStore(user, api)
+                dataNote = resp.parseNewNote(userdata.note, newNote)
+                dataVoti = resp.parseNewVoti(userdata.voti, newVoti)
+                dataAssenze = resp.parseNewAssenze(userdata.assenze, newAssenze)
+                dataAgenda = resp.parseNewAgenda(userdata.agenda, newAgenda)
+                updateUserdata(user, newNote, newVoti, newAssenze, newAgenda)
                 bot.deleteMessage((chatId, sent['message_id']))
                 header = "🔔 <b>Hai nuove notifiche!</b>\n\n"
 
@@ -353,7 +361,7 @@ def button_press(msg):
                                                   "- Stato attuale: {0}\n\n"
                                                   "Vuoi che silenzi le notifiche nella fascia oraria notturna (21:00 - 7:00)?"
                                                   "".format("😴 Attivo" if settings.doNotDisturb else "🔔 Suona"),
-                                                    parse_mode="HTML", reply_markup=keyboards.donotdisturb(message_id))
+                                                    parse_mode="HTML", reply_markup=keyboards.settings_donotdisturb(message_id))
 
     elif button == "settings_dailynotif":
         bot.editMessageText((chatId, message_id), "<b>Preferenze notifiche giornaliere</b>\n"
@@ -415,15 +423,23 @@ def button_press(msg):
                                                   "".format("🔔 Attiva" if settings.wantsDailyUpdates else "🔕 Disattiva", settings.dailyUpdatesHour),
                                                     parse_mode="HTML", reply_markup=keyboards.settings_dailynotif(message_id))
 
-    elif button == "settings_daily_plus":
+    elif (button == "settings_daily_plus") or (button == "settings_daily_minus"):
         hoursplit = settings.dailyUpdatesHour.split(":")
         h = hoursplit[0]
         m = hoursplit[1]
-        if m == "00":
-            m = "30"
-        elif m == "30":
-            m = "00"
-            h = "0" if h == "23" else str(int(h)+1)
+        if "plus" in button:
+            if m == "00":
+                m = "30"
+            elif m == "30":
+                m = "00"
+                h = "0" if h == "23" else str(int(h) + 1)
+        else:
+            if m == "00":
+                m = "30"
+                h = "23" if h == "0" else str(int(h) - 1)
+            elif m == "30":
+                m = "00"
+
         settings.dailyUpdatesHour = "{0}:{1}".format(h, m)
         bot.editMessageText((chatId, message_id), "<b>Preferenze notifiche giornaliere</b>\n"
                                                   "- Stato attuale: {0}\n"
@@ -431,36 +447,11 @@ def button_press(msg):
                                                   "Vuoi che ti dica ogni giorno i compiti per il giorno successivo e le lezioni svolte?"
                                                   "".format("🔔 Attiva" if settings.wantsDailyUpdates else "🔕 Disattiva", settings.dailyUpdatesHour),
                                                     parse_mode="HTML", reply_markup=keyboards.settings_dailynotif(message_id))
-
-    elif button == "settings_daily_minus":
-        hoursplit = settings.dailyUpdatesHour.split(":")
-        h = hoursplit[0]
-        m = hoursplit[1]
-        if m == "00":
-            m = "30"
-            h = "23" if h == "0" else str(int(h)-1)
-        elif m == "30":
-            m = "00"
-        settings.dailyUpdatesHour = "{0}:{1}".format(h, m)
-        bot.editMessageText((chatId, message_id), "<b>Preferenze notifiche giornaliere</b>\n"
-                                                  "- Stato attuale: {0}\n"
-                                                  "- Orario notifiche: {1}\n\n"
-                                                  "Vuoi che ti dica ogni giorno i compiti per il giorno successivo e le lezioni svolte?"
-                                                  "".format("🔔 Attiva" if settings.wantsDailyUpdates else "🔕 Disattiva", settings.dailyUpdatesHour),
-                                                    parse_mode="HTML", reply_markup=keyboards.settings_dailynotif(message_id))
-
 
     elif userLogin(user):
 
-        if button == "lezioni_prima":
-            selectedDay = int(query_split[2]) - 1
-            dateformat = (datetime.now() + timedelta(days=selectedDay)).strftime("%d/%m/%Y")
-            data = resp.parseLezioni(api.lezioni(selectedDay))
-            bot.editMessageText((chatId, message_id), "📚 <b>Lezioni del {0}</b>:\n\n{1}".format(dateformat, data),
-                                parse_mode="HTML", reply_markup=keyboards.lezioni(message_id, selectedDay))
-
-        elif button == "lezioni_dopo":
-            selectedDay = int(query_split[2]) + 1
+        if (button == "lezioni_prima") or (button == "lezioni_dopo"):
+            selectedDay = int(query_split[2]) - 1 if "prima" in button else int(query_split[2]) + 1
             dateformat = (datetime.now() + timedelta(days=selectedDay)).strftime("%d/%m/%Y")
             data = resp.parseLezioni(api.lezioni(selectedDay))
             bot.editMessageText((chatId, message_id), "📚 <b>Lezioni del {0}</b>:\n\n{1}".format(dateformat, data),

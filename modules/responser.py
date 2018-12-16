@@ -24,8 +24,8 @@ def parseDidattica(data):
             result += string if firstFolder else "\n" + string
             firstFolder = False
 
-            for file in folder['contents']:
-                fileName = "Senza nome" if file['contentName'] == "" else file['contentName']
+            for upfile in folder['contents']:
+                fileName = "Senza nome" if upfile['contentName'] == "" else upfile['contentName']
                 result += "\n        📝 {0}".format(fileName)
 
     return result
