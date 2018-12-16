@@ -1,8 +1,7 @@
 ﻿def innerParseNotes(event):
     evtauthor = event['authorName'].title()
     evttime = event['evtDate'].lower().split("-", 2)
-    evttext = event['readStatus'] if event[
-        'readStatus'] else "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione \"annotazioni\" per leggere questa nota."
+    evttext = event['evtText'] if event['readStatus'] else "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione \"annotazioni\" per leggere questa nota."
     return evtauthor, evttime, evttext
 
 
