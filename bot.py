@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from pony.orm import db_session, select
 from modules.session import ClasseVivaAPI, AuthenticationFailedError
 import modules.responser as resp
+import modules.keyboards as keyboards
 from modules.crypter import crypt, decrypt
 from modules.database import User, Data, ParsedData, Settings
 
