@@ -1,5 +1,4 @@
 ﻿import telepot
-from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton
 from telepot.exception import TelegramError, BotWasBlockedError
 from time import sleep
 from datetime import datetime, timedelta
@@ -222,10 +221,7 @@ def reply(msg):
                                 "Non preoccuparti, per adesso non è un problema e questo bot continuerà ad essere gratuito, ma se proprio ti senti generoso e "
                                 "hai voglia di farmi un regalo, sei il benvenuto :)\n"
                                 "PS. Sto pensando di aggiungere delle feature a pagamento in futuro. Se donerai adesso, quando le aggiungerò sarai il primo ad averle!\n\n"
-                                "<i>Grazie di cuore.</i> ❤️", parse_mode="HTML",
-                        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
-                            InlineKeyboardButton(text="🔷 PayPal", url="https://paypal.me/pesaventofilippo")
-                        ]]))
+                                "<i>Grazie di cuore.</i> ❤️", parse_mode="HTML", reply_markup=keyboards.payments())
 
     elif isUserLogged(user):
         if text == "/start":
@@ -276,27 +272,15 @@ def reply(msg):
         elif text == "/lezioni":
             sent = bot.sendMessage(chatId, "📚 <b>Lezioni di oggi</b>:\n\n"
                                            "{0}".format(stored.lezioni), parse_mode="HTML", reply_markup=None)
-            keyboard = InlineKeyboardMarkup(inline_keyboard=[[
-                InlineKeyboardButton(text="⬅️ Prima", callback_data="lezioni_prima#{0}#0".format(sent['message_id'])),
-                InlineKeyboardButton(text="Dopo ➡️", callback_data="lezioni_dopo#{0}#0".format(sent['message_id']))
-            ]])
-            bot.editMessageReplyMarkup((chatId, sent['message_id']), keyboard)
+            bot.editMessageReplyMarkup((chatId, sent['message_id']), keyboards.lezioni(sent['message_id']))
 
         elif text == "/settings":
             sent = bot.sendMessage(chatId, "🛠 <b>Impostazioni</b>\n"
                                            "Ecco le impostazioni del bot. Cosa vuoi modificare?", parse_mode="HTML", reply_markup=None)
-            keyboard = InlineKeyboardMarkup(inline_keyboard=[[
-                InlineKeyboardButton(text="🔔 Ricevi notifiche", callback_data="settings_notifications#{0}".format(sent['message_id']))
-            ], [
-                InlineKeyboardButton(text="😴 Mod. Non Disturbare", callback_data="settings_donotdisturb#{0}".format(sent['message_id']))
-            ], [
-                InlineKeyboardButton(text="🕑 Notifiche giornaliere", callback_data="settings_dailynotif#{0}".format(sent['message_id']))
-            ]])
-            bot.editMessageReplyMarkup((chatId, sent['message_id']), keyboard)
+            bot.editMessageReplyMarkup((chatId, sent['message_id']), keyboards.settings_menu(sent['message_id']))
 
         elif text == "/aggiorna":
             sent = bot.sendMessage(chatId, "🔍 Cerco aggiornamenti...")
-
             if userLogin(user):
                 fetchAndStore(user, api)
                 dataNote = resp.parseNewNote(userdata.note, stored.note)
@@ -349,162 +333,87 @@ def button_press(msg):
     query_split = query_data.split("#")
     message_id = int(query_split[1])
     button = query_split[0]
-
     settings = Settings.get(chatId=chatId)
 
     if button == "settings_main":
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[[
-            InlineKeyboardButton(text="🔔 Ricevi notifiche", callback_data="settings_notifications#{0}".format(message_id))
-        ], [
-            InlineKeyboardButton(text="😴 Mod. Non Disturbare", callback_data="settings_donotdisturb#{0}".format(message_id))
-        ], [
-            InlineKeyboardButton(text="🕑 Notifiche giornaliere", callback_data="settings_dailynotif#{0}".format(message_id))
-        ]])
         bot.editMessageText((chatId, message_id), "🛠 <b>Impostazioni</b>\n"
                                                     "Ecco le impostazioni del bot. Cosa vuoi modificare?",
-                                                     parse_mode="HTML", reply_markup=keyboard)
+                                                     parse_mode="HTML", reply_markup=keyboards.settings_menu(message_id))
 
     elif button == "settings_notifications":
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[[
-            InlineKeyboardButton(text="🔔 Attiva", callback_data="settings_notif_yes#{0}".format(message_id)),
-            InlineKeyboardButton(text="🔕 Disattiva", callback_data="settings_notif_no#{0}".format(message_id))
-        ], [
-            InlineKeyboardButton(text="◀️ Torna al menù", callback_data="settings_main#{0}".format(message_id))
-        ]])
         bot.editMessageText((chatId, message_id), "<b>Preferenze notifiche</b>\n"
                                                   "- Stato attuale: {0}\n\n"
                                                   "Vuoi che ti mandi notifiche se trovo novità?\n"
                                                   "<b>Nota</b>: Se non vuoi riceverle di notte, puoi impostarlo a parte."
                                                   "".format("🔔 Attivo" if settings.wantsNotifications else "🔕 Disattivo"),
-                                                    parse_mode="HTML", reply_markup=keyboard)
+                                                    parse_mode="HTML", reply_markup=keyboards.settings_notifications(message_id))
 
     elif button == "settings_donotdisturb":
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[[
-            InlineKeyboardButton(text="😴 Attiva", callback_data="settings_night_yes#{0}".format(message_id)),
-            InlineKeyboardButton(text="🔔 Suona", callback_data="settings_night_no#{0}".format(message_id))
-        ], [
-            InlineKeyboardButton(text="◀️ Torna al menù", callback_data="settings_main#{0}".format(message_id))
-        ]])
         bot.editMessageText((chatId, message_id), "<b>Preferenze modalità notturna</b>\n"
                                                   "- Stato attuale: {0}\n\n"
                                                   "Vuoi che silenzi le notifiche nella fascia oraria notturna (21:00 - 7:00)?"
                                                   "".format("😴 Attivo" if settings.doNotDisturb else "🔔 Suona"),
-                                                    parse_mode="HTML", reply_markup=keyboard)
+                                                    parse_mode="HTML", reply_markup=keyboards.donotdisturb(message_id))
 
     elif button == "settings_dailynotif":
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[[
-            InlineKeyboardButton(text="🔔 Attiva", callback_data="settings_daily_yes#{0}".format(message_id)),
-            InlineKeyboardButton(text="🔕 Disattiva", callback_data="settings_daily_no#{0}".format(message_id))
-        ], [
-            InlineKeyboardButton(text="🕙 -30 min.", callback_data="settings_daily_minus#{0}".format(message_id)),
-            InlineKeyboardButton(text="🕙 +30 min.", callback_data="settings_daily_plus#{0}".format(message_id))
-        ], [
-            InlineKeyboardButton(text="◀️ Torna al menù", callback_data="settings_main#{0}".format(message_id))
-        ]])
         bot.editMessageText((chatId, message_id), "<b>Preferenze notifiche giornaliere</b>\n"
                                                   "- Stato attuale: {0}\n"
                                                   "- Orario notifiche: {1}\n\n"
                                                   "Vuoi che ti dica ogni giorno i compiti per il giorno successivo e le lezioni svolte?"
-                                                  "".format("🔔 Attiva" if settings.wantsDailyUpdates else "🔕 Disattiva",
-                                                            settings.dailyUpdatesHour),
-                            parse_mode="HTML", reply_markup=keyboard)
-
+                                                  "".format("🔔 Attiva" if settings.wantsDailyUpdates else "🔕 Disattiva", settings.dailyUpdatesHour),
+                                                    parse_mode="HTML", reply_markup=keyboards.settings_dailynotif(message_id))
 
     elif button == "settings_notif_yes":
         settings.wantsNotifications = True
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[[
-            InlineKeyboardButton(text="🔔 Attiva", callback_data="settings_notif_yes#{0}".format(message_id)),
-            InlineKeyboardButton(text="🔕 Disattiva", callback_data="settings_notif_no#{0}".format(message_id))
-        ], [
-            InlineKeyboardButton(text="◀️ Torna al menù", callback_data="settings_main#{0}".format(message_id))
-        ]])
         bot.editMessageText((chatId, message_id), "<b>Preferenze notifiche</b>\n"
                                                   "- Stato attuale: {0}\n\n"
                                                   "Vuoi che ti mandi notifiche se trovo novità?\n"
                                                   "<b>Nota</b>: Se non vuoi riceverle di notte, puoi impostarlo a parte."
                                                   "".format("🔔 Attivo" if settings.wantsNotifications else "🔕 Disattivo"),
-                                                    parse_mode="HTML", reply_markup=keyboard)
+                                                    parse_mode="HTML", reply_markup=keyboards.settings_notifications(message_id))
 
     elif button == "settings_notif_no":
         settings.wantsNotifications = False
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[[
-            InlineKeyboardButton(text="🔔 Attiva", callback_data="settings_notif_yes#{0}".format(message_id)),
-            InlineKeyboardButton(text="🔕 Disattiva", callback_data="settings_notif_no#{0}".format(message_id))
-        ], [
-            InlineKeyboardButton(text="◀️ Torna al menù", callback_data="settings_main#{0}".format(message_id))
-        ]])
         bot.editMessageText((chatId, message_id), "<b>Preferenze notifiche</b>\n"
                                                   "- Stato attuale: {0}\n\n"
                                                   "Vuoi che ti mandi notifiche se trovo novità?\n"
                                                   "<b>Nota</b>: Se non vuoi riceverle di notte, puoi impostarlo a parte."
                                                   "".format("🔔 Attivo" if settings.wantsNotifications else "🔕 Disattivo"),
-                                                    parse_mode="HTML", reply_markup=keyboard)
+                                                    parse_mode="HTML", reply_markup=keyboards.settings_notifications(message_id))
 
     elif button == "settings_night_yes":
         settings.doNotDisturb = True
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[[
-            InlineKeyboardButton(text="😴 Attiva", callback_data="settings_night_yes#{0}".format(message_id)),
-            InlineKeyboardButton(text="🔔 Suona", callback_data="settings_night_no#{0}".format(message_id))
-        ], [
-            InlineKeyboardButton(text="◀️ Torna al menù", callback_data="settings_main#{0}".format(message_id))
-        ]])
         bot.editMessageText((chatId, message_id), "<b>Preferenze modalità notturna</b>\n"
                                                   "- Stato attuale: {0}\n\n"
                                                   "Vuoi che silenzi le notifiche nella fascia oraria notturna (21:00 - 7:00)?"
                                                   "".format("😴 Attivo" if settings.doNotDisturb else "🔔 Suona"),
-                                                    parse_mode="HTML", reply_markup=keyboard)
+                                                    parse_mode="HTML", reply_markup=keyboards.settings_donotdisturb(message_id))
 
     elif button == "settings_night_no":
         settings.doNotDisturb = False
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[[
-            InlineKeyboardButton(text="😴 Attiva", callback_data="settings_night_yes#{0}".format(message_id)),
-            InlineKeyboardButton(text="🔔 Suona", callback_data="settings_night_no#{0}".format(message_id))
-        ], [
-            InlineKeyboardButton(text="◀️ Torna al menù", callback_data="settings_main#{0}".format(message_id))
-        ]])
         bot.editMessageText((chatId, message_id), "<b>Preferenze modalità notturna</b>\n"
                                                   "- Stato attuale: {0}\n\n"
                                                   "Vuoi che silenzi le notifiche nella fascia oraria notturna (21:00 - 7:00)?"
                                                   "".format("😴 Attivo" if settings.doNotDisturb else "🔔 Suona"),
-                                                    parse_mode="HTML", reply_markup=keyboard)
+                                                    parse_mode="HTML", reply_markup=keyboards.settings_donotdisturb(message_id))
 
     elif button == "settings_daily_yes":
         settings.wantsDailyUpdates = True
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[[
-            InlineKeyboardButton(text="🔔 Attiva", callback_data="settings_daily_yes#{0}".format(message_id)),
-            InlineKeyboardButton(text="🔕 Disattiva", callback_data="settings_daily_no#{0}".format(message_id))
-        ], [
-            InlineKeyboardButton(text="🕙 -30 min.", callback_data="settings_daily_minus#{0}".format(message_id)),
-            InlineKeyboardButton(text="🕙 +30 min.", callback_data="settings_daily_plus#{0}".format(message_id))
-        ], [
-            InlineKeyboardButton(text="◀️ Torna al menù", callback_data="settings_main#{0}".format(message_id))
-        ]])
         bot.editMessageText((chatId, message_id), "<b>Preferenze notifiche giornaliere</b>\n"
                                                   "- Stato attuale: {0}\n"
                                                   "- Orario notifiche: {1}\n\n"
                                                   "Vuoi che ti dica ogni giorno i compiti per il giorno successivo e le lezioni svolte?"
-                                                  "".format("🔔 Attiva" if settings.wantsDailyUpdates else "🔕 Disattiva",
-                                                            settings.dailyUpdatesHour),
-                            parse_mode="HTML", reply_markup=keyboard)
+                                                  "".format("🔔 Attiva" if settings.wantsDailyUpdates else "🔕 Disattiva", settings.dailyUpdatesHour),
+                                                    parse_mode="HTML", reply_markup=keyboards.settings_dailynotif(message_id))
 
     elif button == "settings_daily_no":
         settings.wantsDailyUpdates = False
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[[
-            InlineKeyboardButton(text="🔔 Attiva", callback_data="settings_daily_yes#{0}".format(message_id)),
-            InlineKeyboardButton(text="🔕 Disattiva", callback_data="settings_daily_no#{0}".format(message_id))
-        ], [
-            InlineKeyboardButton(text="🕙 -30 min.", callback_data="settings_daily_minus#{0}".format(message_id)),
-            InlineKeyboardButton(text="🕙 +30 min.", callback_data="settings_daily_plus#{0}".format(message_id))
-        ], [
-            InlineKeyboardButton(text="◀️ Torna al menù", callback_data="settings_main#{0}".format(message_id))
-        ]])
         bot.editMessageText((chatId, message_id), "<b>Preferenze notifiche giornaliere</b>\n"
                                                   "- Stato attuale: {0}\n"
                                                   "- Orario notifiche: {1}\n\n"
                                                   "Vuoi che ti dica ogni giorno i compiti per il giorno successivo e le lezioni svolte?"
-                                                  "".format("🔔 Attiva" if settings.wantsDailyUpdates else "🔕 Disattiva",
-                                                            settings.dailyUpdatesHour),
-                            parse_mode="HTML", reply_markup=keyboard)
+                                                  "".format("🔔 Attiva" if settings.wantsDailyUpdates else "🔕 Disattiva", settings.dailyUpdatesHour),
+                                                    parse_mode="HTML", reply_markup=keyboards.settings_dailynotif(message_id))
 
     elif button == "settings_daily_plus":
         hoursplit = settings.dailyUpdatesHour.split(":")
@@ -516,23 +425,12 @@ def button_press(msg):
             m = "00"
             h = "0" if h == "23" else str(int(h)+1)
         settings.dailyUpdatesHour = "{0}:{1}".format(h, m)
-
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[[
-            InlineKeyboardButton(text="🔔 Attiva", callback_data="settings_daily_yes#{0}".format(message_id)),
-            InlineKeyboardButton(text="🔕 Disattiva", callback_data="settings_daily_no#{0}".format(message_id))
-        ], [
-            InlineKeyboardButton(text="🕙 -30 min.", callback_data="settings_daily_minus#{0}".format(message_id)),
-            InlineKeyboardButton(text="🕙 +30 min.", callback_data="settings_daily_plus#{0}".format(message_id))
-        ], [
-            InlineKeyboardButton(text="◀️ Torna al menù", callback_data="settings_main#{0}".format(message_id))
-        ]])
         bot.editMessageText((chatId, message_id), "<b>Preferenze notifiche giornaliere</b>\n"
                                                   "- Stato attuale: {0}\n"
                                                   "- Orario notifiche: {1}\n\n"
                                                   "Vuoi che ti dica ogni giorno i compiti per il giorno successivo e le lezioni svolte?"
-                                                  "".format("🔔 Attiva" if settings.wantsDailyUpdates else "🔕 Disattiva",
-                                                            settings.dailyUpdatesHour),
-                            parse_mode="HTML", reply_markup=keyboard)
+                                                  "".format("🔔 Attiva" if settings.wantsDailyUpdates else "🔕 Disattiva", settings.dailyUpdatesHour),
+                                                    parse_mode="HTML", reply_markup=keyboards.settings_dailynotif(message_id))
 
     elif button == "settings_daily_minus":
         hoursplit = settings.dailyUpdatesHour.split(":")
@@ -544,23 +442,12 @@ def button_press(msg):
         elif m == "30":
             m = "00"
         settings.dailyUpdatesHour = "{0}:{1}".format(h, m)
-
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[[
-            InlineKeyboardButton(text="🔔 Attiva", callback_data="settings_daily_yes#{0}".format(message_id)),
-            InlineKeyboardButton(text="🔕 Disattiva", callback_data="settings_daily_no#{0}".format(message_id))
-        ], [
-            InlineKeyboardButton(text="🕙 -30 min.", callback_data="settings_daily_minus#{0}".format(message_id)),
-            InlineKeyboardButton(text="🕙 +30 min.", callback_data="settings_daily_plus#{0}".format(message_id))
-        ], [
-            InlineKeyboardButton(text="◀️ Torna al menù", callback_data="settings_main#{0}".format(message_id))
-        ]])
         bot.editMessageText((chatId, message_id), "<b>Preferenze notifiche giornaliere</b>\n"
                                                   "- Stato attuale: {0}\n"
                                                   "- Orario notifiche: {1}\n\n"
                                                   "Vuoi che ti dica ogni giorno i compiti per il giorno successivo e le lezioni svolte?"
-                                                  "".format("🔔 Attiva" if settings.wantsDailyUpdates else "🔕 Disattiva",
-                                                            settings.dailyUpdatesHour),
-                            parse_mode="HTML", reply_markup=keyboard)
+                                                  "".format("🔔 Attiva" if settings.wantsDailyUpdates else "🔕 Disattiva", settings.dailyUpdatesHour),
+                                                    parse_mode="HTML", reply_markup=keyboards.settings_dailynotif(message_id))
 
 
     elif userLogin(user):
@@ -569,23 +456,15 @@ def button_press(msg):
             selectedDay = int(query_split[2]) - 1
             dateformat = (datetime.now() + timedelta(days=selectedDay)).strftime("%d/%m/%Y")
             data = resp.parseLezioni(api.lezioni(selectedDay))
-            keyboard = InlineKeyboardMarkup(inline_keyboard=[[
-                InlineKeyboardButton(text="⬅️ Prima", callback_data="lezioni_prima#{0}#{1}".format(message_id, selectedDay)),
-                InlineKeyboardButton(text="Dopo ➡️", callback_data="lezioni_dopo#{0}#{1}".format(message_id, selectedDay))
-            ]])
-            bot.editMessageText((chatId, message_id), "📚 <b>Lezioni del {0}</b>:\n\n"
-                                                      "{1}".format(dateformat, data), parse_mode="HTML", reply_markup=keyboard)
+            bot.editMessageText((chatId, message_id), "📚 <b>Lezioni del {0}</b>:\n\n{1}".format(dateformat, data),
+                                parse_mode="HTML", reply_markup=keyboards.lezioni(message_id, selectedDay))
 
         elif button == "lezioni_dopo":
             selectedDay = int(query_split[2]) + 1
             dateformat = (datetime.now() + timedelta(days=selectedDay)).strftime("%d/%m/%Y")
             data = resp.parseLezioni(api.lezioni(selectedDay))
-            keyboard = InlineKeyboardMarkup(inline_keyboard=[[
-                InlineKeyboardButton(text="⬅️ Prima", callback_data="lezioni_prima#{0}#{1}".format(message_id, selectedDay)),
-                InlineKeyboardButton(text="Dopo ➡️", callback_data="lezioni_dopo#{0}#{1}".format(message_id, selectedDay))
-            ]])
-            bot.editMessageText((chatId, message_id), "📚 <b>Lezioni del {0}</b>:\n\n"
-                                                      "{1}".format(dateformat, data), parse_mode="HTML", reply_markup=keyboard)
+            bot.editMessageText((chatId, message_id), "📚 <b>Lezioni del {0}</b>:\n\n{1}".format(dateformat, data),
+                                parse_mode="HTML", reply_markup=keyboards.lezioni(message_id, selectedDay))
 
         userLogout()
 

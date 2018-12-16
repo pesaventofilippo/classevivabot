@@ -1,0 +1,54 @@
+from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton
+
+
+def payments():
+    return InlineKeyboardMarkup(inline_keyboard=[[
+                InlineKeyboardButton(text="🔷 PayPal", url="https://paypal.me/pesaventofilippo")
+            ]])
+
+
+def lezioni(msgid, day=0):
+    return InlineKeyboardMarkup(inline_keyboard=[[
+                InlineKeyboardButton(text="⬅️ Prima", callback_data="lezioni_prima#{0}#{1}".format(msgid, day)),
+                InlineKeyboardButton(text="Dopo ➡️", callback_data="lezioni_dopo#{0}#{1}".format(msgid, day))
+            ]])
+
+
+def settings_menu(msgid):
+    return InlineKeyboardMarkup(inline_keyboard=[[
+                InlineKeyboardButton(text="🔔 Ricevi notifiche", callback_data="settings_notifications#{0}".format(msgid))
+            ], [
+                InlineKeyboardButton(text="😴 Mod. Non Disturbare", callback_data="settings_donotdisturb#{0}".format(msgid))
+            ], [
+                InlineKeyboardButton(text="🕑 Notifiche giornaliere", callback_data="settings_dailynotif#{0}".format(msgid))
+            ]])
+
+
+def settings_notifications(msgid):
+    return InlineKeyboardMarkup(inline_keyboard=[[
+                InlineKeyboardButton(text="🔔 Attiva", callback_data="settings_notif_yes#{0}".format(msgid)),
+                InlineKeyboardButton(text="🔕 Disattiva", callback_data="settings_notif_no#{0}".format(msgid))
+            ], [
+                InlineKeyboardButton(text="◀️ Torna al menù", callback_data="settings_main#{0}".format(msgid))
+            ]])
+
+
+def settings_donotdisturb(msgid):
+    return InlineKeyboardMarkup(inline_keyboard=[[
+                InlineKeyboardButton(text="😴 Attiva", callback_data="settings_night_yes#{0}".format(msgid)),
+                InlineKeyboardButton(text="🔔 Suona", callback_data="settings_night_no#{0}".format(msgid))
+            ], [
+                InlineKeyboardButton(text="◀️ Torna al menù", callback_data="settings_main#{0}".format(msgid))
+            ]])
+
+
+def settings_dailynotif(msgid):
+    return InlineKeyboardMarkup(inline_keyboard=[[
+                InlineKeyboardButton(text="🔔 Attiva", callback_data="settings_daily_yes#{0}".format(msgid)),
+                InlineKeyboardButton(text="🔕 Disattiva", callback_data="settings_daily_no#{0}".format(msgid))
+            ], [
+                InlineKeyboardButton(text="🕙 -30 min.", callback_data="settings_daily_minus#{0}".format(msgid)),
+                InlineKeyboardButton(text="🕙 +30 min.", callback_data="settings_daily_plus#{0}".format(msgid))
+            ], [
+                InlineKeyboardButton(text="◀️ Torna al menù", callback_data="settings_main#{0}".format(msgid))
+            ]])
