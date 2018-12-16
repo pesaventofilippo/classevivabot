@@ -195,8 +195,8 @@ def reply(msg):
                 bot.sendMessage(chatId, "Fatto 😊\n"
                                         "Premi /help per vedere la lista dei comandi disponibili.")
                 sent = bot.sendMessage(chatId, "🔍 Aggiorno il profilo...")
-                fetchAndStore(user, api)
-                updateUserdata(user)
+                newAgenda, newAssenze, newVoti, newNote = fetchAndStore(user, api)
+                updateUserdata(user, newAgenda, newAssenze, newVoti, newNote)
                 bot.editMessageText((chatId, sent['message_id']), "✅ Profilo aggiornato!")
 
 
