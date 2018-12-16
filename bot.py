@@ -40,12 +40,9 @@ def clearUserData(user):
 
 
 @db_session
-def userLogin(user, use_support=False):
+def userLogin(user, api_type=api):
     try:
-        if use_support:
-            supportApi.login(user.username, decrypt(user.password))
-        else:
-            api.login(user.username, decrypt(user.password))
+        api_type.login(user.username, decrypt(user.password))
         return True
     except AuthenticationFailedError:
         clearUserData(user)
@@ -57,11 +54,8 @@ def userLogin(user, use_support=False):
         return False
 
 
-def userLogout(use_support=False):
-    if use_support:
-        supportApi.logout()
-    else:
-        api.logout()
+def userLogout(api_type=api):
+    api_type.logout()
 
 
 @db_session
@@ -69,7 +63,7 @@ def runUpdates():
     pendingUsers = select(user for user in User if user.password != "")[:]
     for currentUser in pendingUsers:
 
-        if userLogin(currentUser, use_support=True):
+        if userLogin(currentUser, supportApi):
             userdata = Data.get(chatId=currentUser.chatId)
             stored = ParsedData.get(chatId=currentUser.chatId)
             settings = Settings.get(chatId=currentUser.chatId)
@@ -83,7 +77,7 @@ def runUpdates():
             newAgenda = supportApi.agenda(14)
             newLezioni = supportApi.lezioni()
 
-            userLogout(use_support=True)
+            userLogout(supportApi)
 
             stored.didattica = resp.parseDidattica(newDidattica)
             stored.info = resp.parseInfo(newInfo)
@@ -247,8 +241,21 @@ def reply(msg):
                   "/info - Visualizza le tue info utente\n\n" \
                   "/prof - Visualizza la lista delle materie e dei prof\n\n" \
                   "/settings - Modifica le impostazioni personali del bot\n\n" \
+                  "/dona - Supporta il bot e il mio lavoro, se ti senti generoso :)\n\n" \
                   "<b>Notifiche</b>: ogni mezz'ora, se vuoi, ti invierò un messagio se ti sono arrivati nuovi voti, note, compiti o assenze."
         bot.sendMessage(chatId, message, parse_mode="HTML")
+
+    elif text == "/dona":
+        bot.sendMessage(chatId, "<b>Grazie per aver pensato di supportarmi!</b>\n"
+                                "Ho dedicato ore di lavoro a questo bot, ma ho deciso di renderlo open-source e completamente gratuito.\n"
+                                "Tuttavia, il numero di utenti che usano questo bot continua a crescere, e crescono anche i costi di gestione del server. "
+                                "Non preoccuparti, per adesso non è un problema e questo bot continuerà ad essere gratuito, ma se proprio ti senti generoso e "
+                                "hai voglia di farmi un regalo, sei il benvenuto :)\n"
+                                "PS. Sto pensando di aggiungere delle feature a pagamento in futuro. Se donerai adesso, quando le aggiungerò sarai il primo ad averle!\n\n"
+                                "<i>Grazie di cuore.</i> ❤️", parse_mode="HTML",
+                        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
+                            InlineKeyboardButton(text="🔷 PayPal", url="https://paypal.me/pesaventofilippo")
+                        ]]))
 
     elif isUserLogged(user):
 
