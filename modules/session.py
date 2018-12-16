@@ -14,7 +14,6 @@ class AuthenticationFailedError(Exception):
 class ClasseVivaAPI:
     rest_api_url = "https://web.spaggiari.eu/rest/v1"
 
-
     def __init__(self):
         self.id = None
         self.username = None
@@ -25,14 +24,12 @@ class ClasseVivaAPI:
     def login(self, username: str=None, password: str=None):
         r = requests.post(
             url=self.rest_api_url + "/auth/login/",
-            headers={
-                "User-Agent": "zorro/1.0",
-                "Z-Dev-Apikey": "+zorro+",
-                "Content-Type": "application/json",
+            headers={"User-Agent": "zorro/1.0",
+                     "Z-Dev-Apikey": "+zorro+",
+                     "Content-Type": "application/json"
             },
-            data=json.dumps({
-                "uid": username if username else self.username,
-                "pass": password if username else self.password,
+            data=json.dumps({"uid": username if username else self.username,
+                             "pass": password if username else self.password
             })
         )
         result = r.json()
@@ -42,10 +39,7 @@ class ClasseVivaAPI:
 
         self.token = result['token']
         self.id = re.sub(r"\D", "", result['ident'])
-
-        return {
-            "id": self.id
-        }
+        return {"id": self.id}
 
 
     def logout(self):
@@ -55,51 +49,34 @@ class ClasseVivaAPI:
 
     def _request(self, *path):
         url = "{0}/students/{1}".format(self.rest_api_url, self.id)
-
         for x in path:
             url += "/{0}".format(quote_plus(x))
 
-        r = requests.get(
-            url=url,
-            headers={
-                "User-Agent": "zorro/1.0",
-                "Z-Dev-Apikey": "+zorro+",
-                "Z-Auth-Token": self.token,
-                "Content-Type": "application/json",
-            })
-
+        r = requests.get(url=url, headers={"User-Agent": "zorro/1.0", "Z-Dev-Apikey": "+zorro+",
+                                           "Z-Auth-Token": self.token, "Content-Type": "application/json"})
         try:
-            r = r.json()
-            if r.get('error'):
-                if 'auth token expired' in r['error']:
+            rj = r.json()
+            if rj.get('error'):
+                if 'auth token expired' in rj['error']:
                     self.login()
-
-            r = requests.get(
-                url=url,
-                headers={
-                    "User-Agent": "zorro/1.0",
-                    "Z-Dev-Apikey": "+zorro+",
-                    "Z-Auth-Token": self.token,
-                    "Content-Type": "application/json",
-                })
-
-            try:
-                return r.json()
-            except JSONDecodeError:
-                return r.text
+                    r = requests.get(url=url, headers={"User-Agent": "zorro/1.0", "Z-Dev-Apikey": "+zorro+",
+                                                       "Z-Auth-Token": self.token, "Content-Type": "application/json"})
+                    try:
+                        rj = r.json()
+                    except JSONDecodeError:
+                        return r.text
+            return rj
 
         except JSONDecodeError:
             return r.text
 
 
     def assenze(self):
-        return self._request('absences', 'details', str(datetime.now().year) + "0910",
-                                                    datetime.today().strftime("%Y%m%d"))
+        return self._request('absences', 'details', str(datetime.now().year)+"0910", datetime.today().strftime("%Y%m%d"))
 
 
     def agenda(self, days):
-        return self._request('agenda', 'all', datetime.today().strftime("%Y%m%d"),
-                             (datetime.now() + timedelta(days=days)).strftime("%Y%m%d"))
+        return self._request('agenda', 'all', datetime.today().strftime("%Y%m%d"), (datetime.now() + timedelta(days=days)).strftime("%Y%m%d"))
 
 
     def didattica(self):
