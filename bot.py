@@ -27,10 +27,7 @@ supportApi = ClasseVivaAPI()
 
 @db_session
 def isUserLogged(user):
-    if (user.username != "") and (user.password != ""):
-        return True
-    else:
-        return False
+    return True if (user.username != "") and (user.password != "") else False
 
 
 @db_session
@@ -60,6 +57,32 @@ def userLogout(api_type=api):
 
 
 @db_session
+def fetchAndStore(user, api_type):
+    stored = ParsedData.get(chatId=user.chatId)
+    stored.didattica = resp.parseDidattica(api_type.didattica())
+    stored.info = resp.parseInfo(api_type.info())
+    stored.prof = resp.parseMaterie(api_type.materie())
+    stored.note = resp.parseNote(api_type.note())
+    stored.voti = resp.parseVoti(api_type.voti())
+    stored.assenze = resp.parseAssenze(api_type.assenze())
+    agenda = api_type.agenda(14)
+    stored.agenda = resp.parseAgenda(agenda)
+    stored.domani = resp.parseDomani(agenda)
+    stored.lezioni = resp.parseLezioni(api_type.lezioni())
+    userLogout(api_type)
+
+
+@db_session
+def updateUserdata(user):
+    userdata = Data.get(chatId=user.chatId)
+    stored = ParsedData.get(chatId=user.chatId)
+    userdata.note = stored.note
+    userdata.voti = stored.voti
+    userdata.assenze = stored.assenze
+    userdata.agenda = stored.agenda
+
+
+@db_session
 def runUpdates():
     pendingUsers = select(user for user in User if user.password != "")[:]
     for currentUser in pendingUsers:
@@ -68,49 +91,18 @@ def runUpdates():
             userdata = Data.get(chatId=currentUser.chatId)
             stored = ParsedData.get(chatId=currentUser.chatId)
             settings = Settings.get(chatId=currentUser.chatId)
-
-            newDidattica = supportApi.didattica()
-            newInfo = supportApi.info()
-            newProf = supportApi.materie()
-            newNote = supportApi.note()
-            newVoti = supportApi.voti()
-            newAssenze = supportApi.assenze()
-            newAgenda = supportApi.agenda(14)
-            newLezioni = supportApi.lezioni()
-
-            userLogout(supportApi)
-
-            stored.didattica = resp.parseDidattica(newDidattica)
-            stored.info = resp.parseInfo(newInfo)
-            stored.prof = resp.parseMaterie(newProf)
-            stored.note = resp.parseNote(newNote)
-            stored.voti = resp.parseVoti(newVoti)
-            stored.assenze = resp.parseAssenze(newAssenze)
-            stored.agenda = resp.parseAgenda(newAgenda)
-            stored.domani = resp.parseDomani(newAgenda)
-            stored.lezioni = resp.parseLezioni(newLezioni)
+            fetchAndStore(currentUser, supportApi)
 
             if settings.wantsNotifications is True:
                 if (settings.doNotDisturb is False) or (datetime.now().hour in range(7, 21)):
-
-                    oldNote = userdata.note
-                    oldVoti = userdata.voti
-                    oldAssenze = userdata.assenze
-                    oldAgenda = userdata.agenda
-
-                    dataNote = resp.parseNewNote(oldNote, newNote)
-                    dataVoti = resp.parseNewVoti(oldVoti, newVoti)
-                    dataAssenze = resp.parseNewAssenze(oldAssenze, newAssenze)
-                    dataAgenda = resp.parseNewAgenda(oldAgenda, newAgenda)
-
-                    userdata.note = newNote
-                    userdata.voti = newVoti
-                    userdata.assenze = newAssenze
-                    userdata.agenda = newAgenda
+                    dataNote = resp.parseNewNote(userdata.note, stored.note)
+                    dataVoti = resp.parseNewVoti(userdata.voti, stored.voti)
+                    dataAssenze = resp.parseNewAssenze(userdata.assenze, stored.assenze)
+                    dataAgenda = resp.parseNewAgenda(userdata.agenda, stored.agenda)
+                    updateUserdata(currentUser)
 
                     try:
                         header = "🔔 <b>Hai nuove notifiche!</b>\n\n"
-
                         if dataNote is not None:
                             bot.sendMessage(currentUser.chatId, header + "❗️<b>Nuove note</b>{0}".format(dataNote), parse_mode="HTML")
                             header = ""
@@ -128,21 +120,20 @@ def runUpdates():
 
                     except BotWasBlockedError:
                         clearUserData(currentUser)
-
                     except TelegramError:
                         pass
 
 
 @db_session
 def runDailyUpdates():
-    hour = datetime.now().hour
-    minute = datetime.now().minute
+    crhour = datetime.now().hour
+    crminute = datetime.now().minute
     pendingUsers = select(user for user in User if user.password != "")[:]
     for currentUser in pendingUsers:
         settings = Settings.get(chatId=currentUser.chatId)
         if settings.wantsDailyUpdates:
             hoursplit = settings.dailyUpdatesHour.split(":")
-            if (int(hoursplit[0]) == hour) and (int(hoursplit[1]) == minute):
+            if (int(hoursplit[0]) == crhour) and (int(hoursplit[1]) == crminute):
                 stored = ParsedData.get(chatId=currentUser.chatId)
                 try:
                     bot.sendMessage(currentUser.chatId, "🕙 <b>Promemoria!</b>\n\n"
@@ -150,10 +141,8 @@ def runDailyUpdates():
                                                         "{0}\n\n\n"
                                                         "📚 <b>Le lezioni di oggi</b>:\n\n"
                                                         "{1}".format(stored.domani, stored.lezioni), parse_mode="HTML")
-
                 except BotWasBlockedError:
                     clearUserData(currentUser)
-
                 except TelegramError:
                     pass
 
@@ -199,28 +188,8 @@ def reply(msg):
                 bot.sendMessage(chatId, "Fatto 😊\n"
                                         "Premi /help per vedere la lista dei comandi disponibili.")
                 sent = bot.sendMessage(chatId, "🔍 Aggiorno il profilo...")
-                newDidattica = api.didattica()
-                newInfo = api.info()
-                newProf = api.materie()
-                newNote = api.note()
-                newVoti = api.voti()
-                newAssenze = api.assenze()
-                newAgenda = api.agenda(14)
-                newLezioni = api.lezioni()
-                userLogout()
-                userdata.note = newNote
-                userdata.voti = newVoti
-                userdata.assenze = newAssenze
-                userdata.agenda = newAgenda
-                stored.didattica = resp.parseDidattica(newDidattica)
-                stored.info = resp.parseInfo(newInfo)
-                stored.prof = resp.parseMaterie(newProf)
-                stored.note = resp.parseNote(newNote)
-                stored.voti = resp.parseVoti(newVoti)
-                stored.assenze = resp.parseAssenze(newAssenze)
-                stored.agenda = resp.parseAgenda(newAgenda)
-                stored.domani = resp.parseDomani(newAgenda)
-                stored.lezioni = resp.parseLezioni(newLezioni)
+                fetchAndStore(user, api)
+                updateUserdata(user)
                 bot.editMessageText((chatId, sent['message_id']), "✅ Profilo aggiornato!")
 
 
@@ -259,7 +228,6 @@ def reply(msg):
                         ]]))
 
     elif isUserLogged(user):
-
         if text == "/start":
             bot.sendMessage(chatId, "Bentornato, <b>{0}</b>!\n"
                                     "Cosa posso fare per te? 😊".format(name), parse_mode="HTML")
@@ -330,75 +298,37 @@ def reply(msg):
             sent = bot.sendMessage(chatId, "🔍 Cerco aggiornamenti...")
 
             if userLogin(user):
-
-                newDidattica = api.didattica()
-                newInfo = api.info()
-                newProf = api.materie()
-                newNote = api.note()
-                newVoti = api.voti()
-                newAssenze = api.assenze()
-                newAgenda = api.agenda(14)
-                newLezioni = api.lezioni()
-
-                userLogout()
-
-                oldNote = userdata.note
-                oldVoti = userdata.voti
-                oldAssenze = userdata.assenze
-                oldAgenda = userdata.agenda
-
-                dataNote = resp.parseNewNote(oldNote, newNote)
-                dataVoti = resp.parseNewVoti(oldVoti, newVoti)
-                dataAssenze = resp.parseNewAssenze(oldAssenze, newAssenze)
-                dataAgenda = resp.parseNewAgenda(oldAgenda, newAgenda)
-
-                userdata.note = newNote
-                userdata.voti = newVoti
-                userdata.assenze = newAssenze
-                userdata.agenda = newAgenda
-
-                stored.didattica = resp.parseDidattica(newDidattica)
-                stored.info = resp.parseInfo(newInfo)
-                stored.prof = resp.parseMaterie(newProf)
-                stored.note = resp.parseNote(newNote)
-                stored.voti = resp.parseVoti(newVoti)
-                stored.assenze = resp.parseAssenze(newAssenze)
-                stored.agenda = resp.parseAgenda(newAgenda)
-                stored.domani = resp.parseDomani(newAgenda)
-                stored.lezioni = resp.parseLezioni(newLezioni)
-
+                fetchAndStore(user, api)
+                dataNote = resp.parseNewNote(userdata.note, stored.note)
+                dataVoti = resp.parseNewVoti(userdata.voti, stored.voti)
+                dataAssenze = resp.parseNewAssenze(userdata.assenze, stored.assenze)
+                dataAgenda = resp.parseNewAgenda(userdata.agenda, stored.agenda)
+                updateUserdata(user)
                 bot.deleteMessage((chatId, sent['message_id']))
                 header = "🔔 <b>Hai nuove notifiche!</b>\n\n"
 
                 if dataNote is not None:
-                    bot.sendMessage(chatId, header + "❗️<b>Nuove note</b>\n\n"
-                                                     "{0}".format(dataNote), parse_mode="HTML")
+                    bot.sendMessage(chatId, header + "❗️<b>Nuove note</b>\n\n{0}".format(dataNote), parse_mode="HTML")
                     header = ""
 
                 if dataVoti is not None:
-                    bot.sendMessage(chatId, header + "📝 <b>Nuovi voti</b>\n\n"
-                                                     "{0}".format(dataVoti), parse_mode="HTML")
+                    bot.sendMessage(chatId, header + "📝 <b>Nuovi voti</b>\n\n{0}".format(dataVoti), parse_mode="HTML")
                     header = ""
 
                 if dataAssenze is not None:
-                    bot.sendMessage(chatId, header + "🏫 <b>Nuove assenze</b>\n\n"
-                                                     "{0}".format(dataAssenze), parse_mode="HTML")
+                    bot.sendMessage(chatId, header + "🏫 <b>Nuove assenze</b>\n\n{0}".format(dataAssenze), parse_mode="HTML")
                     header = ""
 
                 if dataAgenda is not None:
-                    bot.sendMessage(chatId, header + "📆 <b>Nuovi impegni in agenda</b>\n\n"
-                                                     "{0}".format(dataAgenda), parse_mode="HTML")
+                    bot.sendMessage(chatId, header + "📆 <b>Nuovi impegni in agenda</b>\n\n{0}".format(dataAgenda), parse_mode="HTML")
                     header = ""
 
                 if header != "":
                     bot.sendMessage(chatId, "✅ Dati aggiornati!\n"
                                             "✅ Nessuna novità!")
-
-
         else:
             bot.sendMessage(chatId, "Non ho capito...\n"
                                     "Serve aiuto? Premi /help")
-
 
     else:
         if text == "/login":
