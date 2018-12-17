@@ -109,21 +109,21 @@ def runUpdates():
                     updateUserdata(currentUser, newNote, newVoti, newAssenze, newAgenda)
 
                     try:
-                        header = "🔔 <b>Hai nuove notifiche!</b>\n\n"
                         if dataNote is not None:
-                            bot.sendMessage(currentUser.chatId, header + "❗️<b>Nuove note</b>{0}".format(dataNote), parse_mode="HTML")
-                            header = ""
+                            bot.sendMessage(currentUser.chatId, "🔔 <b>Hai nuove note!</b>\n\n"
+                                                                "{0}".format(dataNote), parse_mode="HTML")
 
                         if dataVoti is not None:
-                            bot.sendMessage(currentUser.chatId, header + "📝 <b>Nuovi voti</b>\n{0}".format(dataVoti), parse_mode="HTML")
-                            header = ""
+                            bot.sendMessage(currentUser.chatId, "🔔 <b>Hai nuovi voti!</b>\n\n"
+                                                                "{0}".format(dataVoti), parse_mode="HTML")
 
                         if dataAssenze is not None:
-                            bot.sendMessage(currentUser.chatId, header + "🏫 <b>Nuove assenze</b>{0}".format(dataAssenze), parse_mode="HTML")
-                            header = ""
+                            bot.sendMessage(currentUser.chatId, "🔔 <b>Hai nuove assenze!</b>\n\n"
+                                                                "{0}".format(dataAssenze), parse_mode="HTML")
 
                         if dataAgenda is not None:
-                            bot.sendMessage(currentUser.chatId, header + "📆 <b>Nuovi impegni in agenda</b>\n{0}".format(dataAgenda), parse_mode="HTML")
+                            bot.sendMessage(currentUser.chatId, "🔔 <b>Hai nuovi impegni!</b>\n\n"
+                                                                "\n{0}".format(dataAgenda), parse_mode="HTML")
 
                     except BotWasBlockedError:
                         clearUserData(currentUser)
@@ -297,25 +297,20 @@ def reply(msg):
                 dataAgenda = resp.parseNewAgenda(userdata.agenda, newAgenda)
                 updateUserdata(user, newNote, newVoti, newAssenze, newAgenda)
                 bot.deleteMessage((chatId, sent['message_id']))
-                header = "🔔 <b>Hai nuove notifiche!</b>\n\n"
 
                 if dataNote is not None:
-                    bot.sendMessage(chatId, header + "❗️<b>Nuove note</b>\n\n{0}".format(dataNote), parse_mode="HTML")
-                    header = ""
+                    bot.sendMessage(chatId, "🔔 <b>Hai nuove note!</b>\n\n{0}".format(dataNote), parse_mode="HTML")
 
                 if dataVoti is not None:
-                    bot.sendMessage(chatId, header + "📝 <b>Nuovi voti</b>\n\n{0}".format(dataVoti), parse_mode="HTML")
-                    header = ""
+                    bot.sendMessage(chatId, "🔔 <b>Hai nuovi voti!</b>\n\n{0}".format(dataVoti), parse_mode="HTML")
 
                 if dataAssenze is not None:
-                    bot.sendMessage(chatId, header + "🏫 <b>Nuove assenze</b>\n\n{0}".format(dataAssenze), parse_mode="HTML")
-                    header = ""
+                    bot.sendMessage(chatId, "🔔 <b>Hai nuove assenze!</b>\n\n{0}".format(dataAssenze), parse_mode="HTML")
 
                 if dataAgenda is not None:
-                    bot.sendMessage(chatId, header + "📆 <b>Nuovi impegni in agenda</b>\n\n{0}".format(dataAgenda), parse_mode="HTML")
-                    header = ""
+                    bot.sendMessage(chatId, "🔔 <b>Hai nuovi impegni!</b>\n\n\n{0}".format(dataAgenda), parse_mode="HTML")
 
-                if header != "":
+                if (dataNote is None) and (dataVoti is None) and (dataAssenze is None) and (dataAgenda is None):
                     bot.sendMessage(chatId, "✅ Dati aggiornati!\n"
                                             "✅ Nessuna novità!")
         else:
