@@ -8,6 +8,7 @@ class User(db.Entity):
     username = Optional(str)
     password = Optional(str)
     status = Required(str, default="normal")
+    isPremium = Required(bool, default=False)
 
 
 class Data(db.Entity):

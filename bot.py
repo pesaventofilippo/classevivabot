@@ -92,7 +92,12 @@ def updateUserdata(user, newNote, newVoti, newAssenze, newAgenda):
 
 @db_session
 def runUpdates():
-    pendingUsers = select(user for user in User if user.password != "")[:]
+    crminute = datetime.now().minute
+    if not crminute % 5:
+        pendingUsers = select(user for user in User if user.isPremium)[:]
+    else:
+        pendingUsers = select(user for user in User if user.password != "")[:]
+
     for currentUser in pendingUsers:
 
         if userLogin(currentUser, supportApi):
@@ -107,24 +112,19 @@ def runUpdates():
                     dataAssenze = resp.parseNewAssenze(userdata.assenze, newAssenze)
                     dataAgenda = resp.parseNewAgenda(userdata.agenda, newAgenda)
                     updateUserdata(currentUser, newNote, newVoti, newAssenze, newAgenda)
-
                     try:
                         if dataNote is not None:
                             bot.sendMessage(currentUser.chatId, "🔔 <b>Hai nuove note!</b>\n\n"
                                                                 "{0}".format(dataNote), parse_mode="HTML")
-
                         if dataVoti is not None:
                             bot.sendMessage(currentUser.chatId, "🔔 <b>Hai nuovi voti!</b>\n\n"
                                                                 "{0}".format(dataVoti), parse_mode="HTML")
-
                         if dataAssenze is not None:
                             bot.sendMessage(currentUser.chatId, "🔔 <b>Hai nuove assenze!</b>\n\n"
                                                                 "{0}".format(dataAssenze), parse_mode="HTML")
-
                         if dataAgenda is not None:
                             bot.sendMessage(currentUser.chatId, "🔔 <b>Hai nuovi impegni!</b>\n\n"
                                                                 "\n{0}".format(dataAgenda), parse_mode="HTML")
-
                     except BotWasBlockedError:
                         clearUserData(currentUser)
                     except TelegramError:
@@ -463,4 +463,5 @@ while True:
     minute = datetime.now().minute
     if not minute % 30:
         runDailyUpdates()
+    if not minute % 5:
         runUpdates()
