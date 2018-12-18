@@ -114,17 +114,17 @@ def runUpdates():
                     updateUserdata(currentUser, newNote, newVoti, newAssenze, newAgenda)
                     try:
                         if dataNote is not None:
-                            bot.sendMessage(currentUser.chatId, "🔔 <b>Hai nuove note!</b>\n\n"
+                            bot.sendMessage(currentUser.chatId, "🔔 <b>Hai nuove note!</b>"
                                                                 "{0}".format(dataNote), parse_mode="HTML")
                         if dataVoti is not None:
-                            bot.sendMessage(currentUser.chatId, "🔔 <b>Hai nuovi voti!</b>\n\n"
+                            bot.sendMessage(currentUser.chatId, "🔔 <b>Hai nuovi voti!</b>"
                                                                 "{0}".format(dataVoti), parse_mode="HTML")
                         if dataAssenze is not None:
-                            bot.sendMessage(currentUser.chatId, "🔔 <b>Hai nuove assenze!</b>\n\n"
+                            bot.sendMessage(currentUser.chatId, "🔔 <b>Hai nuove assenze!</b>"
                                                                 "{0}".format(dataAssenze), parse_mode="HTML")
                         if dataAgenda is not None:
-                            bot.sendMessage(currentUser.chatId, "🔔 <b>Hai nuovi impegni!</b>\n\n"
-                                                                "\n{0}".format(dataAgenda), parse_mode="HTML")
+                            bot.sendMessage(currentUser.chatId, "🔔 <b>Hai nuovi impegni!</b>\n"
+                                                                "{0}".format(dataAgenda), parse_mode="HTML")
                     except BotWasBlockedError:
                         clearUserData(currentUser)
                     except TelegramError:
@@ -299,16 +299,16 @@ def reply(msg):
                 bot.deleteMessage((chatId, sent['message_id']))
 
                 if dataNote is not None:
-                    bot.sendMessage(chatId, "🔔 <b>Hai nuove note!</b>\n\n{0}".format(dataNote), parse_mode="HTML")
+                    bot.sendMessage(chatId, "🔔 <b>Hai nuove note!</b>{0}".format(dataNote), parse_mode="HTML")
 
                 if dataVoti is not None:
-                    bot.sendMessage(chatId, "🔔 <b>Hai nuovi voti!</b>\n\n{0}".format(dataVoti), parse_mode="HTML")
+                    bot.sendMessage(chatId, "🔔 <b>Hai nuovi voti!</b>{0}".format(dataVoti), parse_mode="HTML")
 
                 if dataAssenze is not None:
-                    bot.sendMessage(chatId, "🔔 <b>Hai nuove assenze!</b>\n\n{0}".format(dataAssenze), parse_mode="HTML")
+                    bot.sendMessage(chatId, "🔔 <b>Hai nuove assenze!</b>{0}".format(dataAssenze), parse_mode="HTML")
 
                 if dataAgenda is not None:
-                    bot.sendMessage(chatId, "🔔 <b>Hai nuovi impegni!</b>\n\n\n{0}".format(dataAgenda), parse_mode="HTML")
+                    bot.sendMessage(chatId, "🔔 <b>Hai nuovi impegni!</b>\n{0}".format(dataAgenda), parse_mode="HTML")
 
                 if (dataNote is None) and (dataVoti is None) and (dataAssenze is None) and (dataAgenda is None):
                     bot.sendMessage(chatId, "✅ Dati aggiornati!\n"
