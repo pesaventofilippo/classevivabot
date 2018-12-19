@@ -93,10 +93,10 @@ def updateUserdata(user, newNote, newVoti, newAssenze, newAgenda):
 @db_session
 def runUpdates():
     crminute = datetime.now().minute
-    if not crminute % 5:
-        pendingUsers = select(user for user in User if user.isPremium)[:]
-    else:
+    if not crminute % 30:
         pendingUsers = select(user for user in User if user.password != "")[:]
+    else:
+        pendingUsers = select(user for user in User if user.isPremium)[:]
 
     for currentUser in pendingUsers:
 
