@@ -14,7 +14,7 @@ try:
     token = f.readline().strip()
     f.close()
 except FileNotFoundError:
-    token = input("File 'token.txt' not found. Please insert the bot Token: ")
+    token = input("Please paste the bot Token here: ")
     f = open('token.txt', 'w')
     f.write(token)
     f.close()
@@ -78,12 +78,13 @@ def fetchAndStore(user, api_type):
     stored.domani = resp.parseDomani(newAgenda)
     stored.lezioni = resp.parseLezioni(newLezioni)
 
-    return newNote, newVoti, newAssenze, newAgenda
+    return newDidattica, newNote, newVoti, newAssenze, newAgenda
 
 
 @db_session
-def updateUserdata(user, newNote, newVoti, newAssenze, newAgenda):
+def updateUserdata(user, newDidattica, newNote, newVoti, newAssenze, newAgenda):
     userdata = Data.get(chatId=user.chatId)
+    userdata.didattica = newDidattica
     userdata.note = newNote
     userdata.voti = newVoti
     userdata.assenze = newAssenze
@@ -91,8 +92,8 @@ def updateUserdata(user, newNote, newVoti, newAssenze, newAgenda):
 
 
 @db_session
-def runUpdates():
-    crminute = datetime.now().minute
+def runUpdates(crminute):
+    crhour = datetime.now().hour
     if not crminute % 30:
         pendingUsers = select(user for user in User if user.password != "")[:]
     else:
@@ -103,16 +104,20 @@ def runUpdates():
         if userLogin(currentUser, supportApi):
             userdata = Data.get(chatId=currentUser.chatId)
             settings = Settings.get(chatId=currentUser.chatId)
-            newNote, newVoti, newAssenze, newAgenda = fetchAndStore(currentUser, supportApi)
+            newDidattica, newNote, newVoti, newAssenze, newAgenda = fetchAndStore(currentUser, supportApi)
 
             if settings.wantsNotifications is True:
-                if (settings.doNotDisturb is False) or (datetime.now().hour in range(7, 21)):
+                if (settings.doNotDisturb is False) or (crhour in range(7, 21)):
+                    dataDidattica = resp.parseNewDidattica(userdata.didattica, newDidattica)
                     dataNote = resp.parseNewNote(userdata.note, newNote)
                     dataVoti = resp.parseNewVoti(userdata.voti, newVoti)
                     dataAssenze = resp.parseNewAssenze(userdata.assenze, newAssenze)
                     dataAgenda = resp.parseNewAgenda(userdata.agenda, newAgenda)
-                    updateUserdata(currentUser, newNote, newVoti, newAssenze, newAgenda)
+                    updateUserdata(currentUser, newDidattica, newNote, newVoti, newAssenze, newAgenda)
                     try:
+                        if dataDidattica is not None:
+                            bot.sendMessage(currentUser.chatId, "🔔 <b>Nuovi file caricati!</b>"
+                                                                "{0}".format(dataDidattica), parse_mode="HTML")
                         if dataNote is not None:
                             bot.sendMessage(currentUser.chatId, "🔔 <b>Hai nuove note!</b>"
                                                                 "{0}".format(dataNote), parse_mode="HTML")
@@ -132,9 +137,8 @@ def runUpdates():
 
 
 @db_session
-def runDailyUpdates():
+def runDailyUpdates(crminute):
     crhour = datetime.now().hour
-    crminute = datetime.now().minute
     pendingUsers = select(user for user in User if user.password != "")[:]
     for currentUser in pendingUsers:
         settings = Settings.get(chatId=currentUser.chatId)
@@ -195,8 +199,8 @@ def reply(msg):
                 bot.sendMessage(chatId, "Fatto 😊\n"
                                         "Premi /help per vedere la lista dei comandi disponibili.")
                 sent = bot.sendMessage(chatId, "🔍 Aggiorno il profilo...")
-                newAgenda, newAssenze, newVoti, newNote = fetchAndStore(user, api)
-                updateUserdata(user, newAgenda, newAssenze, newVoti, newNote)
+                newDidattica, newAgenda, newAssenze, newVoti, newNote = fetchAndStore(user, api)
+                updateUserdata(user, newDidattica, newAgenda, newAssenze, newVoti, newNote)
                 bot.editMessageText((chatId, sent['message_id']), "✅ Profilo aggiornato!")
 
 
@@ -290,13 +294,17 @@ def reply(msg):
         elif text == "/aggiorna":
             sent = bot.sendMessage(chatId, "🔍 Cerco aggiornamenti...")
             if userLogin(user):
-                newNote, newVoti, newAssenze, newAgenda = fetchAndStore(user, api)
+                newDidattica, newNote, newVoti, newAssenze, newAgenda = fetchAndStore(user, api)
+                dataDidattica = resp.parseNewDidattica(userdata.didattica, newDidattica)
                 dataNote = resp.parseNewNote(userdata.note, newNote)
                 dataVoti = resp.parseNewVoti(userdata.voti, newVoti)
                 dataAssenze = resp.parseNewAssenze(userdata.assenze, newAssenze)
                 dataAgenda = resp.parseNewAgenda(userdata.agenda, newAgenda)
-                updateUserdata(user, newNote, newVoti, newAssenze, newAgenda)
+                updateUserdata(user, newDidattica, newNote, newVoti, newAssenze, newAgenda)
                 bot.deleteMessage((chatId, sent['message_id']))
+
+                if dataDidattica is not None:
+                    bot.sendMessage(chatId, "🔔 <b>Nuovi file caricati!</b>{0}".format(dataDidattica), parse_mode="HTML")
 
                 if dataNote is not None:
                     bot.sendMessage(chatId, "🔔 <b>Hai nuove note!</b>{0}".format(dataNote), parse_mode="HTML")
@@ -310,7 +318,7 @@ def reply(msg):
                 if dataAgenda is not None:
                     bot.sendMessage(chatId, "🔔 <b>Hai nuovi impegni!</b>\n{0}".format(dataAgenda), parse_mode="HTML")
 
-                if (dataNote is None) and (dataVoti is None) and (dataAssenze is None) and (dataAgenda is None):
+                if not any([dataDidattica, dataNote, dataVoti, dataAssenze, dataAgenda]):
                     bot.sendMessage(chatId, "✅ Dati aggiornati!\n"
                                             "✅ Nessuna novità!")
         else:
@@ -333,10 +341,10 @@ def reply(msg):
 def button_press(msg):
     chatId, query_data = telepot.glance(msg, flavor="callback_query")[1:3]
     user = User.get(chatId=chatId)
+    settings = Settings.get(chatId=chatId)
     query_split = query_data.split("#")
     message_id = int(query_split[1])
     button = query_split[0]
-    settings = Settings.get(chatId=chatId)
 
     if button == "settings_main":
         bot.editMessageText((chatId, message_id), "🛠 <b>Impostazioni</b>\n"
@@ -462,6 +470,6 @@ while True:
     sleep(60)
     minute = datetime.now().minute
     if not minute % 30:
-        runDailyUpdates()
+        runDailyUpdates(minute)
     if not minute % 5:
-        runUpdates()
+        runUpdates(minute)

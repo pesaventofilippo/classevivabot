@@ -252,6 +252,68 @@ def parseLezioni(data):
     return result
 
 
+def parseNewDidattica(oldData, newData):
+    if (newData is None) or (not newData.get('didacticts')):
+        return None
+
+    result = ""
+    firstProf = True
+    for prof in newData['didacticts']:
+        oldProfs = oldData['didacticts']
+        oldProfIds = [i['teacherId'] for i in oldProfs]
+        if prof['teacherId'] not in oldProfIds:
+            string = "\n\n👤 <b>{0}</b>".format(prof['teacherName'])
+            result += string if firstProf else "\n" + string
+            firstProf = False
+
+            firstFolder = True
+            for folder in prof['folders']:
+                folderName = "Altro" if folder['folderName'] == "Uncategorized" else folder['folderName']
+                string = "\n    📂 <b>{0}</b>".format(folderName)
+                result += string if firstFolder else "\n" + string
+                firstFolder = False
+
+                for upfile in folder['contents']:
+                    fileName = "Senza nome" if upfile['contentName'] == "" else upfile['contentName']
+                    result += "\n        📝 {0}".format(fileName)
+
+        else:
+            firstFolder = True
+            for folder in prof['folders']:
+                oldProfFolders = [i['folders'] for i in oldProfs if i['teacherId'] == prof['teacherId']][0]
+                oldProfFolderIds = [i['folderId'] for i in oldProfFolders]
+                if folder['folderId'] not in oldProfFolderIds:
+                    if firstFolder:
+                        string = "\n\n👤 <b>{0}</b>".format(prof['teacherName'])
+                        result += string if firstProf else "\n" + string
+                        firstProf = False
+                    folderName = "Altro" if folder['folderName'] == "Uncategorized" else folder['folderName']
+                    string = "\n    📂 <b>{0}</b>".format(folderName)
+                    result += string if firstFolder else "\n" + string
+                    firstFolder = False
+
+                    for upfile in folder['contents']:
+                        fileName = "Senza nome" if upfile['contentName'] == "" else upfile['contentName']
+                        result += "\n        📝 {0}".format(fileName)
+
+                else:
+                    firstFile = True
+                    for upfile in folder['contents']:
+                        oldFolderFiles = [i['contents'] for i in oldProfFolders if i['folderId'] == folder['folderId']][0]
+                        oldFolderFileIds = [i['contentId'] for i in oldFolderFiles]
+                        if upfile['contentId'] not in oldFolderFileIds:
+                            if firstFile:
+                                folderName = "Altro" if folder['folderName'] == "Uncategorized" else folder['folderName']
+                                string = "\n    📂 <b>{0}</b>".format(folderName)
+                                result += string if firstFolder else "\n" + string
+                                firstFolder = False
+                            fileName = "Senza nome" if upfile['contentName'] == "" else upfile['contentName']
+                            result += "\n        📝 {0}".format(fileName)
+                            firstFile = False
+
+    return result if result != "" else None
+
+
 def parseNewNote(oldData, newData):
     if (newData is None) or (not newData.get('NTCL') and not newData.get('NTWN') and not newData.get('NTTE')):
         return None
