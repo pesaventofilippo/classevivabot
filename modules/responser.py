@@ -255,6 +255,8 @@ def parseLezioni(data):
 def parseNewDidattica(oldData, newData):
     if (newData is None) or (not newData.get('didacticts')):
         return None
+    if oldData is None:
+        return parseDidattica(newData)
 
     result = ""
     firstProf = True
@@ -317,6 +319,8 @@ def parseNewDidattica(oldData, newData):
 def parseNewNote(oldData, newData):
     if (newData is None) or (not newData.get('NTCL') and not newData.get('NTWN') and not newData.get('NTTE')):
         return None
+    if oldData is None:
+        return parseNote(newData)
 
     result = ""
     for nota in newData['NTCL']:
@@ -340,6 +344,8 @@ def parseNewNote(oldData, newData):
 def parseNewVoti(oldData, newData):
     if (newData is None) or (not newData.get('grades')):
         return None
+    if oldData is None:
+        return parseVoti(newData)
 
     votiOrdinati = {}
     for voto in newData['grades']:
@@ -372,6 +378,8 @@ def parseNewVoti(oldData, newData):
 def parseNewAssenze(oldData, newData):
     if (newData is None) or (not newData.get('events')):
         return None
+    if oldData is None:
+        return parseAssenze(newData)
 
     assenze = ""
     ritardi = ""
@@ -408,6 +416,8 @@ def parseNewAssenze(oldData, newData):
 def parseNewAgenda(oldData, newData):
     if (newData is None) or (not newData.get('agenda')):
         return None
+    if oldData is None:
+        return parseAgenda(newData)
 
     result = ""
     firstEvent = True
