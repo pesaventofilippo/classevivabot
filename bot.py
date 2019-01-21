@@ -26,7 +26,7 @@ supportApi = ClasseVivaAPI()
 
 @db_session
 def isUserLogged(user):
-    return True if (user.username != "") and (user.password != "") else False
+    return True if ((user.username != "") and (user.password != "")) else False
 
 
 @db_session
@@ -94,7 +94,7 @@ def updateUserdata(user, newDidattica, newNote, newVoti, newAssenze, newAgenda):
 @db_session
 def runUpdates(crminute):
     crhour = datetime.now().hour
-    if not crminute % 30:
+    if crminute % 30 == 0:
         pendingUsers = select(user for user in User if user.password != "")[:]
     else:
         pendingUsers = select(user for user in User if user.isPremium)[:]
@@ -212,6 +212,7 @@ def reply(msg):
                   "/logout - Disconnettiti\n\n" \
                   "/aggiorna - Aggiorna manualmente tutti i dati, per controllare se ci sono nuovi avvisi.\n" \
                                "Oppure, puoi lasciarlo fare a me, ogni mezz'ora :)\n\n" \
+                  "/promemoria - Vedi un promemoria con i compiti da fare per domani e le lezioni svolte oggi.\n\n" \
                   "/agenda - Visualizza agenda (compiti e verifiche)\n\n" \
                   "/domani - Vedi i compiti che hai per domani\n\n" \
                   "/assenze - Visualizza assenze, ritardi e uscite anticipate\n\n" \
@@ -222,17 +223,20 @@ def reply(msg):
                   "/info - Visualizza le tue info utente\n\n" \
                   "/prof - Visualizza la lista delle materie e dei prof\n\n" \
                   "/settings - Modifica le impostazioni personali del bot\n\n" \
-                  "/dona - Supporta il bot e il mio lavoro, se ti senti generoso :)\n\n" \
-                  "<b>Notifiche</b>: ogni mezz'ora, se vuoi, ti invierò un messagio se ti sono arrivati nuovi voti, note, compiti o assenze."
+                  "/dona o /premium - Supporta il bot e il mio lavoro, se ti senti generoso :)\n\n" \
+                  "<b>Notifiche</b>: ogni mezz'ora, se vuoi, ti invierò un messaggio se ti sono arrivati nuovi voti, note, compiti, assenze o materiali."
         bot.sendMessage(chatId, message, parse_mode="HTML")
 
-    elif text == "/dona":
+    elif text == "/dona" or text == "/premium":
         bot.sendMessage(chatId, "<b>Grazie per aver pensato di supportarmi!</b>\n"
                                 "Ho dedicato ore di lavoro a questo bot, ma ho deciso di renderlo open-source e completamente gratuito.\n"
                                 "Tuttavia, il numero di utenti che usano questo bot continua a crescere, e crescono anche i costi di gestione del server. "
                                 "Non preoccuparti, per adesso non è un problema e questo bot continuerà ad essere gratuito, ma se proprio ti senti generoso e "
-                                "hai voglia di farmi un regalo, sei il benvenuto :)\n"
-                                "PS. Sto pensando di aggiungere delle feature a pagamento in futuro. Se donerai adesso, quando le aggiungerò sarai il primo ad averle!\n\n"
+                                "hai voglia di farmi un regalo, sei il benvenuto :)\n\n"
+                                "Sto aggiungendo delle feature che saranno abilitate solo agli utenti Premium, tra cui:\n"
+                                "⭐️ Aggiornamenti ogni 5 minuti invece di 30\n"
+                                "⭐️ Altre features in sviluppo...\n\n"
+                                "Se vuoi diventare un utente Premium, ti basta donare una somma minima di 2€.\n"
                                 "<i>Grazie di cuore.</i> ❤️", parse_mode="HTML", reply_markup=keyboards.payments())
 
     elif isUserLogged(user):
@@ -290,6 +294,13 @@ def reply(msg):
             sent = bot.sendMessage(chatId, "🛠 <b>Impostazioni</b>\n"
                                            "Ecco le impostazioni del bot. Cosa vuoi modificare?", parse_mode="HTML", reply_markup=None)
             bot.editMessageReplyMarkup((chatId, sent['message_id']), keyboards.settings_menu(sent['message_id']))
+
+        elif text == "/promemoria":
+            bot.sendMessage(chatId, "🕙 <b>Promemoria!</b>\n\n"
+                                    "📆 <b>Cosa devi fare per domani</b>:\n\n"
+                                    "{0}\n\n\n"
+                                    "📚 <b>Le lezioni di oggi</b>:\n\n"
+                                    "{1}".format(stored.domani, stored.lezioni), parse_mode="HTML")
 
         elif text == "/aggiorna":
             sent = bot.sendMessage(chatId, "🔍 Cerco aggiornamenti...")
@@ -464,12 +475,11 @@ def button_press(msg):
 
 
 bot.message_loop({'chat': reply, 'callback_query': button_press})
-print("Bot started...")
 
 while True:
     sleep(60)
     minute = datetime.now().minute
-    if not minute % 30:
+    if minute % 30 == 0:
         runDailyUpdates(minute)
-    if not minute % 5:
+    if minute % 5 == 0:
         runUpdates(minute)
