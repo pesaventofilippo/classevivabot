@@ -3,6 +3,7 @@ token.txt
 
 # Database
 classevivabot.db
+dbconverter/
 
 # Password Crypting Module
 modules/crypter.py

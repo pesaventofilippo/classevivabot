@@ -52,3 +52,9 @@ def settings_dailynotif(msgid):
             ], [
                 InlineKeyboardButton(text="◀️ Torna al menù", callback_data="settings_main#{0}".format(msgid))
             ]])
+
+
+def logout(msgid):
+    return InlineKeyboardMarkup(inline_keyboard=[[
+        InlineKeyboardButton(text="✖️ Logout", callback_data="logout_yes#{0}".format(msgid))
+    ]])

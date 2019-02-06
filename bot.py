@@ -35,6 +35,30 @@ def clearUserData(user):
     user.password = ""
     user.status = "normal"
 
+    userdata = Data.get(chatId=user.chatId)
+    stored = ParsedData.get(chatId=user.chatId)
+
+    userdata.didattica = {}
+    userdata.info = {}
+    userdata.prof = {}
+    userdata.note = {}
+    userdata.voti = {}
+    userdata.assenze = {}
+    userdata.agenda = {}
+    userdata.domani = {}
+    userdata.lezioni = {}
+
+    stored.didattica = ""
+    stored.info = ""
+    stored.prof = ""
+    stored.note = ""
+    stored.voti = ""
+    stored.assenze = ""
+    stored.agenda = ""
+    stored.domani = ""
+    stored.lezioni = ""
+
+
 
 @db_session
 def userLogin(user, api_type=api):
@@ -249,10 +273,8 @@ def reply(msg):
                                     "Premi /logout per uscire.")
 
         elif text == "/logout":
-            clearUserData(user)
-            bot.sendMessage(chatId, "😯 Fatto, sei stato disconnesso!\n"
-                                    "Premi /login per entrare di nuovo.\n\n"
-                                    "Premi /help se serve aiuto.")
+            bot.sendMessage(chatId, "Tutti i tuoi dati scolastici e le credenziali verranno eliminate dal bot.\n"
+                                    "Sei <b>veramente sicuro</b> di voler uscire?", parse_mode="HTML", reply_markup=keyboards.logout())
 
         elif text == "/didattica":
             bot.sendMessage(chatId, "📚 <b>Files caricati in didadttica</b>:\n\n"
@@ -461,6 +483,12 @@ def button_press(msg):
                                                   "Vuoi che ti dica ogni giorno i compiti per il giorno successivo e le lezioni svolte?"
                                                   "".format("🔔 Attiva" if settings.wantsDailyUpdates else "🔕 Disattiva", settings.dailyUpdatesHour),
                                                     parse_mode="HTML", reply_markup=keyboards.settings_dailynotif(message_id))
+
+    elif button == "logout_yes":
+        clearUserData(user)
+        bot.editMessageText((chatId, message_id), "😯 Fatto, sei stato disconnesso!\n"
+                                                  "Premi /login per entrare di nuovo.\n\n"
+                                                  "Premi /help se serve aiuto.")
 
     elif userLogin(user):
 
