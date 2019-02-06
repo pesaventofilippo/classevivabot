@@ -274,7 +274,7 @@ def reply(msg):
 
         elif text == "/logout":
             bot.sendMessage(chatId, "Tutti i tuoi dati scolastici e le credenziali verranno eliminate dal bot.\n"
-                                    "Sei <b>veramente sicuro</b> di voler uscire?", parse_mode="HTML", reply_markup=keyboards.logout())
+                                    "Sei <b>veramente sicuro</b> di voler uscire?", parse_mode="HTML", reply_markup=keyboards.logout(msg['message_id']))
 
         elif text == "/didattica":
             bot.sendMessage(chatId, "📚 <b>Files caricati in didadttica</b>:\n\n"
