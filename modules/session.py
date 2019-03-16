@@ -11,6 +11,16 @@ class AuthenticationFailedError(Exception):
         self.message = "Invalid username or password"
 
 
+class ApiServerError(Exception):
+    def __init__(self):
+        self.message = "ClasseViva APIs are not available"
+
+
+class InvalidRequestError(Exception):
+    def __init__(self):
+        self.message = "Request made is not valid"
+
+
 class ClasseVivaAPI:
     rest_api_url = "https://web.spaggiari.eu/rest/v1"
 
@@ -65,6 +75,10 @@ class ClasseVivaAPI:
                         rj = r.json()
                     except JSONDecodeError:
                         return r.text
+                elif 'content temporarily unavailable' in rj['error']:
+                    raise ApiServerError
+                elif 'invalid date range' in rj['error']:
+                    raise InvalidRequestError
             return rj
 
         except JSONDecodeError:
@@ -72,7 +86,11 @@ class ClasseVivaAPI:
 
 
     def assenze(self):
-        return self._request('absences', 'details', str(datetime.now().year)+"0910", datetime.today().strftime("%Y%m%d"))
+        try:
+            result = self._request('absences', 'details', str(datetime.now().year)+"0910", datetime.today().strftime("%Y%m%d"))
+        except InvalidRequestError:
+            result = self._request('absences', 'details', str(datetime.now().year - 1)+"0910", datetime.today().strftime("%Y%m%d"))
+        return result
 
 
     def agenda(self, days):

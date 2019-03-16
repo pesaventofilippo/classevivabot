@@ -3,8 +3,9 @@ from telepot.exception import TelegramError, BotWasBlockedError
 from time import sleep
 from datetime import datetime, timedelta
 from pony.orm import db_session, select
-from modules.session import ClasseVivaAPI, AuthenticationFailedError
+from modules.session import ClasseVivaAPI, AuthenticationFailedError, ApiServerError
 import modules.responser as resp
+from modules.helpers import sendLongMessage
 import modules.keyboards as keyboards
 from modules.crypter import crypt, decrypt
 from modules.database import User, Data, ParsedData, Settings
@@ -73,6 +74,13 @@ def userLogin(user, api_type=api):
         except (TelegramError, BotWasBlockedError):
             pass
         return False
+    except ApiServerError:
+        try:
+            bot.sendMessage(user.chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
+                                         "Riprova tra qualche minuto.")
+        except (TelegramError, BotWasBlockedError):
+            pass
+        return False
 
 
 def userLogout(api_type=api):
@@ -128,7 +136,10 @@ def runUpdates(crminute):
         if userLogin(currentUser, supportApi):
             userdata = Data.get(chatId=currentUser.chatId)
             settings = Settings.get(chatId=currentUser.chatId)
-            newDidattica, newNote, newVoti, newAssenze, newAgenda = fetchAndStore(currentUser, supportApi)
+            try:
+                newDidattica, newNote, newVoti, newAssenze, newAgenda = fetchAndStore(currentUser, supportApi)
+            except ApiServerError:
+                break
 
             if settings.wantsNotifications is True:
                 if (settings.doNotDisturb is False) or (crhour in range(7, 21)):
@@ -268,8 +279,12 @@ def reply(msg):
             bdText = text.split(" ", 1)[1]
             pendingUsers = select(user for user in User if user.password != "")[:]
             for user in pendingUsers:
-                bot.sendMessage(user.chatId, bdText, parse_mode="HTML", disable_web_page_preview=True)
+                try:
+                    bot.sendMessage(user.chatId, bdText, parse_mode="HTML", disable_web_page_preview=True)
+                except (TelegramError, BotWasBlockedError):
+                    pass
             bot.sendMessage(chatId, "📢 Messaggio inviato correttamente a {0} utenti!".format(pendingUsers.__len__()))
+
 
     elif isUserLogged(user):
         if text == "/start":
@@ -285,27 +300,27 @@ def reply(msg):
                                     "Sei <b>veramente sicuro</b> di voler uscire?", parse_mode="HTML", reply_markup=keyboards.logout(msg['message_id']))
 
         elif text == "/didattica":
-            bot.sendMessage(chatId, "📚 <b>Files caricati in didadttica</b>:\n\n"
-                                    "{0}".format(stored.didattica), parse_mode="HTML")
+            sendLongMessage(bot, chatId, "📚 <b>Files caricati in didadttica</b>:\n\n"
+                                         "{0}".format(stored.didattica), parse_mode="HTML")
 
         elif text == "/info":
             bot.sendMessage(chatId, "ℹ️ <b>Ecco le tue info</b>:\n\n"
                                     "{0}".format(stored.info), parse_mode="HTML")
 
         elif text == "/prof":
-            bot.sendMessage(chatId, "📚 <b>Lista materie e prof</b>:\n\n"
-                                    "{0}".format(stored.prof), parse_mode="HTML")
+            sendLongMessage(bot, chatId, "📚 <b>Lista materie e prof</b>:\n\n"
+                                         "{0}".format(stored.prof), parse_mode="HTML")
 
         elif text == "/note":
-            bot.sendMessage(chatId, "❗️<b>Le tue note</b>:\n\n"
-                                    "{0}".format(stored.note), parse_mode="HTML")
+            sendLongMessage(bot, chatId, "❗️<b>Le tue note</b>:\n\n"
+                                         "{0}".format(stored.note), parse_mode="HTML")
 
         elif text == "/voti":
-            bot.sendMessage(chatId, "📝 <b>I tuoi voti</b>:\n\n"
-                                    "{0}".format(stored.voti), parse_mode="HTML")
+            sendLongMessage(bot, chatId, "📝 <b>I tuoi voti</b>:\n\n"
+                                         "{0}".format(stored.voti), parse_mode="HTML")
 
         elif text == "/assenze":
-            bot.sendMessage(chatId, "{0}".format(stored.assenze), parse_mode="HTML")
+            sendLongMessage(bot, chatId, "{0}".format(stored.assenze), parse_mode="HTML")
 
         elif text == "/agenda":
             bot.sendMessage(chatId, "📆 <b>Agenda compiti delle prossime 2 settimane</b>:\n\n"
@@ -335,7 +350,12 @@ def reply(msg):
         elif text == "/aggiorna":
             sent = bot.sendMessage(chatId, "🔍 Cerco aggiornamenti...")
             if userLogin(user):
-                newDidattica, newNote, newVoti, newAssenze, newAgenda = fetchAndStore(user, api)
+                try:
+                    newDidattica, newNote, newVoti, newAssenze, newAgenda = fetchAndStore(user, api)
+                except ApiServerError:
+                    bot.sendMessage(chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
+                                            "Riprova tra qualche minuto.")
+                    return
                 dataDidattica = resp.parseNewDidattica(userdata.didattica, newDidattica)
                 dataNote = resp.parseNewNote(userdata.note, newNote)
                 dataVoti = resp.parseNewVoti(userdata.voti, newVoti)
@@ -498,14 +518,21 @@ def button_press(msg):
                                                   "Premi /login per entrare di nuovo.\n\n"
                                                   "Premi /help se serve aiuto.")
 
+    elif button == "logout_no":
+        bot.editMessageText((chatId, message_id), "<i>Logout annullato.</i>", parse_mode="HTML")
+
     elif userLogin(user):
 
         if (button == "lezioni_prima") or (button == "lezioni_dopo"):
             selectedDay = int(query_split[2]) - 1 if "prima" in button else int(query_split[2]) + 1
             dateformat = (datetime.now() + timedelta(days=selectedDay)).strftime("%d/%m/%Y")
-            data = resp.parseLezioni(api.lezioni(selectedDay))
-            bot.editMessageText((chatId, message_id), "📚 <b>Lezioni del {0}</b>:\n\n{1}".format(dateformat, data),
-                                parse_mode="HTML", reply_markup=keyboards.lezioni(message_id, selectedDay))
+            try:
+                data = resp.parseLezioni(api.lezioni(selectedDay))
+                bot.editMessageText((chatId, message_id), "📚 <b>Lezioni del {0}</b>:\n\n{1}".format(dateformat, data),
+                                    parse_mode="HTML", reply_markup=keyboards.lezioni(message_id, selectedDay))
+            except ApiServerError:
+                bot.editMessageText((chatId, message_id), "⚠️ I server di ClasseViva non sono raggiungibili.\n"
+                                                          "Riprova tra qualche minuto.", reply_markup=None)
 
         userLogout()
 

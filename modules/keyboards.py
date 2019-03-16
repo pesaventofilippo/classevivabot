@@ -56,5 +56,6 @@ def settings_dailynotif(msgid):
 
 def logout(msgid):
     return InlineKeyboardMarkup(inline_keyboard=[[
-        InlineKeyboardButton(text="✖️ Logout", callback_data="logout_yes#{0}".format(msgid))
+        InlineKeyboardButton(text="✖️ Logout", callback_data="logout_yes#{0}".format(msgid)),
+        InlineKeyboardButton(text="❌ Annulla", callback_data="logout_no#{0}".format(msgid))
     ]])
