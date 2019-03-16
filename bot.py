@@ -22,6 +22,7 @@ except FileNotFoundError:
 bot = telepot.Bot(token)
 api = ClasseVivaAPI()
 supportApi = ClasseVivaAPI()
+adminIds = [368894926] # Bot Creator
 
 
 @db_session
@@ -57,7 +58,6 @@ def clearUserData(user):
     stored.agenda = ""
     stored.domani = ""
     stored.lezioni = ""
-
 
 
 @db_session
@@ -262,6 +262,14 @@ def reply(msg):
                                 "⭐️ Altre features in sviluppo...\n\n"
                                 "Se vuoi diventare un utente Premium, ti basta donare una somma minima di 2€.\n"
                                 "<i>Grazie di cuore.</i> ❤️", parse_mode="HTML", reply_markup=keyboards.payments())
+
+    elif text.startswith("/broadcast "):
+        if chatId in adminIds:
+            bdText = text.split(" ", 1)[1]
+            pendingUsers = select(user for user in User if user.password != "")[:]
+            for user in pendingUsers:
+                bot.sendMessage(user.chatId, bdText, parse_mode="HTML", disable_web_page_preview=True)
+            bot.sendMessage(chatId, "📢 Messaggio inviato correttamente a {0} utenti!".format(pendingUsers.__len__()))
 
     elif isUserLogged(user):
         if text == "/start":
