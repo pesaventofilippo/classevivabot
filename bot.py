@@ -6,7 +6,7 @@ from pony.orm import db_session, select
 from modules.session import ClasseVivaAPI, AuthenticationFailedError, ApiServerError
 import modules.responser as resp
 from modules.helpers import sendLongMessage
-import modules.keyboards
+import modules.keyboards as keyboards
 from modules.crypter import crypt, decrypt
 from modules.database import User, Data, ParsedData, Settings
 
