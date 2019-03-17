@@ -9,6 +9,7 @@ class User(db.Entity):
     password = Optional(str)
     status = Required(str, default="normal")
     isPremium = Required(bool, default=False)
+    lastPeriod = Required(int, default=1)
 
 
 class Data(db.Entity):

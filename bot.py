@@ -6,7 +6,7 @@ from pony.orm import db_session, select
 from modules.session import ClasseVivaAPI, AuthenticationFailedError, ApiServerError
 import modules.responser as resp
 from modules.helpers import sendLongMessage
-import modules.keyboards as keyboards
+import modules.keyboards
 from modules.crypter import crypt, decrypt
 from modules.database import User, Data, ParsedData, Settings
 
@@ -28,7 +28,7 @@ adminIds = [368894926] # Bot Creator
 
 @db_session
 def isUserLogged(user):
-    return True if ((user.username != "") and (user.password != "")) else False
+    return (user.username != "") and (user.password != "")
 
 
 @db_session
@@ -36,6 +36,7 @@ def clearUserData(user):
     user.username = ""
     user.password = ""
     user.status = "normal"
+    user.lastPeriod = 1
 
     userdata = Data.get(chatId=user.chatId)
     stored = ParsedData.get(chatId=user.chatId)
@@ -63,6 +64,8 @@ def clearUserData(user):
 
 @db_session
 def userLogin(user, api_type=api):
+    if not isUserLogged(user):
+        return
     try:
         api_type.login(user.username, decrypt(user.password))
         return True
@@ -104,7 +107,7 @@ def fetchAndStore(user, api_type):
     stored.info = resp.parseInfo(newInfo)
     stored.prof = resp.parseMaterie(newProf)
     stored.note = resp.parseNote(newNote)
-    stored.voti = resp.parseVoti(newVoti)
+    stored.voti = resp.parseVoti(newVoti, user)
     stored.assenze = resp.parseAssenze(newAssenze)
     stored.agenda = resp.parseAgenda(newAgenda)
     stored.domani = resp.parseDomani(newAgenda)
@@ -150,19 +153,19 @@ def runUpdates(crminute):
                     dataAgenda = resp.parseNewAgenda(userdata.agenda, newAgenda)
                     updateUserdata(currentUser, newDidattica, newNote, newVoti, newAssenze, newAgenda)
                     try:
-                        if dataDidattica is not None:
+                        if dataDidattica:
                             bot.sendMessage(currentUser.chatId, "🔔 <b>Nuovi file caricati!</b>"
                                                                 "{0}".format(dataDidattica), parse_mode="HTML")
-                        if dataNote is not None:
+                        if dataNote:
                             bot.sendMessage(currentUser.chatId, "🔔 <b>Hai nuove note!</b>"
                                                                 "{0}".format(dataNote), parse_mode="HTML")
-                        if dataVoti is not None:
+                        if dataVoti:
                             bot.sendMessage(currentUser.chatId, "🔔 <b>Hai nuovi voti!</b>"
                                                                 "{0}".format(dataVoti), parse_mode="HTML")
-                        if dataAssenze is not None:
+                        if dataAssenze:
                             bot.sendMessage(currentUser.chatId, "🔔 <b>Hai nuove assenze!</b>"
                                                                 "{0}".format(dataAssenze), parse_mode="HTML")
-                        if dataAgenda is not None:
+                        if dataAgenda:
                             bot.sendMessage(currentUser.chatId, "🔔 <b>Hai nuovi impegni!</b>\n"
                                                                 "{0}".format(dataAgenda), parse_mode="HTML")
                     except BotWasBlockedError:
@@ -242,23 +245,23 @@ def reply(msg):
     elif text == "/help":
         message = "Ciao, sono il bot di <b>ClasseViva</b>! 👋🏻\n" \
                   "Posso aiutarti a <b>navigare</b> nel registro e posso mandarti <b>notifiche</b> quando hai nuovi avvisi.\n\n" \
-                  "<b>Lista dei comandi</b>:\n\n" \
-                  "/login - Effettua il login\n\n" \
-                  "/logout - Disconnettiti\n\n" \
-                  "/aggiorna - Aggiorna manualmente tutti i dati, per controllare se ci sono nuovi avvisi.\n" \
-                               "Oppure, puoi lasciarlo fare a me, ogni mezz'ora :)\n\n" \
-                  "/promemoria - Vedi un promemoria con i compiti da fare per domani e le lezioni svolte oggi.\n\n" \
-                  "/agenda - Visualizza agenda (compiti e verifiche)\n\n" \
-                  "/domani - Vedi i compiti che hai per domani\n\n" \
-                  "/assenze - Visualizza assenze, ritardi e uscite anticipate\n\n" \
-                  "/didattica - Visualizza la lista dei file in didattica\n\n" \
-                  "/lezioni - Visualizza la lista delle lezioni\n\n" \
-                  "/voti - Visualizza la lista dei voti\n\n" \
-                  "/note - Visualizza la lista delle note\n\n" \
-                  "/info - Visualizza le tue info utente\n\n" \
-                  "/prof - Visualizza la lista delle materie e dei prof\n\n" \
-                  "/settings - Modifica le impostazioni personali del bot\n\n" \
-                  "/dona o /premium - Supporta il bot e il mio lavoro, se ti senti generoso :)\n\n" \
+                  "<b>Lista dei comandi</b>:\n" \
+                  "- /login - Effettua il login\n" \
+                  "- /logout - Disconnettiti\n" \
+                  "- /aggiorna - Aggiorna manualmente tutti i dati, per controllare se ci sono nuovi avvisi.\n" \
+                               "Oppure, puoi lasciarlo fare a me, ogni mezz'ora :)\n" \
+                  "- /promemoria - Vedi un promemoria con i compiti da fare per domani e le lezioni svolte oggi.\n" \
+                  "- /agenda - Visualizza agenda (compiti e verifiche)\n" \
+                  "- /domani - Vedi i compiti che hai per domani\n" \
+                  "- /assenze - Visualizza assenze, ritardi e uscite anticipate\n" \
+                  "- /didattica - Visualizza la lista dei file in didattica\n" \
+                  "- /lezioni - Visualizza la lista delle lezioni\n" \
+                  "- /voti - Visualizza la lista dei voti\n" \
+                  "- /note - Visualizza la lista delle note\n" \
+                  "- /info - Visualizza le tue info utente\n" \
+                  "- /prof - Visualizza la lista delle materie e dei prof\n" \
+                  "- /settings - Modifica le impostazioni personali del bot\n" \
+                  "- /dona o /premium - Supporta il bot e il mio lavoro, se ti senti generoso :)\n\n" \
                   "<b>Notifiche</b>: ogni mezz'ora, se vuoi, ti invierò un messaggio se ti sono arrivati nuovi voti, note, compiti, assenze o materiali."
         bot.sendMessage(chatId, message, parse_mode="HTML")
 
@@ -285,6 +288,19 @@ def reply(msg):
                     pass
             bot.sendMessage(chatId, "📢 Messaggio inviato correttamente a {0} utenti!".format(pendingUsers.__len__()))
 
+    elif text.startswith("/setpremium "):
+        if chatId in adminIds:
+            selId = int(text.split(" ", 1)[1])
+            selUser = User.get(chatId=selId)
+            selUser.isPremium = True
+            bot.sendMessage(chatId, "Utente <a href=\"tg://user?id={0}\">{0}</a> aggiornato a <b>Premium</b>!".format(selId), parse_mode="HTML")
+
+    elif text.startswith("/delpremium "):
+        if chatId in adminIds:
+            selId = int(text.split(" ", 1)[1])
+            selUser = User.get(chatId=selId)
+            selUser.isPremium = False
+            bot.sendMessage(chatId, "Utente <a href=\"tg://user?id={0}\">{0}</a> rimosso da <b>Premium</b>!".format(selId), parse_mode="HTML")
 
     elif isUserLogged(user):
         if text == "/start":
