@@ -274,7 +274,7 @@ def reply(msg):
                                 "Sto aggiungendo delle feature che saranno abilitate solo agli utenti Premium, tra cui:\n"
                                 "⭐️ Aggiornamenti ogni 5 minuti invece di 30\n"
                                 "⭐️ Altre features in sviluppo...\n\n"
-                                "Se vuoi diventare un utente Premium, ti basta donare una somma minima di 2€.\n"
+                                "Se vuoi diventare un utente Premium, ti basta donare una somma minima di 0.50€/mese.\n"
                                 "<i>Grazie di cuore.</i> ❤️", parse_mode="HTML", reply_markup=keyboards.payments())
 
     elif text.startswith("/broadcast "):
@@ -287,6 +287,12 @@ def reply(msg):
                 except (TelegramError, BotWasBlockedError):
                     pass
             bot.sendMessage(chatId, "📢 Messaggio inviato correttamente a {0} utenti!".format(pendingUsers.__len__()))
+
+    elif text.startswith("/sendmsg "):
+        if chatId in adminIds:
+            selId = int(text.split(" ", 2)[1])
+            selText = str(text.split(" ", 2)[2])
+            bot.sendMessage(selId, selText, parse_mode="HTML")
 
     elif text.startswith("/setpremium "):
         if chatId in adminIds:
