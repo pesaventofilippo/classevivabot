@@ -241,6 +241,16 @@ def reply(msg):
                 updateUserdata(user, newDidattica, newAgenda, newAssenze, newVoti, newNote)
                 bot.editMessageText((chatId, sent['message_id']), "✅ Profilo aggiornato!")
 
+        elif user.status == "calling_support":
+            user.status = "normal"
+            for a in adminIds:
+                bot.sendMessage(a, "🆘 <b>Richiesta di aiuto</b>\n"
+                                   "Da: <a href=\"tg://user?id={0}\">{1}</a>\n"
+                                   "<i>Rispondi al messaggio per parlare con l'utente.</i>".format(chatId, name), parse_mode="HTML")
+                bot.forwardMessage(a, chatId, msg['message_id'])
+            bot.sendMessage(chatId, "<i>Richiesta inviata.</i>\n"
+                                    "Un admin ti risponderà il prima possibile.", parse_mode="HTML")
+
 
     elif text == "/help":
         message = "Ciao, sono il bot di <b>ClasseViva</b>! 👋🏻\n" \
@@ -261,7 +271,8 @@ def reply(msg):
                   "- /info - Visualizza le tue info utente\n" \
                   "- /prof - Visualizza la lista delle materie e dei prof\n" \
                   "- /settings - Modifica le impostazioni personali del bot\n" \
-                  "- /dona o /premium - Supporta il bot e il mio lavoro, se ti senti generoso :)\n\n" \
+                  "- /dona o /premium - Supporta il bot e il mio lavoro, se ti senti generoso :)\n" \
+                  "- /support - Contatta lo staff (emergenze)\n\n" \
                   "<b>Notifiche</b>: ogni mezz'ora, se vuoi, ti invierò un messaggio se ti sono arrivati nuovi voti, note, compiti, assenze o materiali."
         bot.sendMessage(chatId, message, parse_mode="HTML")
 
@@ -308,6 +319,15 @@ def reply(msg):
             selUser.isPremium = False
             bot.sendMessage(chatId, "Utente <a href=\"tg://user?id={0}\">{0}</a> rimosso da <b>Premium</b>!".format(selId), parse_mode="HTML")
 
+    elif "reply_to_message" in msg:
+        if chatId in adminIds:
+            userId = msg['reply_to_message']['forward_from']['id']
+            bot.sendMessage(userId, "💬 <b>Risposta dello staff</b>\n"
+                                    "{0}".format(text), parse_mode="HTML")
+            bot.sendMessage(chatId, "Risposta inviata!")
+        else:
+            bot.sendMessage(chatId, "Premi /support per parlare con lo staff.")
+
     elif isUserLogged(user):
         if text == "/start":
             bot.sendMessage(chatId, "Bentornato, <b>{0}</b>!\n"
@@ -318,8 +338,9 @@ def reply(msg):
                                     "Premi /logout per uscire.")
 
         elif text == "/logout":
-            bot.sendMessage(chatId, "Tutti i tuoi dati scolastici e le credenziali verranno eliminate dal bot.\n"
-                                    "Sei <b>veramente sicuro</b> di voler uscire?", parse_mode="HTML", reply_markup=keyboards.logout(msg['message_id']))
+            sent = bot.sendMessage(chatId, "Tutti i tuoi dati scolastici e le credenziali verranno eliminate dal bot.\n"
+                                           "Sei <b>veramente sicuro</b> di voler uscire?", parse_mode="HTML")
+            bot.editMessageReplyMarkup((chatId, sent['message_id']), keyboards.logout(sent['message_id']))
 
         elif text == "/didattica":
             sendLongMessage(bot, chatId, "📚 <b>Files caricati in didadttica</b>:\n\n"
@@ -404,6 +425,14 @@ def reply(msg):
                 if not any([dataDidattica, dataNote, dataVoti, dataAssenze, dataAgenda]):
                     bot.sendMessage(chatId, "✅ Dati aggiornati!\n"
                                             "✅ Nessuna novità!")
+
+        elif text == "/support":
+            user.status = "calling_support"
+            bot.sendMessage(chatId, "🆘 <b>Richiesta di supporto</b>\n"
+                                    "Se hai qualche problema che non riesci a risolvere, scrivi qui un messaggio, e un admin "
+                                    "ti contatterà entro 24 ore.\n\n"
+                                    "<i>Per annullare, premi</i> /annulla.", parse_mode="HTML")
+
         else:
             bot.sendMessage(chatId, "Non ho capito...\n"
                                     "Serve aiuto? Premi /help")
@@ -538,10 +567,10 @@ def button_press(msg):
         clearUserData(user)
         bot.editMessageText((chatId, message_id), "😯 Fatto, sei stato disconnesso!\n"
                                                   "Premi /login per entrare di nuovo.\n\n"
-                                                  "Premi /help se serve aiuto.")
+                                                  "Premi /help se serve aiuto.", reply_markup=None)
 
     elif button == "logout_no":
-        bot.editMessageText((chatId, message_id), "<i>Logout annullato.</i>", parse_mode="HTML")
+        bot.editMessageText((chatId, message_id), "<i>Logout annullato.</i>", parse_mode="HTML", reply_markup=None)
 
     elif userLogin(user):
 
