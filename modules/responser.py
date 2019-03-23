@@ -348,11 +348,11 @@ def parseNewNote(oldData, newData):
     return result if result != "" else None
 
 
-def parseNewVoti(oldData, newData):
+def parseNewVoti(oldData, newData, user):
     if (newData is None) or (not newData.get('grades')):
         return None
     if oldData is None:
-        return parseVoti(newData)
+        return parseVoti(newData, user)
 
     votiOrdinati = {}
     for voto in newData['grades']:

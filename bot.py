@@ -148,7 +148,7 @@ def runUpdates(crminute):
                 if (settings.doNotDisturb is False) or (crhour in range(7, 21)):
                     dataDidattica = resp.parseNewDidattica(userdata.didattica, newDidattica)
                     dataNote = resp.parseNewNote(userdata.note, newNote)
-                    dataVoti = resp.parseNewVoti(userdata.voti, newVoti)
+                    dataVoti = resp.parseNewVoti(userdata.voti, newVoti, currentUser)
                     dataAssenze = resp.parseNewAssenze(userdata.assenze, newAssenze)
                     dataAgenda = resp.parseNewAgenda(userdata.agenda, newAgenda)
                     updateUserdata(currentUser, newDidattica, newNote, newVoti, newAssenze, newAgenda)
@@ -401,7 +401,7 @@ def reply(msg):
                     return
                 dataDidattica = resp.parseNewDidattica(userdata.didattica, newDidattica)
                 dataNote = resp.parseNewNote(userdata.note, newNote)
-                dataVoti = resp.parseNewVoti(userdata.voti, newVoti)
+                dataVoti = resp.parseNewVoti(userdata.voti, newVoti, user)
                 dataAssenze = resp.parseNewAssenze(userdata.assenze, newAssenze)
                 dataAgenda = resp.parseNewAgenda(userdata.agenda, newAgenda)
                 updateUserdata(user, newDidattica, newNote, newVoti, newAssenze, newAgenda)
