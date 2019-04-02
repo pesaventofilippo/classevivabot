@@ -162,9 +162,9 @@ def runUpdates(crminute):
                         if dataVoti:
                             bot.sendMessage(currentUser.chatId, "🔔 <b>Hai nuovi voti!</b>"
                                                                 "{0}".format(dataVoti), parse_mode="HTML")
-                        if dataAssenze:
-                            bot.sendMessage(currentUser.chatId, "🔔 <b>Hai nuove assenze!</b>"
-                                                                "{0}".format(dataAssenze), parse_mode="HTML")
+#                        if dataAssenze:
+#                            bot.sendMessage(currentUser.chatId, "🔔 <b>Hai nuove assenze!</b>"
+#                                                                "{0}".format(dataAssenze), parse_mode="HTML")
                         if dataAgenda:
                             bot.sendMessage(currentUser.chatId, "🔔 <b>Hai nuovi impegni!</b>\n"
                                                                 "{0}".format(dataAgenda), parse_mode="HTML")
@@ -416,13 +416,13 @@ def reply(msg):
                 if dataVoti is not None:
                     bot.sendMessage(chatId, "🔔 <b>Hai nuovi voti!</b>{0}".format(dataVoti), parse_mode="HTML")
 
-                if dataAssenze is not None:
-                    bot.sendMessage(chatId, "🔔 <b>Hai nuove assenze!</b>{0}".format(dataAssenze), parse_mode="HTML")
+#                if dataAssenze is not None:
+#                    bot.sendMessage(chatId, "🔔 <b>Hai nuove assenze!</b>{0}".format(dataAssenze), parse_mode="HTML")
 
                 if dataAgenda is not None:
                     bot.sendMessage(chatId, "🔔 <b>Hai nuovi impegni!</b>\n{0}".format(dataAgenda), parse_mode="HTML")
 
-                if not any([dataDidattica, dataNote, dataVoti, dataAssenze, dataAgenda]):
+                if not any([dataDidattica, dataNote, dataVoti, dataAgenda]): # +dataAssenze
                     bot.sendMessage(chatId, "✅ Dati aggiornati!\n"
                                             "✅ Nessuna novità!")
 
