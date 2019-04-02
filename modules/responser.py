@@ -382,44 +382,6 @@ def parseNewVoti(oldData, newData, user):
     return result if result != "" else None
 
 
-def parseNewAssenze(oldData, newData):
-    if (newData is None) or (not newData.get('events')):
-        return None
-    if oldData is None:
-        return parseAssenze(newData)
-
-    assenze = ""
-    ritardi = ""
-    ritardiBrevi = ""
-    usciteAnticipate = ""
-
-    for evento in newData['events']:
-        if (oldData is None) or (not oldData.get('events')) or (evento not in oldData['events']):
-            desc = "Altro" if evento['justifReasonDesc'] is None else evento['justifReasonDesc'].lower()
-            if evento['evtCode'] == "ABA0":
-                if not assenze:
-                    assenze = "\n\n\n❌ <b>Assenze</b>:"
-                assenze += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], desc, "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
-
-            elif evento['evtCode'] == "ABR0":
-                if not ritardi:
-                    ritardi = "\n\n\n🏃 <b>Ritardi</b>:"
-                ritardi += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], desc, "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
-
-            elif evento['evtCode'] == "ABR1":
-                if not ritardiBrevi:
-                    ritardiBrevi = "\n\n\n🚶 <b>Ritardi Brevi</b>:"
-                ritardiBrevi += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], desc, "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
-
-            elif evento['evtCode'] == "ABU0":
-                if not usciteAnticipate:
-                    usciteAnticipate = "\n\n\n🚪 <b>Uscite Anticipate</b>:"
-                usciteAnticipate += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], desc, "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
-
-    result = assenze + ritardi + ritardiBrevi + usciteAnticipate
-    return result if result != "" else None
-
-
 def parseNewAgenda(oldData, newData):
     if (newData is None) or (not newData.get('agenda')):
         return None

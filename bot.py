@@ -113,16 +113,15 @@ def fetchAndStore(user, api_type):
     stored.domani = resp.parseDomani(newAgenda)
     stored.lezioni = resp.parseLezioni(newLezioni)
 
-    return newDidattica, newNote, newVoti, newAssenze, newAgenda
+    return newDidattica, newNote, newVoti, newAgenda
 
 
 @db_session
-def updateUserdata(user, newDidattica, newNote, newVoti, newAssenze, newAgenda):
+def updateUserdata(user, newDidattica, newNote, newVoti, newAgenda):
     userdata = Data.get(chatId=user.chatId)
     userdata.didattica = newDidattica
     userdata.note = newNote
     userdata.voti = newVoti
-    userdata.assenze = newAssenze
     userdata.agenda = newAgenda
 
 
@@ -140,7 +139,7 @@ def runUpdates(crminute):
             userdata = Data.get(chatId=currentUser.chatId)
             settings = Settings.get(chatId=currentUser.chatId)
             try:
-                newDidattica, newNote, newVoti, newAssenze, newAgenda = fetchAndStore(currentUser, supportApi)
+                newDidattica, newNote, newVoti, newAgenda = fetchAndStore(currentUser, supportApi)
             except ApiServerError:
                 break
 
@@ -149,9 +148,8 @@ def runUpdates(crminute):
                     dataDidattica = resp.parseNewDidattica(userdata.didattica, newDidattica)
                     dataNote = resp.parseNewNote(userdata.note, newNote)
                     dataVoti = resp.parseNewVoti(userdata.voti, newVoti, currentUser)
-                    dataAssenze = resp.parseNewAssenze(userdata.assenze, newAssenze)
                     dataAgenda = resp.parseNewAgenda(userdata.agenda, newAgenda)
-                    updateUserdata(currentUser, newDidattica, newNote, newVoti, newAssenze, newAgenda)
+                    updateUserdata(currentUser, newDidattica, newNote, newVoti, newAgenda)
                     try:
                         if dataDidattica:
                             bot.sendMessage(currentUser.chatId, "🔔 <b>Nuovi file caricati!</b>"
@@ -162,9 +160,6 @@ def runUpdates(crminute):
                         if dataVoti:
                             bot.sendMessage(currentUser.chatId, "🔔 <b>Hai nuovi voti!</b>"
                                                                 "{0}".format(dataVoti), parse_mode="HTML")
-#                        if dataAssenze:
-#                            bot.sendMessage(currentUser.chatId, "🔔 <b>Hai nuove assenze!</b>"
-#                                                                "{0}".format(dataAssenze), parse_mode="HTML")
                         if dataAgenda:
                             bot.sendMessage(currentUser.chatId, "🔔 <b>Hai nuovi impegni!</b>\n"
                                                                 "{0}".format(dataAgenda), parse_mode="HTML")
@@ -237,8 +232,8 @@ def reply(msg):
                 bot.sendMessage(chatId, "Fatto 😊\n"
                                         "Premi /help per vedere la lista dei comandi disponibili.")
                 sent = bot.sendMessage(chatId, "🔍 Aggiorno il profilo...")
-                newDidattica, newAgenda, newAssenze, newVoti, newNote = fetchAndStore(user, api)
-                updateUserdata(user, newDidattica, newAgenda, newAssenze, newVoti, newNote)
+                newDidattica, newNote, newVoti, newAgenda = fetchAndStore(user, api)
+                updateUserdata(user, newDidattica, newNote, newVoti, newAgenda)
                 bot.editMessageText((chatId, sent['message_id']), "✅ Profilo aggiornato!")
 
         elif user.status == "calling_support":
@@ -273,7 +268,7 @@ def reply(msg):
                   "- /settings - Modifica le impostazioni personali del bot\n" \
                   "- /dona o /premium - Supporta il bot e il mio lavoro, se ti senti generoso :)\n" \
                   "- /support - Contatta lo staff (emergenze)\n\n" \
-                  "<b>Notifiche</b>: ogni mezz'ora, se vuoi, ti invierò un messaggio se ti sono arrivati nuovi voti, note, compiti, assenze o materiali."
+                  "<b>Notifiche</b>: ogni mezz'ora, se vuoi, ti invierò un messaggio se ti sono arrivati nuovi voti, note, compiti o materiali."
         bot.sendMessage(chatId, message, parse_mode="HTML")
 
     elif text == "/dona" or text == "/premium":
@@ -394,7 +389,7 @@ def reply(msg):
             sent = bot.sendMessage(chatId, "🔍 Cerco aggiornamenti...")
             if userLogin(user):
                 try:
-                    newDidattica, newNote, newVoti, newAssenze, newAgenda = fetchAndStore(user, api)
+                    newDidattica, newNote, newVoti, newAgenda = fetchAndStore(user, api)
                 except ApiServerError:
                     bot.sendMessage(chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
                                             "Riprova tra qualche minuto.")
@@ -402,9 +397,8 @@ def reply(msg):
                 dataDidattica = resp.parseNewDidattica(userdata.didattica, newDidattica)
                 dataNote = resp.parseNewNote(userdata.note, newNote)
                 dataVoti = resp.parseNewVoti(userdata.voti, newVoti, user)
-                dataAssenze = resp.parseNewAssenze(userdata.assenze, newAssenze)
                 dataAgenda = resp.parseNewAgenda(userdata.agenda, newAgenda)
-                updateUserdata(user, newDidattica, newNote, newVoti, newAssenze, newAgenda)
+                updateUserdata(user, newDidattica, newNote, newVoti, newAgenda)
                 bot.deleteMessage((chatId, sent['message_id']))
 
                 if dataDidattica is not None:
@@ -416,13 +410,10 @@ def reply(msg):
                 if dataVoti is not None:
                     bot.sendMessage(chatId, "🔔 <b>Hai nuovi voti!</b>{0}".format(dataVoti), parse_mode="HTML")
 
-#                if dataAssenze is not None:
-#                    bot.sendMessage(chatId, "🔔 <b>Hai nuove assenze!</b>{0}".format(dataAssenze), parse_mode="HTML")
-
                 if dataAgenda is not None:
                     bot.sendMessage(chatId, "🔔 <b>Hai nuovi impegni!</b>\n{0}".format(dataAgenda), parse_mode="HTML")
 
-                if not any([dataDidattica, dataNote, dataVoti, dataAgenda]): # +dataAssenze
+                if not any([dataDidattica, dataNote, dataVoti, dataAgenda]):
                     bot.sendMessage(chatId, "✅ Dati aggiornati!\n"
                                             "✅ Nessuna novità!")
 
