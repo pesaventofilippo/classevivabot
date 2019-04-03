@@ -1,4 +1,4 @@
-from pony.orm import Database, Required, Optional, Json
+from pony.orm import Database, Required, Optional, Json, StrArray
 
 db = Database("sqlite", "../classevivabot.db", create_db=True)
 
@@ -44,6 +44,7 @@ class Settings(db.Entity):
     doNotDisturb = Required(bool, default=True)
     wantsDailyUpdates = Required(bool, default=True)
     dailyUpdatesHour = Required(str, default="13:30")
+    activeNews = Required(StrArray, default=["didattica", "note", "voti", "agenda"])
 
 
 db.generate_mapping(create_tables=True)

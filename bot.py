@@ -279,7 +279,7 @@ def reply(msg):
                                 "hai voglia di farmi un regalo, sei il benvenuto :)\n\n"
                                 "Sto aggiungendo delle feature che saranno abilitate solo agli utenti Premium, tra cui:\n"
                                 "⭐️ Aggiornamenti ogni 5 minuti invece di 30\n"
-                                "⭐️ Altre features in sviluppo...\n\n"
+                                "⭐️ Possibilità di scegliere quali notifiche ricevere\n\n"
                                 "Se vuoi diventare un utente Premium, ti basta donare una somma minima di 0.50€/mese.\n"
                                 "<i>Grazie di cuore.</i> ❤️", parse_mode="HTML", reply_markup=keyboards.payments())
 
@@ -299,6 +299,7 @@ def reply(msg):
             selId = int(text.split(" ", 2)[1])
             selText = str(text.split(" ", 2)[2])
             bot.sendMessage(selId, selText, parse_mode="HTML")
+            bot.sendMessage(chatId, selText + "\n\n- Messaggio inviato!", parse_mode="HTML")
 
     elif text.startswith("/setpremium "):
         if chatId in adminIds:
@@ -399,7 +400,6 @@ def reply(msg):
                 dataVoti = resp.parseNewVoti(userdata.voti, newVoti, user)
                 dataAgenda = resp.parseNewAgenda(userdata.agenda, newAgenda)
                 updateUserdata(user, newDidattica, newNote, newVoti, newAgenda)
-                bot.deleteMessage((chatId, sent['message_id']))
 
                 if dataDidattica is not None:
                     bot.sendMessage(chatId, "🔔 <b>Nuovi file caricati!</b>{0}".format(dataDidattica), parse_mode="HTML")
@@ -414,8 +414,8 @@ def reply(msg):
                     bot.sendMessage(chatId, "🔔 <b>Hai nuovi impegni!</b>\n{0}".format(dataAgenda), parse_mode="HTML")
 
                 if not any([dataDidattica, dataNote, dataVoti, dataAgenda]):
-                    bot.sendMessage(chatId, "✅ Dati aggiornati!\n"
-                                            "✅ Nessuna novità!")
+                    bot.editMessageText((chatId, sent['message_id']), "✅ Dati aggiornati!\n"
+                                                                      "✅ Nessuna novità!")
 
         elif text == "/support":
             user.status = "calling_support"
@@ -476,6 +476,87 @@ def button_press(msg):
                                                   "Vuoi che ti dica ogni giorno i compiti per il giorno successivo e le lezioni svolte?"
                                                   "".format("🔔 Attiva" if settings.wantsDailyUpdates else "🔕 Disattiva", settings.dailyUpdatesHour),
                                                     parse_mode="HTML", reply_markup=keyboards.settings_dailynotif(message_id))
+
+    elif button == "settings_selectnews":
+        if not user.isPremium:
+            bot.editMessageText((chatId, message_id), "💎 Questa funzione è disponibile solo agli utenti <b>Premium</b>.",
+                                parse_mode="HTML", reply_markup=keyboards.back(message_id))
+        else:
+            bot.editMessageText((chatId, message_id), "📲 <b>Selezione notifiche</b>\n\n"
+                                                      "📚 Didattica: {0}\n"
+                                                      "❗️ Note: {1}\n"
+                                                      "📝 Voti: {2}\n"
+                                                      "📆 Agenda: {3}\n\n"
+                                                      "Quali notifiche vuoi ricevere? (Clicca per cambiare)"
+                                                      "".format("🔔 Attivo" if "didattica" in settings.activeNews else "🔕 Disattivo",
+                                                                "🔔 Attivo" if "note" in settings.activeNews else "🔕 Disattivo",
+                                                                "🔔 Attivo" if "voti" in settings.activeNews else "🔕 Disattivo",
+                                                                "🔔 Attivo" if "agenda" in settings.activeNews else "🔕 Disattivo"),
+                                                        parse_mode="HTML", reply_markup=keyboards.settings_selectnews(message_id))
+
+    elif button == "news_didattica":
+        if "didattica" in settings.activeNews:
+            settings.activeNews.remove("didattica")
+        else:
+            settings.activeNews.append("didattica")
+        bot.editMessageText((chatId, message_id), "📲 <b>Selezione notifiche</b>\n\n"
+                                                      "📚 Didattica: {0}\n"
+                                                      "❗️ Note: {1}\n"
+                                                      "📝 Voti: {2}\n"
+                                                      "📆 Agenda: {3}\n\n"
+                                                      "Quali notifiche vuoi ricevere? (Clicca per cambiare)"
+                                                      "".format("🔔 Attivo" if "didattica" in settings.activeNews else "🔕 Disattivo",
+                                                                "🔔 Attivo" if "note" in settings.activeNews else "🔕 Disattivo",
+                                                                "🔔 Attivo" if "voti" in settings.activeNews else "🔕 Disattivo",
+                                                                "🔔 Attivo" if "agenda" in settings.activeNews else "🔕 Disattivo"),
+                                                        parse_mode="HTML", reply_markup=keyboards.settings_selectnews(message_id))
+
+    elif button == "news_note":
+        if "note" in settings.activeNews:
+            settings.activeNews.remove("note")
+        else:
+            settings.activeNews.append("note")
+        bot.editMessageText((chatId, message_id), "📲 <b>Selezione notifiche</b>\n\n"
+                                                      "📚 Didattica: {0}\n"
+                                                      "❗️ Note: {1}\n"
+                                                      "📝 Voti: {2}\n"
+                                                      "📆 Agenda: {3}\n\n"
+                                                      "Quali notifiche vuoi ricevere? (Clicca per cambiare)"
+                                                      "".format("🔔 Attivo" if "didattica" in settings.activeNews else "🔕 Disattivo",
+                                                                "🔔 Attivo" if "note" in settings.activeNews else "🔕 Disattivo",
+                                                                "🔔 Attivo" if "voti" in settings.activeNews else "🔕 Disattivo",
+                                                                "🔔 Attivo" if "agenda" in settings.activeNews else "🔕 Disattivo"),
+                                                        parse_mode="HTML", reply_markup=keyboards.settings_selectnews(message_id))
+
+    elif button == "news_voti":
+        if "voti" in settings.activeNews:
+            settings.activeNews.remove("voti")
+        else:
+            settings.activeNews.append("voti")
+        bot.editMessageText((chatId, message_id), "📲 <b>Selezione notifiche</b>\n"
+                                                  "- Didattica: {0}\n"
+                                                  "- Note: {1}\n"
+                                                  "- Voti: {2}\n"
+                                                  "- Agenda: {3}\n\n"
+                                                  "Quali notifiche vuoi ricevere? (Clicca per cambiare)"
+                                                  "".format("didattica" in settings.activeNews, "note" in settings.activeNews,
+                                                            "voti" in settings.activeNews, "agenda" in settings.activeNews),
+                            parse_mode="HTML", reply_markup=keyboards.settings_selectnews(message_id))
+
+    elif button == "news_agenda":
+        if "agenda" in settings.activeNews:
+            settings.activeNews.remove("agenda")
+        else:
+            settings.activeNews.append("agenda")
+        bot.editMessageText((chatId, message_id), "📲 <b>Selezione notifiche</b>\n"
+                                                  "- Didattica: {0}\n"
+                                                  "- Note: {1}\n"
+                                                  "- Voti: {2}\n"
+                                                  "- Agenda: {3}\n\n"
+                                                  "Quali notifiche vuoi ricevere? (Clicca per cambiare)"
+                                                  "".format("didattica" in settings.activeNews, "note" in settings.activeNews,
+                                                            "voti" in settings.activeNews, "agenda" in settings.activeNews),
+                            parse_mode="HTML", reply_markup=keyboards.settings_selectnews(message_id))
 
     elif button == "settings_notif_yes":
         settings.wantsNotifications = True
