@@ -263,6 +263,7 @@ def reply(msg):
                   "- /prof - Visualizza la lista delle materie e dei prof\n" \
                   "- /settings - Modifica le impostazioni personali del bot\n" \
                   "- /dona - Supporta il bot e il mio lavoro, se ti senti generoso :)\n" \
+                  "- /about - Informazioni sul bot\n" \
                   "- /support - Contatta lo staff (emergenze)\n\n" \
                   "<b>Notifiche</b>: ogni mezz'ora, se vuoi, ti invierò un messaggio se ti sono arrivati nuovi voti, note, compiti o materiali."
         bot.sendMessage(chatId, message, parse_mode="HTML")
@@ -274,6 +275,15 @@ def reply(msg):
                                 "Non preoccuparti, per adesso non è un problema e questo bot continuerà ad essere gratuito, ma se proprio ti senti generoso e "
                                 "hai voglia di farmi un regalo, sei il benvenuto :)\n\n"
                                 "<i>Grazie di cuore.</i> ❤️", parse_mode="HTML", reply_markup=keyboards.payments())
+
+    elif text == "/about":
+        bot.sendMessage(chatId, "ℹ️ <b>Informazioni sul bot</b>\n"
+                                "ClasseVivaBot è un bot creato e sviluppato da Filippo Pesavento, che ti può aiutare "
+                                "durante l'anno scolastico mandando notifiche per le novità del registro e molto altro.\n"
+                                "Prova ad usarlo per scoprire quanto è comodo!\n\n"
+                                "<b>Sviluppo:</b> Filippo Pesavento\n"
+                                "<b>Hosting:</b> Filippo Pesavento\n"
+                                "<a href=\"https://pesaventofilippo.tk/projects/classevivabot\">Altre info & Privacy Policy</a>", parse_mode="HTML")
 
     elif text.startswith("/broadcast "):
         if chatId in adminIds:
