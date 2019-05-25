@@ -311,6 +311,9 @@ def reply(msg):
             bot.sendMessage(chatId, "Risposta inviata!")
         else:
             bot.sendMessage(chatId, "Premi /support per parlare con lo staff.")
+    
+    elif text == "/annulla":
+        bot.sendMessage(chatId, "😴 Nessun commando da annullare!")
 
     elif isUserLogged(user):
         if text == "/start":
