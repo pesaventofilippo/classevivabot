@@ -90,28 +90,30 @@ def userLogout(api_type=api):
 
 
 @db_session
-def fetchAndStore(user, api_type):
+def fetchAndStore(user, api_type, fetch_long=False):
     newDidattica = api_type.didattica()
-    newInfo = api_type.info()
-    newProf = api_type.materie()
     newNote = api_type.note()
     newVoti = api_type.voti()
-    newAssenze = api_type.assenze()
     newAgenda = api_type.agenda(14)
+    newAssenze = api_type.assenze()
     newLezioni = api_type.lezioni()
-    userLogout(api_type)
 
     stored = ParsedData.get(chatId=user.chatId)
-    stored.didattica = resp.parseDidattica(newDidattica)
-    stored.info = resp.parseInfo(newInfo)
-    stored.prof = resp.parseMaterie(newProf)
     stored.note = resp.parseNote(newNote)
     stored.voti = resp.parseVoti(newVoti, user)
     stored.assenze = resp.parseAssenze(newAssenze)
     stored.agenda = resp.parseAgenda(newAgenda)
     stored.domani = resp.parseDomani(newAgenda)
     stored.lezioni = resp.parseLezioni(newLezioni)
+    stored.didattica = resp.parseDidattica(newDidattica)
 
+    if fetch_long:
+        newInfo = api_type.info()
+        newProf = api_type.materie()
+        stored.info = resp.parseInfo(newInfo)
+        stored.prof = resp.parseMaterie(newProf)
+
+    userLogout(api_type)
     return newDidattica, newNote, newVoti, newAgenda
 
 
@@ -230,7 +232,7 @@ def reply(msg):
                 bot.sendMessage(chatId, "Fatto 😊\n"
                                         "Premi /help per vedere la lista dei comandi disponibili.")
                 sent = bot.sendMessage(chatId, "🔍 Aggiorno il profilo...")
-                newDidattica, newNote, newVoti, newAgenda = fetchAndStore(user, api)
+                newDidattica, newNote, newVoti, newAgenda = fetchAndStore(user, api, fetch_long=True)
                 updateUserdata(user, newDidattica, newNote, newVoti, newAgenda)
                 bot.editMessageText((chatId, sent['message_id']), "✅ Profilo aggiornato!")
 
