@@ -99,19 +99,19 @@ def fetchAndStore(user, api_type, fetch_long=False):
     newLezioni = api_type.lezioni()
 
     stored = ParsedData.get(chatId=user.chatId)
-    stored.note = resp.parseNote(newNote).replace("<", "\<").replace(">", "\>")
-    stored.voti = resp.parseVoti(newVoti, user).replace("<", "\<").replace(">", "\>")
-    stored.assenze = resp.parseAssenze(newAssenze).replace("<", "\<").replace(">", "\>")
-    stored.agenda = resp.parseAgenda(newAgenda).replace("<", "\<").replace(">", "\>")
-    stored.domani = resp.parseDomani(newAgenda).replace("<", "\<").replace(">", "\>")
-    stored.lezioni = resp.parseLezioni(newLezioni).replace("<", "\<").replace(">", "\>")
-    stored.didattica = resp.parseDidattica(newDidattica).replace("<", "\<").replace(">", "\>")
+    stored.note = resp.parseNote(newNote)
+    stored.voti = resp.parseVoti(newVoti, user)
+    stored.assenze = resp.parseAssenze(newAssenze)
+    stored.agenda = resp.parseAgenda(newAgenda)
+    stored.domani = resp.parseDomani(newAgenda)
+    stored.lezioni = resp.parseLezioni(newLezioni)
+    stored.didattica = resp.parseDidattica(newDidattica)
 
     if fetch_long:
         newInfo = api_type.info()
         newProf = api_type.materie()
-        stored.info = resp.parseInfo(newInfo).replace("<", "\<").replace(">", "\>")
-        stored.prof = resp.parseMaterie(newProf).replace("<", "\<").replace(">", "\>")
+        stored.info = resp.parseInfo(newInfo)
+        stored.prof = resp.parseMaterie(newProf)
 
     userLogout(api_type)
     return newDidattica, newNote, newVoti, newAgenda
