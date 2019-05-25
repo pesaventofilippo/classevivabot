@@ -1,5 +1,10 @@
 ﻿def sanitize(dinput):
-    return dinput.replace("<", "\<").replace(">", "\>")
+    from xml.sax.saxutils import escape
+    esc_table = {
+        ">": "&gt;",
+        "<": "&lt;"
+    }
+    return escape(dinput, esc_table)
 
 
 def innerParseNotes(event):
