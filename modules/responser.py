@@ -173,27 +173,30 @@ def parseAssenze(data):
     usciteAnticipate = ""
 
     for evento in data['events']:
-        desc = "Altro" if evento['justifReasonDesc'] is None else evento['justifReasonDesc'].lower()
+        desc = "Non specificato" if not evento['justifReasonDesc'] else evento['justifReasonDesc'].lower()
+        toJustify = "\n ⚠️ Da giustificare!" if not evento['isJustified'] else ""
+        date = evento['evtDate'].split("-", 2)
+        date = "{0}/{1}/{2}".format(date[2], date[1], date[0])
 
         if evento['evtCode'] == "ABA0":
             if not assenze:
                 assenze = "\n\n\n❌ <b>Assenze</b>:"
-            assenze += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], desc, "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
+            assenze += "\n\n 📌 {0}: {1}{2}".format(date, desc, toJustify)
 
         elif evento['evtCode'] == "ABR0":
             if not ritardi:
                 ritardi = "\n\n\n🏃 <b>Ritardi</b>:"
-            ritardi += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], desc, "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
+            ritardi += "\n\n 📌 {0}: {1}{2}".format(date, desc, toJustify)
 
         elif evento['evtCode'] == "ABR1":
             if not ritardiBrevi:
                 ritardiBrevi = "\n\n\n🚶 <b>Ritardi Brevi</b>:"
-            ritardiBrevi += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], desc, "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
+            ritardiBrevi += "\n\n 📌 {0}: {1}{2}".format(date, desc, toJustify)
 
         elif evento['evtCode'] == "ABU0":
             if not usciteAnticipate:
                 usciteAnticipate = "\n\n\n🚪 <b>Uscite Anticipate</b>:"
-            usciteAnticipate += "\n\n   📌 {0}: Per \"{1}\"{2}".format(evento['evtDate'], desc, "\n   ⚠️ Da giustificare!" if not evento['isJustified'] else "")
+            usciteAnticipate += "\n\n 📌 {0}: {1}{2}".format(date, desc, toJustify)
 
     return assenze + ritardi + ritardiBrevi + usciteAnticipate
 
