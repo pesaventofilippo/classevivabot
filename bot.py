@@ -168,6 +168,8 @@ def runUpdates():
 @db_session
 def runDailyUpdates(crminute):
     crhour = datetime.now().hour
+    isSaturday = datetime.now().isoweekday() == 6
+    dayString = "lunedì" if isSaturday else "domani"
     pendingUsers = select(user for user in User if user.password != "")[:]
     for currentUser in pendingUsers:
         settings = Settings.get(chatId=currentUser.chatId)
@@ -177,10 +179,10 @@ def runDailyUpdates(crminute):
                 stored = ParsedData.get(chatId=currentUser.chatId)
                 try:
                     bot.sendMessage(currentUser.chatId, "🕙 <b>Promemoria!</b>\n\n"
-                                                        "📆 <b>Cosa devi fare per domani</b>:\n\n"
-                                                        "{0}\n\n\n"
+                                                        "📆 <b>Cosa devi fare per {0}</b>:\n\n"
+                                                        "{1}\n\n\n"
                                                         "📚 <b>Le lezioni di oggi</b>:\n\n"
-                                                        "{1}".format(stored.domani, stored.lezioni), parse_mode="HTML")
+                                                        "{2}".format(dayString, stored.domani, stored.lezioni), parse_mode="HTML")
                 except BotWasBlockedError:
                     clearUserData(currentUser)
                 except TelegramError:
@@ -250,7 +252,7 @@ def reply(msg):
                   "- /login - Effettua il login\n" \
                   "- /logout - Disconnettiti\n" \
                   "- /aggiorna - Aggiorna manualmente tutti i dati, per controllare se ci sono nuovi avvisi.\n" \
-                               "Oppure, puoi lasciarlo fare a me, ogni mezz'ora :)\n" \
+                                "Oppure, puoi lasciarlo fare a me, ogni mezz'ora :)\n" \
                   "- /promemoria - Vedi un promemoria con i compiti da fare per domani e le lezioni svolte oggi.\n" \
                   "- /agenda - Visualizza agenda (compiti e verifiche)\n" \
                   "- /domani - Vedi i compiti che hai per domani\n" \
@@ -313,7 +315,7 @@ def reply(msg):
             bot.sendMessage(chatId, "Premi /support per parlare con lo staff.")
     
     elif text == "/annulla":
-        bot.sendMessage(chatId, "😴 Nessun commando da annullare!")
+        bot.sendMessage(chatId, "😴 Nessun comando da annullare!")
 
     elif isUserLogged(user):
         if text == "/start":
@@ -353,12 +355,14 @@ def reply(msg):
             sendLongMessage(bot, chatId, "{0}".format(stored.assenze), parse_mode="HTML")
 
         elif text == "/agenda":
-            bot.sendMessage(chatId, "📆 <b>Agenda compiti delle prossime 2 settimane</b>:\n\n"
+            bot.sendMessage(chatId, "📆 <b>Agenda compiti per le prossime 2 settimane</b>:\n\n"
                                     "{0}".format(stored.agenda), parse_mode="HTML")
 
         elif text == "/domani":
-            bot.sendMessage(chatId, "📆 <b>Compiti e verifiche per domani</b>:\n\n"
-                                    "{0}".format(stored.domani), parse_mode="HTML")
+            isSaturday = datetime.now().isoweekday() == 6
+            dayString = "lunedì" if isSaturday else "domani"
+            bot.sendMessage(chatId, "📆 <b>Compiti e verifiche per {0}</b>:\n\n"
+                                    "{1}".format(dayString, stored.domani), parse_mode="HTML")
 
         elif text == "/lezioni":
             sent = bot.sendMessage(chatId, "📚 <b>Lezioni di oggi</b>:\n\n"

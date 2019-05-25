@@ -232,7 +232,7 @@ def parseDomani(data):
     for event in data['agenda']:
         evtDate = str(event['evtDatetimeBegin']).split("T", 1)[0]
         evtDay = int(evtDate.split("-", 2)[2])
-        dayToCheck = datetime.now().day + 1
+        dayToCheck = datetime.now().day+1 if datetime.now().isoweekday() != 6 else datetime.now().day+2
 
         if evtDay == dayToCheck:
             evtType = "📌" if event['evtCode'] == "AGNT" else "📝"
