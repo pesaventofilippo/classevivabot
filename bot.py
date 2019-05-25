@@ -39,8 +39,6 @@ def clearUserData(user):
     user.lastPeriod = 1
 
     userdata = Data.get(chatId=user.chatId)
-    stored = ParsedData.get(chatId=user.chatId)
-
     userdata.didattica = {}
     userdata.info = {}
     userdata.prof = {}
@@ -51,6 +49,7 @@ def clearUserData(user):
     userdata.domani = {}
     userdata.lezioni = {}
 
+    stored = ParsedData.get(chatId=user.chatId)
     stored.didattica = ""
     stored.info = ""
     stored.prof = ""
@@ -65,7 +64,7 @@ def clearUserData(user):
 @db_session
 def userLogin(user, api_type=api):
     if not isUserLogged(user):
-        return
+        return False
     try:
         api_type.login(user.username, decrypt(user.password))
         return True
@@ -126,12 +125,9 @@ def updateUserdata(user, newDidattica, newNote, newVoti, newAgenda):
 
 
 @db_session
-def runUpdates(crminute):
+def runUpdates():
     crhour = datetime.now().hour
-    if crminute % 30 == 0:
-        pendingUsers = select(user for user in User if user.password != "")[:]
-    else:
-        pendingUsers = select(user for user in User if user.isPremium)[:]
+    pendingUsers = select(user for user in User if user.password != "")[:]
 
     for currentUser in pendingUsers:
 
@@ -266,21 +262,17 @@ def reply(msg):
                   "- /info - Visualizza le tue info utente\n" \
                   "- /prof - Visualizza la lista delle materie e dei prof\n" \
                   "- /settings - Modifica le impostazioni personali del bot\n" \
-                  "- /dona o /premium - Supporta il bot e il mio lavoro, se ti senti generoso :)\n" \
+                  "- /dona - Supporta il bot e il mio lavoro, se ti senti generoso :)\n" \
                   "- /support - Contatta lo staff (emergenze)\n\n" \
                   "<b>Notifiche</b>: ogni mezz'ora, se vuoi, ti invierò un messaggio se ti sono arrivati nuovi voti, note, compiti o materiali."
         bot.sendMessage(chatId, message, parse_mode="HTML")
 
-    elif text == "/dona" or text == "/premium":
+    elif text == "/dona":
         bot.sendMessage(chatId, "<b>Grazie per aver pensato di supportarmi!</b>\n"
                                 "Ho dedicato ore di lavoro a questo bot, ma ho deciso di renderlo open-source e completamente gratuito.\n"
                                 "Tuttavia, il numero di utenti che usano questo bot continua a crescere, e crescono anche i costi di gestione del server. "
                                 "Non preoccuparti, per adesso non è un problema e questo bot continuerà ad essere gratuito, ma se proprio ti senti generoso e "
                                 "hai voglia di farmi un regalo, sei il benvenuto :)\n\n"
-                                "Sto aggiungendo delle feature che saranno abilitate solo agli utenti Premium, tra cui:\n"
-                                "⭐️ Aggiornamenti ogni 5 minuti invece di 30\n"
-                                "⭐️ Possibilità di scegliere quali notifiche ricevere\n\n"
-                                "Se vuoi diventare un utente Premium, ti basta donare una somma minima di 0.50€/mese.\n"
                                 "<i>Grazie di cuore.</i> ❤️", parse_mode="HTML", reply_markup=keyboards.payments())
 
     elif text.startswith("/broadcast "):
@@ -300,20 +292,6 @@ def reply(msg):
             selText = str(text.split(" ", 2)[2])
             bot.sendMessage(selId, selText, parse_mode="HTML")
             bot.sendMessage(chatId, selText + "\n\n- Messaggio inviato!", parse_mode="HTML")
-
-    elif text.startswith("/setpremium "):
-        if chatId in adminIds:
-            selId = int(text.split(" ", 1)[1])
-            selUser = User.get(chatId=selId)
-            selUser.isPremium = True
-            bot.sendMessage(chatId, "Utente <a href=\"tg://user?id={0}\">{0}</a> aggiornato a <b>Premium</b>!".format(selId), parse_mode="HTML")
-
-    elif text.startswith("/delpremium "):
-        if chatId in adminIds:
-            selId = int(text.split(" ", 1)[1])
-            selUser = User.get(chatId=selId)
-            selUser.isPremium = False
-            bot.sendMessage(chatId, "Utente <a href=\"tg://user?id={0}\">{0}</a> rimosso da <b>Premium</b>!".format(selId), parse_mode="HTML")
 
     elif "reply_to_message" in msg:
         if chatId in adminIds:
@@ -478,21 +456,17 @@ def button_press(msg):
                                                     parse_mode="HTML", reply_markup=keyboards.settings_dailynotif(message_id))
 
     elif button == "settings_selectnews":
-        if not user.isPremium:
-            bot.editMessageText((chatId, message_id), "💎 Questa funzione è disponibile solo agli utenti <b>Premium</b>.",
-                                parse_mode="HTML", reply_markup=keyboards.back(message_id))
-        else:
-            bot.editMessageText((chatId, message_id), "📲 <b>Selezione notifiche</b>\n\n"
-                                                      "📚 Didattica: {0}\n"
-                                                      "❗️ Note: {1}\n"
-                                                      "📝 Voti: {2}\n"
-                                                      "📆 Agenda: {3}\n\n"
-                                                      "Quali notifiche vuoi ricevere? (Clicca per cambiare)"
-                                                      "".format("🔔 Attivo" if "didattica" in settings.activeNews else "🔕 Disattivo",
-                                                                "🔔 Attivo" if "note" in settings.activeNews else "🔕 Disattivo",
-                                                                "🔔 Attivo" if "voti" in settings.activeNews else "🔕 Disattivo",
-                                                                "🔔 Attivo" if "agenda" in settings.activeNews else "🔕 Disattivo"),
-                                                        parse_mode="HTML", reply_markup=keyboards.settings_selectnews(message_id))
+        bot.editMessageText((chatId, message_id), "📲 <b>Selezione notifiche</b>\n\n"
+                                                  "📚 Didattica: {0}\n"
+                                                  "❗️ Note: {1}\n"
+                                                  "📝 Voti: {2}\n"
+                                                  "📆 Agenda: {3}\n\n"
+                                                  "Quali notifiche vuoi ricevere? (Clicca per cambiare)"
+                                                  "".format("🔔 Attivo" if "didattica" in settings.activeNews else "🔕 Disattivo",
+                                                            "🔔 Attivo" if "note" in settings.activeNews else "🔕 Disattivo",
+                                                            "🔔 Attivo" if "voti" in settings.activeNews else "🔕 Disattivo",
+                                                            "🔔 Attivo" if "agenda" in settings.activeNews else "🔕 Disattivo"),
+                                                    parse_mode="HTML", reply_markup=keyboards.settings_selectnews(message_id))
 
     elif button == "news_didattica":
         if "didattica" in settings.activeNews:
@@ -671,5 +645,4 @@ while True:
     minute = datetime.now().minute
     if minute % 30 == 0:
         runDailyUpdates(minute)
-    if minute % 5 == 0:
-        runUpdates(minute)
+        runUpdates()

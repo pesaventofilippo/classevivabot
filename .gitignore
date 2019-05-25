@@ -10,3 +10,6 @@ modules/crypter.py
 
 # Python Compiled Cache
 *__pycache__/
+
+# Python Virtual Environment
+venv/
