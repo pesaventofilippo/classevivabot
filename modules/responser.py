@@ -1,8 +1,12 @@
-﻿def innerParseNotes(event):
+﻿def sanitize(dinput):
+    return dinput.replace("<", "\<").replace(">", "\>")
+
+
+def innerParseNotes(event):
     evtauthor = event['authorName'].title()
     evttime = event['evtDate'].lower().split("-", 2)
     evttext = event['evtText'] if event['readStatus'] else "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione \"annotazioni\" per leggere questa nota."
-    return evtauthor, evttime, evttext
+    return evtauthor, evttime, sanitize(evttext)
 
 
 def parseDidattica(data):
@@ -18,13 +22,13 @@ def parseDidattica(data):
 
         firstFolder = True
         for folder in prof['folders']:
-            folderName = "Altro" if folder['folderName'] == "Uncategorized" else folder['folderName']
+            folderName = "Altro" if folder['folderName'] == "Uncategorized" else sanitize(folder['folderName'])
             string = "\n    📂 <b>{0}</b>".format(folderName)
             result += string if firstFolder else "\n" + string
             firstFolder = False
 
             for upfile in folder['contents']:
-                fileName = "Senza nome" if upfile['contentName'] == "" else upfile['contentName']
+                fileName = "Senza nome" if upfile['contentName'] == "" else sanitize(upfile['contentName'])
                 result += "\n        📝 {0}".format(fileName)
 
     return result
@@ -106,16 +110,15 @@ def parseVoti(data, user):
             tipo = voto['componentDesc']
             time = voto['evtDate'].lower().split("-", 2)
             period = voto['periodPos']
+            desc = "\n<i>{0}</i>".format(sanitize(voto['notesForFamily'])) if voto['notesForFamily'] else ""
+            colore = "📗" if voto['color'] == "green" else "📕" if voto['color'] == "red" else "📘"
             if period > user.lastPeriod:
                 user.lastPeriod = period
-            colore = "📗" if voto['color'] == "green" else "📕" if voto['color'] == "red" else "📘"
 
             if tipo == "":
-                str_voto = "\n\n{0} <b>{1}</b> • {2} {3}".format(colore, value, "{0}/{1}/{2}".format(time[2], time[1], time[0]),
-                                                                 "\n<i>{0}</i>".format(voto['notesForFamily']) if voto['notesForFamily'] else "")
+                str_voto = "\n\n{0} <b>{1}</b> • {2} {3}".format(colore, value, "{0}/{1}/{2}".format(time[2], time[1], time[0]), desc)
             else:
-                str_voto = "\n\n{0} <b>{1}</b> • {2} • {3} {4}".format(colore, value, tipo, "{0}/{1}/{2}".format(time[2], time[1], time[0]),
-                                                                       "\n<i>{0}</i>".format(voto['notesForFamily']) if voto['notesForFamily'] else "")
+                str_voto = "\n\n{0} <b>{1}</b> • {2} • {3} {4}".format(colore, value, tipo, "{0}/{1}/{2}".format(time[2], time[1], time[0]), desc)
             if materia not in votiOrdinati:
                 votiOrdinati[materia] = []
             if materia not in media:
@@ -173,7 +176,7 @@ def parseAssenze(data):
     usciteAnticipate = ""
 
     for evento in data['events']:
-        desc = "Non specificato" if not evento['justifReasonDesc'] else evento['justifReasonDesc'].lower()
+        desc = "Non specificato" if not evento['justifReasonDesc'] else sanitize(evento['justifReasonDesc'].lower())
         toJustify = "\n ⚠️ Da giustificare!" if not evento['isJustified'] else ""
         date = evento['evtDate'].split("-", 2)
         date = "{0}/{1}/{2}".format(date[2], date[1], date[0])
@@ -181,22 +184,22 @@ def parseAssenze(data):
         if evento['evtCode'] == "ABA0":
             if not assenze:
                 assenze = "\n\n\n❌ <b>Assenze</b>:"
-            assenze += "\n\n 📌 {0}: {1}{2}".format(date, desc, toJustify)
+            assenze += "\n 📌 {0}: {1}{2}".format(date, desc, toJustify)
 
         elif evento['evtCode'] == "ABR0":
             if not ritardi:
                 ritardi = "\n\n\n🏃 <b>Ritardi</b>:"
-            ritardi += "\n\n 📌 {0}: {1}{2}".format(date, desc, toJustify)
+            ritardi += "\n 📌 {0}: {1}{2}".format(date, desc, toJustify)
 
         elif evento['evtCode'] == "ABR1":
             if not ritardiBrevi:
                 ritardiBrevi = "\n\n\n🚶 <b>Ritardi Brevi</b>:"
-            ritardiBrevi += "\n\n 📌 {0}: {1}{2}".format(date, desc, toJustify)
+            ritardiBrevi += "\n 📌 {0}: {1}{2}".format(date, desc, toJustify)
 
         elif evento['evtCode'] == "ABU0":
             if not usciteAnticipate:
                 usciteAnticipate = "\n\n\n🚪 <b>Uscite Anticipate</b>:"
-            usciteAnticipate += "\n\n 📌 {0}: {1}{2}".format(date, desc, toJustify)
+            usciteAnticipate += "\n 📌 {0}: {1}{2}".format(date, desc, toJustify)
 
     return assenze + ritardi + ritardiBrevi + usciteAnticipate
 
@@ -221,7 +224,7 @@ def parseAgenda(data):
             separator = "\n" if firstEvent else "\n\n\n"
             firstEvent = False
             result += separator + "{0} {1}/{2}/{3} • <b>{4}</b>\n{5}".format(evtType, date[2], date[1], date[0],
-                                                                             event['authorName'].title(), event['notes'])
+                                                                             event['authorName'].title(), sanitize(event['notes']))
     return result
 
 
@@ -239,7 +242,7 @@ def parseDomani(data):
 
         if evtDay == dayToCheck:
             evtType = "📌" if event['evtCode'] == "AGNT" else "📝"
-            result += "{0}{1} <b>{2}</b>\n{3}".format(separator, evtType, event['authorName'].title(), event['notes'])
+            result += "{0}{1} <b>{2}</b>\n{3}".format(separator, evtType, event['authorName'].title(), sanitize(event['notes']))
             separator = "\n\n\n"
 
     return "\n🗓 Non hai compiti per domani." if result == "" else result
@@ -252,13 +255,13 @@ def parseLezioni(data):
     result = ""
     for lezione in data['lessons']:
         ora = lezione['evtHPos']
-        descrizione = lezione['lessonArg']
+        desc = lezione['lessonArg']
         tipo = lezione['lessonType']
         materia = lezione['subjectDesc']
-        if descrizione == "":
+        if desc == "":
             result += "✏️ {0}° ora • <b>{1}</b> di <b>{2}</b>\n\n".format(ora, tipo, materia)
         else:
-            result += "✏️ {0}° ora • <b>{1}</b> di <b>{2}</b>\n{3}\n\n".format(ora, tipo, materia, descrizione)
+            result += "✏️ {0}° ora • <b>{1}</b> di <b>{2}</b>\n{3}\n\n".format(ora, tipo, materia, sanitize(desc))
     return result
 
 
@@ -280,13 +283,13 @@ def parseNewDidattica(oldData, newData):
 
             firstFolder = True
             for folder in prof['folders']:
-                folderName = "Altro" if folder['folderName'] == "Uncategorized" else folder['folderName']
+                folderName = "Altro" if folder['folderName'] == "Uncategorized" else sanitize(folder['folderName'])
                 string = "\n    📂 <b>{0}</b>".format(folderName)
                 result += string if firstFolder else "\n" + string
                 firstFolder = False
 
                 for upfile in folder['contents']:
-                    fileName = "Senza nome" if upfile['contentName'] == "" else upfile['contentName']
+                    fileName = "Senza nome" if upfile['contentName'] == "" else sanitize(upfile['contentName'])
                     result += "\n        📝 {0}".format(fileName)
 
         else:
@@ -299,13 +302,13 @@ def parseNewDidattica(oldData, newData):
                         string = "\n\n👤 <b>{0}</b>".format(prof['teacherName'])
                         result += string if firstProf else "\n" + string
                         firstProf = False
-                    folderName = "Altro" if folder['folderName'] == "Uncategorized" else folder['folderName']
+                    folderName = "Altro" if folder['folderName'] == "Uncategorized" else sanitize(folder['folderName'])
                     string = "\n    📂 <b>{0}</b>".format(folderName)
                     result += string if firstFolder else "\n" + string
                     firstFolder = False
 
                     for upfile in folder['contents']:
-                        fileName = "Senza nome" if upfile['contentName'] == "" else upfile['contentName']
+                        fileName = "Senza nome" if upfile['contentName'] == "" else sanitize(upfile['contentName'])
                         result += "\n        📝 {0}".format(fileName)
 
                 else:
@@ -315,11 +318,11 @@ def parseNewDidattica(oldData, newData):
                         oldFolderFileIds = [i['contentId'] for i in oldFolderFiles]
                         if upfile['contentId'] not in oldFolderFileIds:
                             if firstFile:
-                                folderName = "Altro" if folder['folderName'] == "Uncategorized" else folder['folderName']
+                                folderName = "Altro" if folder['folderName'] == "Uncategorized" else sanitize(folder['folderName'])
                                 string = "\n    📂 <b>{0}</b>".format(folderName)
                                 result += string if firstFolder else "\n" + string
                                 firstFolder = False
-                            fileName = "Senza nome" if upfile['contentName'] == "" else upfile['contentName']
+                            fileName = "Senza nome" if upfile['contentName'] == "" else sanitize(upfile['contentName'])
                             result += "\n        📝 {0}".format(fileName)
                             firstFile = False
 
@@ -364,11 +367,12 @@ def parseNewVoti(oldData, newData, user):
             value = "Voto " + voto['displayValue']
             tipo = voto['componentDesc']
             time = voto['evtDate'].lower().split("-", 2)
+            desc = "\n<i>{0}</i>".format(sanitize(voto['notesForFamily'])) if voto['notesForFamily'] else ""
             colore = "📗" if voto['color'] == "green" else "📕" if voto['color'] == "red" else "📘"
             if tipo == "":
-                str_voto = "\n\n{0} <b>{1}</b> • {2} {3}".format(colore, value, "{0}/{1}/{2}".format(time[2], time[1], time[0]), "\n<i>{0}</i>".format(voto['notesForFamily']) if voto['notesForFamily'] else "")
+                str_voto = "\n\n{0} <b>{1}</b> • {2} {3}".format(colore, value, "{0}/{1}/{2}".format(time[2], time[1], time[0]), desc)
             else:
-                str_voto = "\n\n{0} <b>{1}</b> • {2} • {3} {4}".format(colore, value, tipo, "{0}/{1}/{2}".format(time[2], time[1], time[0]), "\n<i>{0}</i>".format(voto['notesForFamily']) if voto['notesForFamily'] else "")
+                str_voto = "\n\n{0} <b>{1}</b> • {2} • {3} {4}".format(colore, value, tipo, "{0}/{1}/{2}".format(time[2], time[1], time[0]), desc)
             if materia not in votiOrdinati:
                 votiOrdinati[materia] = []
             votiOrdinati[materia].append(str_voto)
@@ -400,6 +404,6 @@ def parseNewAgenda(oldData, newData):
             evtType = "📌" if event['evtCode'] == "AGNT" else "📝"
             separator = "\n" if firstEvent else  "\n\n\n"
             firstEvent = False
-            result += separator + "{0} {1}/{2}/{3} • <b>{4}</b>\n{5}".format(evtType, date[2], date[1], date[0], event['authorName'].title(), event['notes'])
+            result += separator + "{0} {1}/{2}/{3} • <b>{4}</b>\n{5}".format(evtType, date[2], date[1], date[0], event['authorName'].title(), sanitize(event['notes']))
 
     return result if result != "" else None
