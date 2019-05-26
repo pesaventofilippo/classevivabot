@@ -127,7 +127,7 @@ def updateUserdata(user, newDidattica, newNote, newVoti, newAgenda):
 
 
 @db_session
-def runUpdates():
+def runUpdates(long_fetch=False):
     crhour = datetime.now().hour
     pendingUsers = select(user for user in User if user.password != "")[:]
 
@@ -137,7 +137,7 @@ def runUpdates():
             userdata = Data.get(chatId=currentUser.chatId)
             settings = Settings.get(chatId=currentUser.chatId)
             try:
-                newDidattica, newNote, newVoti, newAgenda = fetchAndStore(currentUser, supportApi)
+                newDidattica, newNote, newVoti, newAgenda = fetchAndStore(currentUser, supportApi, long_fetch)
             except ApiServerError:
                 break
 
@@ -306,6 +306,12 @@ def reply(msg):
             selText = str(text.split(" ", 2)[2])
             bot.sendMessage(selId, selText, parse_mode="HTML")
             bot.sendMessage(chatId, selText + "\n\n- Messaggio inviato!", parse_mode="HTML")
+
+    elif text == "/globalupdate":
+        if chatId in adminIds:
+            bot.sendMessage(chatId, "🕙 Inizio aggiornamento globale...")
+            runUpdates(long_fetch=True)
+            bot.sendMessage(chatId, "✅ Aggiornamenti completati!")
 
     elif "reply_to_message" in msg:
         if chatId in adminIds:
