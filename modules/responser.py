@@ -60,7 +60,7 @@ def parseInfo(data):
            "👤 UserID: <b>{12}</b>\n" \
            "👤 Tipo Utente: <b>{13}</b>" \
            "".format(info['firstName'], info['lastName'], time[2], time[1], time[0], info['fiscalCode'], info['ident'],
-                     info['schName'], info['schDedication'], info['schCode'], info['schCity'], info['schProv'],
+                     info['schDedication'], info['schName'], info['schCode'], info['schCity'], info['schProv'],
                      info['usrId'], info['usrType'])
 
 
