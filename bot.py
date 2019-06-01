@@ -21,8 +21,6 @@ except FileNotFoundError:
     f.close()
 
 bot = telepot.Bot(token)
-api = ClasseVivaAPI()
-supportApi = ClasseVivaAPI()
 adminIds = [368894926] # Bot Creator
 
 
@@ -62,7 +60,7 @@ def clearUserData(user):
 
 
 @db_session
-def userLogin(user, api_type=api):
+def userLogin(user, api_type):
     if not isUserLogged(user):
         return False
     try:
@@ -85,7 +83,7 @@ def userLogin(user, api_type=api):
         return False
 
 
-def userLogout(api_type=api):
+def userLogout(api_type):
     api_type.logout()
 
 
@@ -130,14 +128,15 @@ def updateUserdata(user, newDidattica, newNote, newVoti, newAgenda):
 def runUpdates(long_fetch=False):
     crhour = datetime.now().hour
     pendingUsers = select(user for user in User if user.password != "")[:]
+    api = ClasseVivaAPI()
 
     for currentUser in pendingUsers:
 
-        if userLogin(currentUser, supportApi):
+        if userLogin(currentUser, api):
             userdata = Data.get(chatId=currentUser.chatId)
             settings = Settings.get(chatId=currentUser.chatId)
             try:
-                newDidattica, newNote, newVoti, newAgenda = fetchAndStore(currentUser, supportApi, long_fetch)
+                newDidattica, newNote, newVoti, newAgenda = fetchAndStore(currentUser, api, long_fetch)
             except ApiServerError:
                 break
 
@@ -227,8 +226,9 @@ def reply(msg):
         elif user.status == "login_1":
             user.password = crypt(text)
             user.status = "normal"
+            api = ClasseVivaAPI()
 
-            if userLogin(user):
+            if userLogin(user, api):
                 bot.sendMessage(chatId, "Fatto 😊\n"
                                         "Premi /help per vedere la lista dei comandi disponibili.")
                 sent = bot.sendMessage(chatId, "🔍 Aggiorno il profilo...")
@@ -391,12 +391,14 @@ def reply(msg):
 
         elif text == "/aggiorna":
             sent = bot.sendMessage(chatId, "🔍 Cerco aggiornamenti...")
-            if userLogin(user):
+            api = ClasseVivaAPI()
+            if userLogin(user, api):
                 try:
                     newDidattica, newNote, newVoti, newAgenda = fetchAndStore(user, api)
                 except ApiServerError:
                     bot.sendMessage(chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
                                             "Riprova tra qualche minuto.")
+                    userLogout(api)
                     return
                 dataDidattica = resp.parseNewDidattica(userdata.didattica, newDidattica)
                 dataNote = resp.parseNewNote(userdata.note, newNote)
@@ -419,6 +421,8 @@ def reply(msg):
                 if not any([dataDidattica, dataNote, dataVoti, dataAgenda]):
                     bot.editMessageText((chatId, sent['message_id']), "✅ Dati aggiornati!\n"
                                                                       "✅ Nessuna novità!")
+                else:
+                    bot.deleteMessage((chatId, sent['message_id']))
 
         elif text == "/support":
             user.status = "calling_support"
@@ -647,20 +651,22 @@ def button_press(msg):
     elif button == "logout_no":
         bot.editMessageText((chatId, message_id), "<i>Logout annullato.</i>", parse_mode="HTML", reply_markup=None)
 
-    elif userLogin(user):
 
-        if (button == "lezioni_prima") or (button == "lezioni_dopo"):
-            selectedDay = int(query_split[2]) - 1 if "prima" in button else int(query_split[2]) + 1
-            dateformat = (datetime.now() + timedelta(days=selectedDay)).strftime("%d/%m/%Y")
-            try:
-                data = resp.parseLezioni(api.lezioni(selectedDay))
-                bot.editMessageText((chatId, message_id), "📚 <b>Lezioni del {0}</b>:\n\n{1}".format(dateformat, data),
-                                    parse_mode="HTML", reply_markup=keyboards.lezioni(message_id, selectedDay))
-            except ApiServerError:
-                bot.editMessageText((chatId, message_id), "⚠️ I server di ClasseViva non sono raggiungibili.\n"
-                                                          "Riprova tra qualche minuto.", reply_markup=None)
+    else:
+        api = ClasseVivaAPI()
+        if userLogin(user, api):
 
-        userLogout()
+            if (button == "lezioni_prima") or (button == "lezioni_dopo"):
+                selectedDay = int(query_split[2]) - 1 if "prima" in button else int(query_split[2]) + 1
+                dateformat = (datetime.now() + timedelta(days=selectedDay)).strftime("%d/%m/%Y")
+                try:
+                    data = resp.parseLezioni(api.lezioni(selectedDay))
+                    bot.editMessageText((chatId, message_id), "📚 <b>Lezioni del {0}</b>:\n\n{1}".format(dateformat, data),
+                                        parse_mode="HTML", reply_markup=keyboards.lezioni(message_id, selectedDay))
+                except ApiServerError:
+                    bot.editMessageText((chatId, message_id), "⚠️ I server di ClasseViva non sono raggiungibili.\n"
+                                                              "Riprova tra qualche minuto.", reply_markup=None)
+            userLogout(api)
 
 
 bot.message_loop({'chat': reply, 'callback_query': button_press})
