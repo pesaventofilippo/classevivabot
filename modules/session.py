@@ -1,6 +1,6 @@
-import json
-import re
-import requests
+from json import dumps
+from re import sub
+from requests import get, post
 from datetime import datetime, timedelta
 from json.decoder import JSONDecodeError
 from urllib.parse import quote_plus
@@ -32,14 +32,14 @@ class ClasseVivaAPI:
 
 
     def login(self, username: str=None, password: str=None):
-        r = requests.post(
+        r = post(
             url=self.rest_api_url + "/auth/login/",
             headers={"User-Agent": "zorro/1.0",
                      "Z-Dev-Apikey": "+zorro+",
                      "Content-Type": "application/json"
             },
-            data=json.dumps({"uid": username if username else self.username,
-                             "pass": password if username else self.password
+            data=dumps({"uid": username if username else self.username,
+                        "pass": password if username else self.password
             })
         )
         result = r.json()
@@ -48,7 +48,7 @@ class ClasseVivaAPI:
             raise AuthenticationFailedError()
 
         self.token = result['token']
-        self.id = re.sub(r"\D", "", result['ident'])
+        self.id = sub(r"\D", "", result['ident'])
         return {"id": self.id}
 
 
@@ -62,15 +62,15 @@ class ClasseVivaAPI:
         for x in path:
             url += "/{0}".format(quote_plus(x))
 
-        r = requests.get(url=url, headers={"User-Agent": "zorro/1.0", "Z-Dev-Apikey": "+zorro+",
-                                           "Z-Auth-Token": self.token, "Content-Type": "application/json"})
+        r = get(url=url, headers={"User-Agent": "zorro/1.0", "Z-Dev-Apikey": "+zorro+",
+                                  "Z-Auth-Token": self.token, "Content-Type": "application/json"})
         try:
             rj = r.json()
             if rj.get('error'):
                 if 'auth token expired' in rj['error']:
                     self.login()
-                    r = requests.get(url=url, headers={"User-Agent": "zorro/1.0", "Z-Dev-Apikey": "+zorro+",
-                                                       "Z-Auth-Token": self.token, "Content-Type": "application/json"})
+                    r = get(url=url, headers={"User-Agent": "zorro/1.0", "Z-Dev-Apikey": "+zorro+",
+                                              "Z-Auth-Token": self.token, "Content-Type": "application/json"})
                     try:
                         rj = r.json()
                     except JSONDecodeError:

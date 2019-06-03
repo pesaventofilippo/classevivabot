@@ -1,14 +1,18 @@
-﻿import telepot
-from telepot.exception import TelegramError, BotWasBlockedError
+﻿# Python Libraries
 from time import sleep
-from datetime import datetime, timedelta
+from telepot import Bot
+from threading import Thread
 from pony.orm import db_session, select
-from modules.session import ClasseVivaAPI, AuthenticationFailedError, ApiServerError
+from datetime import datetime, timedelta
+from telepot.exception import TelegramError, BotWasBlockedError
+
+# Custom Modules
 import modules.responser as resp
-from modules.helpers import sendLongMessage
 import modules.keyboards as keyboards
 from modules.crypter import crypt, decrypt
+from modules.helpers import sendLongMessage
 from modules.database import User, Data, ParsedData, Settings
+from modules.session import ClasseVivaAPI, AuthenticationFailedError, ApiServerError
 
 try:
     f = open('token.txt', 'r')
@@ -20,7 +24,7 @@ except FileNotFoundError:
     f.write(token)
     f.close()
 
-bot = telepot.Bot(token)
+bot = Bot(token)
 adminIds = [368894926] # Bot Creator
 
 
@@ -125,45 +129,67 @@ def updateUserdata(user, newDidattica, newNote, newVoti, newAgenda):
 
 
 @db_session
+def runUserUpdate(user, long_fetch, crhour):
+    api = ClasseVivaAPI()
+    if userLogin(user, api):
+        userdata = Data.get(chatId=user.chatId)
+        settings = Settings.get(chatId=user.chatId)
+        try:
+            newDidattica, newNote, newVoti, newAgenda = fetchAndStore(user, api, long_fetch)
+        except ApiServerError:
+            return
+
+        if settings.wantsNotifications is True:
+            if (settings.doNotDisturb is False) or (crhour in range(7, 21)):
+                dataDidattica = resp.parseNewDidattica(userdata.didattica, newDidattica)
+                dataNote = resp.parseNewNote(userdata.note, newNote)
+                dataVoti = resp.parseNewVoti(userdata.voti, newVoti, user)
+                dataAgenda = resp.parseNewAgenda(userdata.agenda, newAgenda)
+                updateUserdata(user, newDidattica, newNote, newVoti, newAgenda)
+                try:
+                    if dataDidattica and "didattica" in settings.activeNews:
+                        bot.sendMessage(user.chatId, "🔔 <b>Nuovi file caricati!</b>"
+                                                            "{0}".format(dataDidattica), parse_mode="HTML")
+                    if dataNote and "note" in settings.activeNews:
+                        bot.sendMessage(user.chatId, "🔔 <b>Hai nuove note!</b>"
+                                                            "{0}".format(dataNote), parse_mode="HTML")
+                    if dataVoti and "voti" in settings.activeNews:
+                        bot.sendMessage(user.chatId, "🔔 <b>Hai nuovi voti!</b>"
+                                                            "{0}".format(dataVoti), parse_mode="HTML")
+                    if dataAgenda and "agenda" in settings.activeNews:
+                        bot.sendMessage(user.chatId, "🔔 <b>Hai nuovi impegni!</b>\n"
+                                                            "{0}".format(dataAgenda), parse_mode="HTML")
+                except BotWasBlockedError:
+                    clearUserData(user)
+                except TelegramError:
+                    pass
+
+
+@db_session
 def runUpdates(long_fetch=False):
     crhour = datetime.now().hour
     pendingUsers = select(user for user in User if user.password != "")[:]
-    api = ClasseVivaAPI()
-
     for currentUser in pendingUsers:
+        Thread(target=runUserUpdate, args=[currentUser, long_fetch, crhour]).start()
 
-        if userLogin(currentUser, api):
-            userdata = Data.get(chatId=currentUser.chatId)
-            settings = Settings.get(chatId=currentUser.chatId)
+
+@db_session
+def runUserDaily(user, crhour, crminute, dayString):
+    settings = Settings.get(chatId=user.chatId)
+    if settings.wantsDailyUpdates:
+        hoursplit = settings.dailyUpdatesHour.split(":")
+        if (int(hoursplit[0]) == crhour) and (int(hoursplit[1]) == crminute):
+            stored = ParsedData.get(chatId=user.chatId)
             try:
-                newDidattica, newNote, newVoti, newAgenda = fetchAndStore(currentUser, api, long_fetch)
-            except ApiServerError:
-                break
-
-            if settings.wantsNotifications is True:
-                if (settings.doNotDisturb is False) or (crhour in range(7, 21)):
-                    dataDidattica = resp.parseNewDidattica(userdata.didattica, newDidattica)
-                    dataNote = resp.parseNewNote(userdata.note, newNote)
-                    dataVoti = resp.parseNewVoti(userdata.voti, newVoti, currentUser)
-                    dataAgenda = resp.parseNewAgenda(userdata.agenda, newAgenda)
-                    updateUserdata(currentUser, newDidattica, newNote, newVoti, newAgenda)
-                    try:
-                        if dataDidattica and "didattica" in settings.activeNews:
-                            bot.sendMessage(currentUser.chatId, "🔔 <b>Nuovi file caricati!</b>"
-                                                                "{0}".format(dataDidattica), parse_mode="HTML")
-                        if dataNote and "note" in settings.activeNews:
-                            bot.sendMessage(currentUser.chatId, "🔔 <b>Hai nuove note!</b>"
-                                                                "{0}".format(dataNote), parse_mode="HTML")
-                        if dataVoti and "voti" in settings.activeNews:
-                            bot.sendMessage(currentUser.chatId, "🔔 <b>Hai nuovi voti!</b>"
-                                                                "{0}".format(dataVoti), parse_mode="HTML")
-                        if dataAgenda and "agenda" in settings.activeNews:
-                            bot.sendMessage(currentUser.chatId, "🔔 <b>Hai nuovi impegni!</b>\n"
-                                                                "{0}".format(dataAgenda), parse_mode="HTML")
-                    except BotWasBlockedError:
-                        clearUserData(currentUser)
-                    except TelegramError:
-                        pass
+                bot.sendMessage(user.chatId, "🕙 <b>Promemoria!</b>\n\n"
+                                              "📆 <b>Cosa devi fare per {0}</b>:\n\n"
+                                              "{1}\n\n\n"
+                                              "📚 <b>Le lezioni di oggi</b>:\n\n"
+                                              "{2}".format(dayString, stored.domani, stored.lezioni), parse_mode="HTML")
+            except BotWasBlockedError:
+                clearUserData(user)
+            except TelegramError:
+                pass
 
 
 @db_session
@@ -173,21 +199,7 @@ def runDailyUpdates(crminute):
     dayString = "lunedì" if isSaturday else "domani"
     pendingUsers = select(user for user in User if user.password != "")[:]
     for currentUser in pendingUsers:
-        settings = Settings.get(chatId=currentUser.chatId)
-        if settings.wantsDailyUpdates:
-            hoursplit = settings.dailyUpdatesHour.split(":")
-            if (int(hoursplit[0]) == crhour) and (int(hoursplit[1]) == crminute):
-                stored = ParsedData.get(chatId=currentUser.chatId)
-                try:
-                    bot.sendMessage(currentUser.chatId, "🕙 <b>Promemoria!</b>\n\n"
-                                                        "📆 <b>Cosa devi fare per {0}</b>:\n\n"
-                                                        "{1}\n\n\n"
-                                                        "📚 <b>Le lezioni di oggi</b>:\n\n"
-                                                        "{2}".format(dayString, stored.domani, stored.lezioni), parse_mode="HTML")
-                except BotWasBlockedError:
-                    clearUserData(currentUser)
-                except TelegramError:
-                    pass
+        Thread(target=runUserDaily, args=[currentUser, crhour, crminute, dayString]).start()
 
 
 @db_session
@@ -447,6 +459,10 @@ def reply(msg):
                                     "Premi /help se serve aiuto.".format(name), parse_mode="HTML")
 
 
+def accept_message(msg):
+    Thread(target=reply, args=[msg]).start()
+
+
 @db_session
 def button_press(msg):
     chatId, query_data = telepot.glance(msg, flavor="callback_query")[1:3]
@@ -669,7 +685,11 @@ def button_press(msg):
             userLogout(api)
 
 
-bot.message_loop({'chat': reply, 'callback_query': button_press})
+def accept_button(msg):
+    Thread(target=button_press, args=[msg]).start()
+
+
+bot.message_loop({'chat': accept_message, 'callback_query': accept_button})
 
 while True:
     sleep(60)
