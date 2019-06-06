@@ -1,4 +1,6 @@
 ﻿def sanitize(dinput):
+    if not dinput:
+        return None
     from xml.sax.saxutils import escape
     esc_table = {
         ">": "&gt;",
