@@ -233,7 +233,24 @@ def reply(msg):
     userdata = Data.get(chatId=chatId)
     stored = ParsedData.get(chatId=chatId)
 
-    if user.status != "normal":
+
+    if text == "/about":
+        bot.sendMessage(chatId, "ℹ️ <b>Informazioni sul bot</b>\n"
+                                "ClasseVivaBot è un bot creato e sviluppato da Filippo Pesavento, che ti può aiutare "
+                                "durante l'anno scolastico mandando notifiche per le novità del registro e molto altro.\n"
+                                "Prova ad usarlo per scoprire quanto è comodo!\n\n"
+                                "<b>Sviluppo:</b> Filippo Pesavento\n"
+                                "<b>Hosting:</b> Filippo Pesavento\n\n"
+                                "<b>Info sicurezza:</b> /aboutprivacy", parse_mode="HTML")
+
+    elif text == "/aboutprivacy":
+        bot.sendMessage(chatId, "ℹ️ <b>Informazioni sulla privacy</b>\n"
+                                "# INFO\n\n"
+                                "# INFO DETTAGLIATE\n\n"
+                                "<a href=\"https://pesaventofilippo.tk/projects/classevivabot\">Altre info & Privacy Policy</a>", parse_mode="HTML")
+
+
+    elif user.status != "normal":
         if text == "/annulla":
             user.status = "normal"
             bot.sendMessage(chatId, "Comando annullato!")
@@ -303,19 +320,6 @@ def reply(msg):
                                 "Non preoccuparti, per adesso non è un problema e questo bot continuerà ad essere gratuito, ma se proprio ti senti generoso e "
                                 "hai voglia di farmi un regalo, sei il benvenuto :)\n\n"
                                 "<i>Grazie di cuore.</i> ❤️", parse_mode="HTML", reply_markup=keyboards.payments())
-
-    elif text == "/about":
-        bot.sendMessage(chatId, "ℹ️ <b>Informazioni sul bot</b>\n"
-                                "ClasseVivaBot è un bot creato e sviluppato da Filippo Pesavento, che ti può aiutare "
-                                "durante l'anno scolastico mandando notifiche per le novità del registro e molto altro.\n"
-                                "Prova ad usarlo per scoprire quanto è comodo!\n\n"
-                                "<b>Sviluppo:</b> Filippo Pesavento\n"
-                                "<b>Hosting:</b> Filippo Pesavento\n\n"
-                                "<b>Info sicurezza:</b> /aboutprivacy", parse_mode="HTML")
-
-    elif text == "/aboutprivacy":
-        bot.sendMessage(chatId, "ℹ️ TODO\n"
-                                "<a href=\"https://pesaventofilippo.tk/projects/classevivabot\">Altre info & Privacy Policy</a>", parse_mode="HTML")
 
     elif text.startswith("/broadcast "):
         if chatId in adminIds:
