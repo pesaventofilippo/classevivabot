@@ -1,6 +1,6 @@
 ﻿# Python Libraries
 from time import sleep
-from telepot import Bot
+from telepot import Bot, glance
 from threading import Thread
 from pony.orm import db_session, select
 from datetime import datetime, timedelta
@@ -465,7 +465,7 @@ def accept_message(msg):
 
 @db_session
 def button_press(msg):
-    chatId, query_data = telepot.glance(msg, flavor="callback_query")[1:3]
+    chatId, query_data = glance(msg, flavor="callback_query")[1:3]
     user = User.get(chatId=chatId)
     settings = Settings.get(chatId=chatId)
     query_split = query_data.split("#")
