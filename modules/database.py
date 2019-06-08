@@ -8,7 +8,6 @@ class User(db.Entity):
     username = Optional(str)
     password = Optional(str)
     status = Required(str, default="normal")
-    isPremium = Required(bool, default=False)
     lastPeriod = Required(int, default=1)
 
 
@@ -23,6 +22,7 @@ class Data(db.Entity):
     agenda = Optional(Json)
     domani = Optional(Json)
     lezioni = Optional(Json)
+    comunicazioni = Optional(Json)
 
 
 class ParsedData(db.Entity):
@@ -36,6 +36,7 @@ class ParsedData(db.Entity):
     agenda = Optional(str)
     domani = Optional(str)
     lezioni = Optional(str)
+    comunicazioni = Optional(str)
 
 
 class Settings(db.Entity):
@@ -44,7 +45,7 @@ class Settings(db.Entity):
     doNotDisturb = Required(bool, default=True)
     wantsDailyUpdates = Required(bool, default=True)
     dailyUpdatesHour = Required(str, default="13:30")
-    activeNews = Required(StrArray, default=["didattica", "note", "voti", "agenda"])
+    activeNews = Required(StrArray, default=["didattica", "note", "voti", "agenda", "comunicazioni"])
 
 
 db.generate_mapping(create_tables=True)

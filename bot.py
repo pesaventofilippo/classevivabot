@@ -50,6 +50,7 @@ def clearUserData(user):
     userdata.agenda = {}
     userdata.domani = {}
     userdata.lezioni = {}
+    userdata.comunicazioni = {}
 
     stored = ParsedData.get(chatId=user.chatId)
     stored.didattica = ""
@@ -61,6 +62,7 @@ def clearUserData(user):
     stored.agenda = ""
     stored.domani = ""
     stored.lezioni = ""
+    stored.comunicazioni = ""
 
 
 @db_session
@@ -99,6 +101,7 @@ def fetchAndStore(user, api_type, fetch_long=False):
     newAgenda = api_type.agenda(14)
     newAssenze = api_type.assenze()
     newLezioni = api_type.lezioni()
+    newComunicazioni = api_type.comunicazioni()
 
     stored = ParsedData.get(chatId=user.chatId)
     stored.note = resp.parseNote(newNote)
@@ -108,6 +111,7 @@ def fetchAndStore(user, api_type, fetch_long=False):
     stored.domani = resp.parseDomani(newAgenda)
     stored.lezioni = resp.parseLezioni(newLezioni)
     stored.didattica = resp.parseDidattica(newDidattica)
+    stored.comunicazioni = resp.parseComunicazioni(newComunicazioni)
 
     if fetch_long:
         newInfo = api_type.info()
@@ -116,16 +120,17 @@ def fetchAndStore(user, api_type, fetch_long=False):
         stored.prof = resp.parseMaterie(newProf)
 
     userLogout(api_type)
-    return newDidattica, newNote, newVoti, newAgenda
+    return newDidattica, newNote, newVoti, newAgenda, newComunicazioni
 
 
 @db_session
-def updateUserdata(user, newDidattica, newNote, newVoti, newAgenda):
+def updateUserdata(user, newDidattica, newNote, newVoti, newAgenda, newComunicazioni):
     userdata = Data.get(chatId=user.chatId)
     userdata.didattica = newDidattica
     userdata.note = newNote
     userdata.voti = newVoti
     userdata.agenda = newAgenda
+    userdata.comunicazioni = newComunicazioni
 
 
 @db_session
@@ -135,7 +140,7 @@ def runUserUpdate(user, long_fetch, crhour):
         userdata = Data.get(chatId=user.chatId)
         settings = Settings.get(chatId=user.chatId)
         try:
-            newDidattica, newNote, newVoti, newAgenda = fetchAndStore(user, api, long_fetch)
+            newDidattica, newNote, newVoti, newAgenda, newComunicazioni = fetchAndStore(user, api, long_fetch)
         except ApiServerError:
             return
 
@@ -145,20 +150,24 @@ def runUserUpdate(user, long_fetch, crhour):
                 dataNote = resp.parseNewNote(userdata.note, newNote)
                 dataVoti = resp.parseNewVoti(userdata.voti, newVoti, user)
                 dataAgenda = resp.parseNewAgenda(userdata.agenda, newAgenda)
-                updateUserdata(user, newDidattica, newNote, newVoti, newAgenda)
+                dataComunicazioni = resp.parseNewComunicazioni(userdata.comunicazioni, newComunicazioni)
+                updateUserdata(user, newDidattica, newNote, newVoti, newAgenda, newComunicazioni)
                 try:
-                    if dataDidattica and "didattica" in settings.activeNews:
+                    if dataDidattica and ("didattica" in settings.activeNews):
                         bot.sendMessage(user.chatId, "🔔 <b>Nuovi file caricati!</b>"
                                                             "{0}".format(dataDidattica), parse_mode="HTML")
-                    if dataNote and "note" in settings.activeNews:
+                    if dataNote and ("note" in settings.activeNews):
                         bot.sendMessage(user.chatId, "🔔 <b>Hai nuove note!</b>"
                                                             "{0}".format(dataNote), parse_mode="HTML")
-                    if dataVoti and "voti" in settings.activeNews:
+                    if dataVoti and ("voti" in settings.activeNews):
                         bot.sendMessage(user.chatId, "🔔 <b>Hai nuovi voti!</b>"
                                                             "{0}".format(dataVoti), parse_mode="HTML")
-                    if dataAgenda and "agenda" in settings.activeNews:
+                    if dataAgenda and ("agenda" in settings.activeNews):
                         bot.sendMessage(user.chatId, "🔔 <b>Hai nuovi impegni!</b>\n"
                                                             "{0}".format(dataAgenda), parse_mode="HTML")
+                    if dataComunicazioni and ("comunicazioni" in settings.activeNews):
+                        bot.sendMessage(user.chatId, "🔔 <b>Hai nuove comunicazioni!</b>"
+                                                     "{0}".format(dataComunicazioni), parse_mode="HTML")
                 except BotWasBlockedError:
                     clearUserData(user)
                 except TelegramError:
@@ -233,7 +242,8 @@ def reply(msg):
             user.username = text
             user.status = "login_1"
             bot.sendMessage(chatId, "👍 Ottimo. Adesso inviami la password.\n"
-                                    "Ricorda che la password viene salvata solo per te e viene criptata, nessuno potrà leggerla.")
+                                    "Ricorda che la password viene salvata solo per te e viene criptata, nessuno potrà leggerla.\n\n"
+                                    "Sei preoccupato per la sicurezza della password? /aboutprivacy")
 
         elif user.status == "login_1":
             user.password = crypt(text)
@@ -244,8 +254,8 @@ def reply(msg):
                 bot.sendMessage(chatId, "Fatto 😊\n"
                                         "Premi /help per vedere la lista dei comandi disponibili.")
                 sent = bot.sendMessage(chatId, "🔍 Aggiorno il profilo...")
-                newDidattica, newNote, newVoti, newAgenda = fetchAndStore(user, api, fetch_long=True)
-                updateUserdata(user, newDidattica, newNote, newVoti, newAgenda)
+                newDidattica, newNote, newVoti, newAgenda, newComunicazioni = fetchAndStore(user, api, fetch_long=True)
+                updateUserdata(user, newDidattica, newNote, newVoti, newAgenda, newComunicazioni)
                 bot.editMessageText((chatId, sent['message_id']), "✅ Profilo aggiornato!")
 
         elif user.status == "calling_support":
@@ -275,13 +285,15 @@ def reply(msg):
                   "- /lezioni - Visualizza la lista delle lezioni\n" \
                   "- /voti - Visualizza la lista dei voti\n" \
                   "- /note - Visualizza la lista delle note\n" \
+                  "- /circolari - Visualizza le circolari da leggere\n" \
                   "- /info - Visualizza le tue info utente\n" \
                   "- /prof - Visualizza la lista delle materie e dei prof\n" \
                   "- /settings - Modifica le impostazioni personali del bot\n" \
                   "- /dona - Supporta il bot e il mio lavoro, se ti senti generoso :)\n" \
                   "- /about - Informazioni sul bot\n" \
+                  "- /aboutprivacy - Più informazioni sulla privacy" \
                   "- /support - Contatta lo staff (emergenze)\n\n" \
-                  "<b>Notifiche</b>: ogni mezz'ora, se vuoi, ti invierò un messaggio se ti sono arrivati nuovi voti, note, compiti o materiali."
+                  "<b>Notifiche</b>: ogni mezz'ora, se vuoi, ti invierò un messaggio se ti sono arrivati nuovi voti, note, compiti, materiali o avvisi."
         bot.sendMessage(chatId, message, parse_mode="HTML")
 
     elif text == "/dona":
@@ -298,7 +310,11 @@ def reply(msg):
                                 "durante l'anno scolastico mandando notifiche per le novità del registro e molto altro.\n"
                                 "Prova ad usarlo per scoprire quanto è comodo!\n\n"
                                 "<b>Sviluppo:</b> Filippo Pesavento\n"
-                                "<b>Hosting:</b> Filippo Pesavento\n"
+                                "<b>Hosting:</b> Filippo Pesavento\n\n"
+                                "<b>Info sicurezza:</b> /aboutprivacy", parse_mode="HTML")
+
+    elif text == "/aboutprivacy":
+        bot.sendMessage(chatId, "ℹ️ TODO\n"
                                 "<a href=\"https://pesaventofilippo.tk/projects/classevivabot\">Altre info & Privacy Policy</a>", parse_mode="HTML")
 
     elif text.startswith("/broadcast "):
@@ -384,6 +400,10 @@ def reply(msg):
             bot.sendMessage(chatId, "📆 <b>Compiti e verifiche per {0}</b>:\n\n"
                                     "{1}".format(dayString, stored.domani), parse_mode="HTML")
 
+        elif text == "/circolari":
+            bot.sendMessage(chatId, "📩 <b>Circolari da leggere</b>:\n\n"
+                                    "{0}".format(stored.comunicazioni), parse_mode="HTML")
+
         elif text == "/lezioni":
             sent = bot.sendMessage(chatId, "📚 <b>Lezioni di oggi</b>:\n\n"
                                            "{0}".format(stored.lezioni), parse_mode="HTML", reply_markup=None)
@@ -406,7 +426,7 @@ def reply(msg):
             api = ClasseVivaAPI()
             if userLogin(user, api):
                 try:
-                    newDidattica, newNote, newVoti, newAgenda = fetchAndStore(user, api)
+                    newDidattica, newNote, newVoti, newAgenda, newComunicazioni = fetchAndStore(user, api)
                 except ApiServerError:
                     bot.sendMessage(chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
                                             "Riprova tra qualche minuto.")
@@ -416,7 +436,8 @@ def reply(msg):
                 dataNote = resp.parseNewNote(userdata.note, newNote)
                 dataVoti = resp.parseNewVoti(userdata.voti, newVoti, user)
                 dataAgenda = resp.parseNewAgenda(userdata.agenda, newAgenda)
-                updateUserdata(user, newDidattica, newNote, newVoti, newAgenda)
+                dataComunicazioni = resp.parseNewComunicazioni(userdata.comunicazioni, newComunicazioni)
+                updateUserdata(user, newDidattica, newNote, newVoti, newAgenda, newComunicazioni)
 
                 if dataDidattica is not None:
                     bot.sendMessage(chatId, "🔔 <b>Nuovi file caricati!</b>{0}".format(dataDidattica), parse_mode="HTML")
@@ -430,7 +451,10 @@ def reply(msg):
                 if dataAgenda is not None:
                     bot.sendMessage(chatId, "🔔 <b>Hai nuovi impegni!</b>\n{0}".format(dataAgenda), parse_mode="HTML")
 
-                if not any([dataDidattica, dataNote, dataVoti, dataAgenda]):
+                if dataComunicazioni is not None:
+                    bot.sendMessage(chatId, "🔔 <b>Hai nuove comunicazioni!</b>{0}".format(dataComunicazioni), parse_mode="HTML")
+
+                if not any([dataDidattica, dataNote, dataVoti, dataAgenda, dataComunicazioni]):
                     bot.editMessageText((chatId, sent['message_id']), "✅ Dati aggiornati!\n"
                                                                       "✅ Nessuna novità!")
                 else:
@@ -505,12 +529,14 @@ def button_press(msg):
                                                   "📚 Didattica: {0}\n"
                                                   "❗️ Note: {1}\n"
                                                   "📝 Voti: {2}\n"
-                                                  "📆 Agenda: {3}\n\n"
+                                                  "📆 Agenda: {3}\n"
+                                                  "📩 Circolari: {4}\n\n"
                                                   "Quali notifiche vuoi ricevere? (Clicca per cambiare)"
                                                   "".format("🔔 Attivo" if "didattica" in settings.activeNews else "🔕 Disattivo",
                                                             "🔔 Attivo" if "note" in settings.activeNews else "🔕 Disattivo",
                                                             "🔔 Attivo" if "voti" in settings.activeNews else "🔕 Disattivo",
-                                                            "🔔 Attivo" if "agenda" in settings.activeNews else "🔕 Disattivo"),
+                                                            "🔔 Attivo" if "agenda" in settings.activeNews else "🔕 Disattivo",
+                                                            "🔔 Attivo" if "comunicazioni" in settings.activeNews else "🔕 Disattivo"),
                                                     parse_mode="HTML", reply_markup=keyboards.settings_selectnews(message_id))
 
     elif button == "news_didattica":
@@ -519,16 +545,18 @@ def button_press(msg):
         else:
             settings.activeNews.append("didattica")
         bot.editMessageText((chatId, message_id), "📲 <b>Selezione notifiche</b>\n\n"
-                                                      "📚 Didattica: {0}\n"
-                                                      "❗️ Note: {1}\n"
-                                                      "📝 Voti: {2}\n"
-                                                      "📆 Agenda: {3}\n\n"
-                                                      "Quali notifiche vuoi ricevere? (Clicca per cambiare)"
-                                                      "".format("🔔 Attivo" if "didattica" in settings.activeNews else "🔕 Disattivo",
-                                                                "🔔 Attivo" if "note" in settings.activeNews else "🔕 Disattivo",
-                                                                "🔔 Attivo" if "voti" in settings.activeNews else "🔕 Disattivo",
-                                                                "🔔 Attivo" if "agenda" in settings.activeNews else "🔕 Disattivo"),
-                                                        parse_mode="HTML", reply_markup=keyboards.settings_selectnews(message_id))
+                                                  "📚 Didattica: {0}\n"
+                                                  "❗️ Note: {1}\n"
+                                                  "📝 Voti: {2}\n"
+                                                  "📆 Agenda: {3}\n"
+                                                  "📩 Circolari: {4}\n\n"
+                                                  "Quali notifiche vuoi ricevere? (Clicca per cambiare)"
+                                                  "".format("🔔 Attivo" if "didattica" in settings.activeNews else "🔕 Disattivo",
+                                                            "🔔 Attivo" if "note" in settings.activeNews else "🔕 Disattivo",
+                                                            "🔔 Attivo" if "voti" in settings.activeNews else "🔕 Disattivo",
+                                                            "🔔 Attivo" if "agenda" in settings.activeNews else "🔕 Disattivo",
+                                                            "🔔 Attivo" if "comunicazioni" in settings.activeNews else "🔕 Disattivo"),
+                                                    parse_mode="HTML", reply_markup=keyboards.settings_selectnews(message_id))
 
     elif button == "news_note":
         if "note" in settings.activeNews:
@@ -536,16 +564,18 @@ def button_press(msg):
         else:
             settings.activeNews.append("note")
         bot.editMessageText((chatId, message_id), "📲 <b>Selezione notifiche</b>\n\n"
-                                                      "📚 Didattica: {0}\n"
-                                                      "❗️ Note: {1}\n"
-                                                      "📝 Voti: {2}\n"
-                                                      "📆 Agenda: {3}\n\n"
-                                                      "Quali notifiche vuoi ricevere? (Clicca per cambiare)"
-                                                      "".format("🔔 Attivo" if "didattica" in settings.activeNews else "🔕 Disattivo",
-                                                                "🔔 Attivo" if "note" in settings.activeNews else "🔕 Disattivo",
-                                                                "🔔 Attivo" if "voti" in settings.activeNews else "🔕 Disattivo",
-                                                                "🔔 Attivo" if "agenda" in settings.activeNews else "🔕 Disattivo"),
-                                                        parse_mode="HTML", reply_markup=keyboards.settings_selectnews(message_id))
+                                                  "📚 Didattica: {0}\n"
+                                                  "❗️ Note: {1}\n"
+                                                  "📝 Voti: {2}\n"
+                                                  "📆 Agenda: {3}\n"
+                                                  "📩 Circolari: {4}\n\n"
+                                                  "Quali notifiche vuoi ricevere? (Clicca per cambiare)"
+                                                  "".format("🔔 Attivo" if "didattica" in settings.activeNews else "🔕 Disattivo",
+                                                            "🔔 Attivo" if "note" in settings.activeNews else "🔕 Disattivo",
+                                                            "🔔 Attivo" if "voti" in settings.activeNews else "🔕 Disattivo",
+                                                            "🔔 Attivo" if "agenda" in settings.activeNews else "🔕 Disattivo",
+                                                            "🔔 Attivo" if "comunicazioni" in settings.activeNews else "🔕 Disattivo"),
+                                                    parse_mode="HTML", reply_markup=keyboards.settings_selectnews(message_id))
 
     elif button == "news_voti":
         if "voti" in settings.activeNews:
@@ -553,16 +583,18 @@ def button_press(msg):
         else:
             settings.activeNews.append("voti")
         bot.editMessageText((chatId, message_id), "📲 <b>Selezione notifiche</b>\n\n"
-                                                      "📚 Didattica: {0}\n"
-                                                      "❗️ Note: {1}\n"
-                                                      "📝 Voti: {2}\n"
-                                                      "📆 Agenda: {3}\n\n"
-                                                      "Quali notifiche vuoi ricevere? (Clicca per cambiare)"
-                                                      "".format("🔔 Attivo" if "didattica" in settings.activeNews else "🔕 Disattivo",
-                                                                "🔔 Attivo" if "note" in settings.activeNews else "🔕 Disattivo",
-                                                                "🔔 Attivo" if "voti" in settings.activeNews else "🔕 Disattivo",
-                                                                "🔔 Attivo" if "agenda" in settings.activeNews else "🔕 Disattivo"),
-                                                        parse_mode="HTML", reply_markup=keyboards.settings_selectnews(message_id))
+                                                  "📚 Didattica: {0}\n"
+                                                  "❗️ Note: {1}\n"
+                                                  "📝 Voti: {2}\n"
+                                                  "📆 Agenda: {3}\n"
+                                                  "📩 Circolari: {4}\n\n"
+                                                  "Quali notifiche vuoi ricevere? (Clicca per cambiare)"
+                                                  "".format("🔔 Attivo" if "didattica" in settings.activeNews else "🔕 Disattivo",
+                                                            "🔔 Attivo" if "note" in settings.activeNews else "🔕 Disattivo",
+                                                            "🔔 Attivo" if "voti" in settings.activeNews else "🔕 Disattivo",
+                                                            "🔔 Attivo" if "agenda" in settings.activeNews else "🔕 Disattivo",
+                                                            "🔔 Attivo" if "comunicazioni" in settings.activeNews else "🔕 Disattivo"),
+                                                    parse_mode="HTML", reply_markup=keyboards.settings_selectnews(message_id))
 
     elif button == "news_agenda":
         if "agenda" in settings.activeNews:
@@ -570,16 +602,37 @@ def button_press(msg):
         else:
             settings.activeNews.append("agenda")
         bot.editMessageText((chatId, message_id), "📲 <b>Selezione notifiche</b>\n\n"
-                                                      "📚 Didattica: {0}\n"
-                                                      "❗️ Note: {1}\n"
-                                                      "📝 Voti: {2}\n"
-                                                      "📆 Agenda: {3}\n\n"
-                                                      "Quali notifiche vuoi ricevere? (Clicca per cambiare)"
-                                                      "".format("🔔 Attivo" if "didattica" in settings.activeNews else "🔕 Disattivo",
-                                                                "🔔 Attivo" if "note" in settings.activeNews else "🔕 Disattivo",
-                                                                "🔔 Attivo" if "voti" in settings.activeNews else "🔕 Disattivo",
-                                                                "🔔 Attivo" if "agenda" in settings.activeNews else "🔕 Disattivo"),
-                                                        parse_mode="HTML", reply_markup=keyboards.settings_selectnews(message_id))
+                                                  "📚 Didattica: {0}\n"
+                                                  "❗️ Note: {1}\n"
+                                                  "📝 Voti: {2}\n"
+                                                  "📆 Agenda: {3}\n"
+                                                  "📩 Circolari: {4}\n\n"
+                                                  "Quali notifiche vuoi ricevere? (Clicca per cambiare)"
+                                                  "".format("🔔 Attivo" if "didattica" in settings.activeNews else "🔕 Disattivo",
+                                                            "🔔 Attivo" if "note" in settings.activeNews else "🔕 Disattivo",
+                                                            "🔔 Attivo" if "voti" in settings.activeNews else "🔕 Disattivo",
+                                                            "🔔 Attivo" if "agenda" in settings.activeNews else "🔕 Disattivo",
+                                                            "🔔 Attivo" if "comunicazioni" in settings.activeNews else "🔕 Disattivo"),
+                                                    parse_mode="HTML", reply_markup=keyboards.settings_selectnews(message_id))
+
+    elif button == "news_circolari":
+        if "comunicazioni" in settings.activeNews:
+            settings.activeNews.remove("comunicazioni")
+        else:
+            settings.activeNews.append("comunicazioni")
+        bot.editMessageText((chatId, message_id), "📲 <b>Selezione notifiche</b>\n\n"
+                                                  "📚 Didattica: {0}\n"
+                                                  "❗️ Note: {1}\n"
+                                                  "📝 Voti: {2}\n"
+                                                  "📆 Agenda: {3}\n"
+                                                  "📩 Circolari: {4}\n\n"
+                                                  "Quali notifiche vuoi ricevere? (Clicca per cambiare)"
+                                                  "".format("🔔 Attivo" if "didattica" in settings.activeNews else "🔕 Disattivo",
+                                                            "🔔 Attivo" if "note" in settings.activeNews else "🔕 Disattivo",
+                                                            "🔔 Attivo" if "voti" in settings.activeNews else "🔕 Disattivo",
+                                                            "🔔 Attivo" if "agenda" in settings.activeNews else "🔕 Disattivo",
+                                                            "🔔 Attivo" if "comunicazioni" in settings.activeNews else "🔕 Disattivo"),
+                                                    parse_mode="HTML", reply_markup=keyboards.settings_selectnews(message_id))
 
     elif button == "settings_notif_yes":
         settings.wantsNotifications = True

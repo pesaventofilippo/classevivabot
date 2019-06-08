@@ -272,6 +272,25 @@ def parseLezioni(data):
     return result
 
 
+def parseComunicazioni(data):
+    if (data is None) or (not data.get('items')):
+        return "📩 Non ci sono circolari da leggere."
+
+    result = ""
+    isFirst = True
+    for item in data['items']:
+        status = item['cntStatus']
+        title = sanitize(item['cntTitle'])
+        isRead = item['readStatus']
+        if (status == 'active') and not isRead:
+            string = "\n✉️ {0}".format(title)
+            result += string if isFirst else "\n" + string
+            isFirst = False
+
+    return result
+
+
+
 def parseNewDidattica(oldData, newData):
     if (newData is None) or (not newData.get('didacticts')):
         return None
@@ -412,5 +431,26 @@ def parseNewAgenda(oldData, newData):
             separator = "\n" if firstEvent else  "\n\n\n"
             firstEvent = False
             result += separator + "{0} {1}/{2}/{3} • <b>{4}</b>\n{5}".format(evtType, date[2], date[1], date[0], event['authorName'].title(), sanitize(event['notes']))
+
+    return result if result != "" else None
+
+
+def parseNewComunicazioni(oldData, newData):
+    if (newData is None) or (not newData.get('items')):
+        return None
+    if oldData is None:
+        return parseComunicazioni(newData)
+
+    result = ""
+    isFirst = True
+    for item in data['items']:
+        if (not oldData.get('items')) or (item not in oldData['items']):
+            status = item['cntStatus']
+            title = sanitize(item['cntTitle'])
+            isRead = item['readStatus']
+            if (status == 'active') and not isRead:
+                string = "\n✉️ {0}".format(title)
+                result += string if isFirst else "\n" + string
+                isFirst = False
 
     return result if result != "" else None

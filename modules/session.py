@@ -22,24 +22,22 @@ class InvalidRequestError(Exception):
 
 
 class ClasseVivaAPI:
-    rest_api_url = "https://web.spaggiari.eu/rest/v1"
+    baseApiUrl = "https://web.spaggiari.eu/rest/v1"
 
     def __init__(self):
         self.id = None
-        self.username = None
-        self.password = None
         self.token = None
 
 
-    def login(self, username: str=None, password: str=None):
+    def login(self, username: str, password: str):
         r = post(
-            url=self.rest_api_url + "/auth/login/",
+            url=self.baseApiUrl + "/auth/login/",
             headers={"User-Agent": "zorro/1.0",
                      "Z-Dev-Apikey": "+zorro+",
                      "Content-Type": "application/json"
             },
-            data=dumps({"uid": username if username else self.username,
-                        "pass": password if username else self.password
+            data=dumps({"uid": username,
+                        "pass": password
             })
         )
         result = r.json()
@@ -54,35 +52,30 @@ class ClasseVivaAPI:
 
     def logout(self):
         self.token = None
-        return True
 
 
     def _request(self, *path):
-        url = "{0}/students/{1}".format(self.rest_api_url, self.id)
+        url = "{0}/students/{1}".format(self.baseApiUrl, self.id)
         for x in path:
             url += "/{0}".format(quote_plus(x))
 
-        r = get(url=url, headers={"User-Agent": "zorro/1.0", "Z-Dev-Apikey": "+zorro+",
-                                  "Z-Auth-Token": self.token, "Content-Type": "application/json"})
+        req = get(url=url, headers={"User-Agent": "zorro/1.0",
+                                    "Z-Dev-Apikey": "+zorro+",
+                                    "Z-Auth-Token": self.token,
+                                    "Content-Type": "application/json"})
         try:
-            rj = r.json()
-            if rj.get('error'):
-                if 'auth token expired' in rj['error']:
-                    self.login()
-                    r = get(url=url, headers={"User-Agent": "zorro/1.0", "Z-Dev-Apikey": "+zorro+",
-                                              "Z-Auth-Token": self.token, "Content-Type": "application/json"})
-                    try:
-                        rj = r.json()
-                    except JSONDecodeError:
-                        return r.text
-                elif 'content temporarily unavailable' in rj['error']:
+            jsonReq = req.json()
+            if jsonReq.get('error'):
+                if 'auth token expired' in jsonReq['error']:
+                    raise AuthenticationFailedError
+                elif 'content temporarily unavailable' in jsonReq['error']:
                     raise ApiServerError
-                elif 'invalid date range' in rj['error']:
+                elif 'invalid date range' in jsonReq['error']:
                     raise InvalidRequestError
-            return rj
+            return jsonReq
 
         except JSONDecodeError:
-            return r.text
+            return req.text
 
 
     def assenze(self):
@@ -93,12 +86,24 @@ class ClasseVivaAPI:
         return result
 
 
-    def agenda(self, days):
+    def agenda(self, days: int=14):
         return self._request('agenda', 'all', datetime.today().strftime("%Y%m%d"), (datetime.now() + timedelta(days=days)).strftime("%Y%m%d"))
 
 
     def didattica(self):
         return self._request('didactics')
+
+
+    def getFile(self, file_id: str):
+        return self._request('didactics', 'item', file_id)
+
+
+    def comunicazioni(self):
+        return self._request('noticeboard')
+
+
+    def getMessage(self, file_id: str):
+        return self._request('noticeboard', 'attach', 'CF', file_id)
 
 
     def info(self):
@@ -117,5 +122,5 @@ class ClasseVivaAPI:
         return self._request('subjects')
 
 
-    def lezioni(self, days=0):
+    def lezioni(self, days: int=0):
         return self._request('lessons', (datetime.now() + timedelta(days=days)).strftime("%Y%m%d"))

@@ -49,6 +49,7 @@ def settings_selectnews(msgid):
                 InlineKeyboardButton(text="📝 Voti", callback_data="news_voti#{0}".format(msgid)),
                 InlineKeyboardButton(text="📆 Agenda", callback_data="news_agenda#{0}".format(msgid))
             ], [
+                InlineKeyboardButton(text="📩 Circolari", callback_data="news_circolari#{0}".format(msgid)),
                 InlineKeyboardButton(text="◀️ Torna al menù", callback_data="settings_main#{0}".format(msgid))
             ]])
 
