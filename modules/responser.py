@@ -443,7 +443,7 @@ def parseNewComunicazioni(oldData, newData):
 
     result = ""
     isFirst = True
-    for item in data['items']:
+    for item in newData['items']:
         if (not oldData.get('items')) or (item not in oldData['items']):
             status = item['cntStatus']
             title = sanitize(item['cntTitle'])

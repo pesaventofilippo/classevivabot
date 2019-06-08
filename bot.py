@@ -247,7 +247,7 @@ def reply(msg):
         bot.sendMessage(chatId, "ℹ️ <b>Informazioni sulla privacy</b>\n"
                                 "# INFO\n\n"
                                 "# INFO DETTAGLIATE\n\n"
-                                "<a href=\"https://pesaventofilippo.tk/projects/classevivabot\">Altre info & Privacy Policy</a>", parse_mode="HTML")
+                                "<a href=\"https://pesaventofilippo.tk/projects/classevivabot\">Altre info & Privacy Policy</a>", parse_mode="HTML", disable_web_page_preview=True)
 
 
     elif user.status != "normal":
@@ -308,7 +308,7 @@ def reply(msg):
                   "- /settings - Modifica le impostazioni personali del bot\n" \
                   "- /dona - Supporta il bot e il mio lavoro, se ti senti generoso :)\n" \
                   "- /about - Informazioni sul bot\n" \
-                  "- /aboutprivacy - Più informazioni sulla privacy" \
+                  "- /aboutprivacy - Più informazioni sulla privacy\n" \
                   "- /support - Contatta lo staff (emergenze)\n\n" \
                   "<b>Notifiche</b>: ogni mezz'ora, se vuoi, ti invierò un messaggio se ti sono arrivati nuovi voti, note, compiti, materiali o avvisi."
         bot.sendMessage(chatId, message, parse_mode="HTML")
