@@ -245,9 +245,24 @@ def reply(msg):
 
     elif text == "/aboutprivacy":
         bot.sendMessage(chatId, "ℹ️ <b>Informazioni sulla privacy</b>\n"
-                                "# INFO\n\n"
-                                "# INFO DETTAGLIATE\n\n"
-                                "<a href=\"https://pesaventofilippo.tk/projects/classevivabot\">Altre info & Privacy Policy</a>", parse_mode="HTML", disable_web_page_preview=True)
+                                "La mia password è al sicuro? 🤔\n\n"
+                                "🔐 <b>Sì: la tua password viene criptata.</b>\n"
+                                "Il bot conserva la tua password in maniera sicura, salvandola in un formato non leggibile da "
+                                "persone estranee. Sei al sicuro: i tuoi dati non verranno visti nè rubati da nessuno!\n\n"
+                                "🔐 <b>Spiegazione dettagliata:</b>\n"
+                                "Tecnicamente potrei decriptare a mano le password e vederle, ma sostanzialmente è complicato, "
+                                "perchè il bot genera una chiave per l'algoritmo (visto che il cripting deve essere reversibile, "
+                                "per poter mandare le notifiche automatiche) prendendo come dati una chiave comune (che salvo nella RAM "
+                                "e inserisco ad ogni avvio, per evitare che qualcuno che non sia io possa leggere il database e i dati degli utenti) "
+                                "e anche l'username dell'utente. Quindi ogni utente ha la propria password criptata con una chiave diversa da tutti "
+                                "gli altri, e sarebbe difficile anche per me risalire alla password, dovendo sapere di chi è l'username collegato a "
+                                "quella password specifica.\n"
+                                "Questo non vuol dire che non possa farlo: con un po' di lavoro ci riuscirei. Quindi alla fine devi decidere tu: "
+                                "io ti posso assicurare che non leggerò mai nè proverò mai a decriptare le password, sia per un discorso di etica "
+                                "che per scelta personale, ma non sono tuo amico nè tuo conoscente: quindi se decidi di non fidarti di uno sconosciuto "
+                                "che ti scrive su Telegram (ti posso capire benissimo) sei libero di non usare il bot 🙂\n\n"
+                                "<a href=\"https://pesaventofilippo.tk/projects/classevivabot\">Altre info & Privacy Policy</a>\n"
+                                "<a href=\"https://t.me/pesaventofilippo\">Contattami</a>", parse_mode="HTML", disable_web_page_preview=True)
 
 
     elif user.status != "normal":
@@ -426,9 +441,10 @@ def reply(msg):
                                     "{1}".format(stored.domani, stored.lezioni), parse_mode="HTML")
 
         elif text == "/aggiorna":
-            sent = bot.sendMessage(chatId, "🔍 Cerco aggiornamenti...")
+            sent = bot.sendMessage(chatId, "📙📙📙📙 Cerco aggiornamenti... 0%")
             api = ClasseVivaAPI()
             if userLogin(user, api):
+                bot.editMessageText((chatId, sent['message_id']), "📙📙📙📙 Cerco aggiornamenti... 5%")
                 try:
                     newDidattica, newNote, newVoti, newAgenda, newComunicazioni = fetchAndStore(user, api)
                 except ApiServerError:
@@ -436,12 +452,19 @@ def reply(msg):
                                             "Riprova tra qualche minuto.")
                     userLogout(api)
                     return
+                bot.editMessageText((chatId, sent['message_id']), "📗📙📙📙 Cerco aggiornamenti... 10%")
                 dataDidattica = resp.parseNewDidattica(userdata.didattica, newDidattica)
+                bot.editMessageText((chatId, sent['message_id']), "📗📙📙📙 Cerco aggiornamenti... 25%")
                 dataNote = resp.parseNewNote(userdata.note, newNote)
+                bot.editMessageText((chatId, sent['message_id']), "📗📗📙📙 Cerco aggiornamenti... 40%")
                 dataVoti = resp.parseNewVoti(userdata.voti, newVoti, user)
+                bot.editMessageText((chatId, sent['message_id']), "📗📗📙📙 Cerco aggiornamenti... 55%")
                 dataAgenda = resp.parseNewAgenda(userdata.agenda, newAgenda)
+                bot.editMessageText((chatId, sent['message_id']), "📗📗📗📙 Cerco aggiornamenti... 70%")
                 dataComunicazioni = resp.parseNewComunicazioni(userdata.comunicazioni, newComunicazioni)
+                bot.editMessageText((chatId, sent['message_id']), "📗📗📗📙 Cerco aggiornamenti... 85%")
                 updateUserdata(user, newDidattica, newNote, newVoti, newAgenda, newComunicazioni)
+                bot.editMessageText((chatId, sent['message_id']), "📗📗📗📗 Cerco aggiornamenti... 100%")
 
                 if dataDidattica is not None:
                     bot.sendMessage(chatId, "🔔 <b>Nuovi file caricati!</b>{0}".format(dataDidattica), parse_mode="HTML")
@@ -459,8 +482,8 @@ def reply(msg):
                     bot.sendMessage(chatId, "🔔 <b>Hai nuove comunicazioni!</b>{0}".format(dataComunicazioni), parse_mode="HTML")
 
                 if not any([dataDidattica, dataNote, dataVoti, dataAgenda, dataComunicazioni]):
-                    bot.editMessageText((chatId, sent['message_id']), "✅ Dati aggiornati!\n"
-                                                                      "✅ Nessuna novità!")
+                    bot.editMessageText((chatId, sent['message_id']), "📗 Dati aggiornati!\n"
+                                                                      "📗 Nessuna novità!")
                 else:
                     bot.deleteMessage((chatId, sent['message_id']))
 
