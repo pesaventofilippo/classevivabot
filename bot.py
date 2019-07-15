@@ -28,7 +28,6 @@ bot = Bot(token)
 adminIds = [368894926] # Bot Creator
 
 
-@db_session
 def isUserLogged(user):
     return (user.username != "") and (user.password != "")
 
@@ -65,7 +64,6 @@ def clearUserData(user):
     stored.comunicazioni = ""
 
 
-@db_session
 def userLogin(user, api_type):
     if not isUserLogged(user):
         return False
@@ -241,6 +239,7 @@ def reply(msg):
                                 "Prova ad usarlo per scoprire quanto è comodo!\n\n"
                                 "<b>Sviluppo:</b> Filippo Pesavento\n"
                                 "<b>Hosting:</b> Filippo Pesavento\n\n"
+                                "<b>Donazioni:</b> <a href=\"https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=JCXWVMBZHTJ42&source=url\">PayPal</a>\n"
                                 "<b>Info sicurezza:</b> /aboutprivacy", parse_mode="HTML")
 
     elif text == "/aboutprivacy":
@@ -335,6 +334,19 @@ def reply(msg):
                                 "Non preoccuparti, per adesso non è un problema e questo bot continuerà ad essere gratuito, ma se proprio ti senti generoso e "
                                 "hai voglia di farmi un regalo, sei il benvenuto :)\n\n"
                                 "<i>Grazie di cuore.</i> ❤️", parse_mode="HTML", reply_markup=keyboards.payments())
+
+    elif text == "/start donation_cancel":
+        bot.sendMessage(chatId, "😓 Donazione cancellata.\n"
+                                "Spero di continuare a esserti utile! Se dovessi cambiare idea, puoi scrivere /dona o "
+                                "cliccare <a href=\"https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=JCXWVMBZHTJ42&source=url\">qui</a>.", parse_mode="HTML")
+
+    elif text == "/start donation_success":
+        bot.sendMessage(chatId, "😍 <b>GRAZIE!</b>\n"
+                                "Sono contento che ti sia piaciuto il mio lavoro. Grazie alla tua donazione questo bot "
+                                "può continuare ad esistere per te e per tutti gli altri utenti che ogni giorno lo usano.\n"
+                                "Sei veramente una persona speciale! ❤️\n\n"
+                                "<a href=\"https://t.me/pesaventofilippo\">Contattami</a>\n"
+                                "<a href=\"https://pesaventofilippo.tk\">Sito Web</a>", parse_mode="HTML")
 
     elif text.startswith("/broadcast "):
         if chatId in adminIds:
@@ -441,10 +453,9 @@ def reply(msg):
                                     "{1}".format(stored.domani, stored.lezioni), parse_mode="HTML")
 
         elif text == "/aggiorna":
-            sent = bot.sendMessage(chatId, "📙📙📙📙 Cerco aggiornamenti... 0%")
+            sent = bot.sendMessage(chatId, "📙📙📙 Cerco aggiornamenti... 0%")
             api = ClasseVivaAPI()
             if userLogin(user, api):
-                bot.editMessageText((chatId, sent['message_id']), "📙📙📙📙 Cerco aggiornamenti... 5%")
                 try:
                     newDidattica, newNote, newVoti, newAgenda, newComunicazioni = fetchAndStore(user, api)
                 except ApiServerError:
@@ -452,19 +463,19 @@ def reply(msg):
                                             "Riprova tra qualche minuto.")
                     userLogout(api)
                     return
-                bot.editMessageText((chatId, sent['message_id']), "📗📙📙📙 Cerco aggiornamenti... 10%")
+                bot.editMessageText((chatId, sent['message_id']), "📗📙📙 Cerco aggiornamenti... 10%")
                 dataDidattica = resp.parseNewDidattica(userdata.didattica, newDidattica)
-                bot.editMessageText((chatId, sent['message_id']), "📗📙📙📙 Cerco aggiornamenti... 25%")
+                bot.editMessageText((chatId, sent['message_id']), "📗📙📙  Cerco aggiornamenti... 25%")
                 dataNote = resp.parseNewNote(userdata.note, newNote)
-                bot.editMessageText((chatId, sent['message_id']), "📗📗📙📙 Cerco aggiornamenti... 40%")
+                bot.editMessageText((chatId, sent['message_id']), "📗📙📙  Cerco aggiornamenti... 40%")
                 dataVoti = resp.parseNewVoti(userdata.voti, newVoti, user)
-                bot.editMessageText((chatId, sent['message_id']), "📗📗📙📙 Cerco aggiornamenti... 55%")
+                bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 55%")
                 dataAgenda = resp.parseNewAgenda(userdata.agenda, newAgenda)
-                bot.editMessageText((chatId, sent['message_id']), "📗📗📗📙 Cerco aggiornamenti... 70%")
+                bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 70%")
                 dataComunicazioni = resp.parseNewComunicazioni(userdata.comunicazioni, newComunicazioni)
-                bot.editMessageText((chatId, sent['message_id']), "📗📗📗📙 Cerco aggiornamenti... 85%")
+                bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 85%")
                 updateUserdata(user, newDidattica, newNote, newVoti, newAgenda, newComunicazioni)
-                bot.editMessageText((chatId, sent['message_id']), "📗📗📗📗 Cerco aggiornamenti... 100%")
+                bot.editMessageText((chatId, sent['message_id']), "📗📗📗  Cerco aggiornamenti... 100%")
 
                 if dataDidattica is not None:
                     bot.sendMessage(chatId, "🔔 <b>Nuovi file caricati!</b>{0}".format(dataDidattica), parse_mode="HTML")
@@ -508,10 +519,6 @@ def reply(msg):
             bot.sendMessage(chatId, "Benvenuto, <b>{0}</b>!\n"
                                     "Per favore, premi /login per utilizzarmi.\n\n"
                                     "Premi /help se serve aiuto.".format(name), parse_mode="HTML")
-
-
-def accept_message(msg):
-    Thread(target=reply, args=[msg]).start()
 
 
 @db_session
@@ -765,9 +772,11 @@ def button_press(msg):
             userLogout(api)
 
 
+def accept_message(msg):
+    Thread(target=reply, args=[msg]).start()
+
 def accept_button(msg):
     Thread(target=button_press, args=[msg]).start()
-
 
 bot.message_loop({'chat': accept_message, 'callback_query': accept_button})
 

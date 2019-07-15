@@ -9,7 +9,7 @@ def back(msgid):
 
 def payments():
     return InlineKeyboardMarkup(inline_keyboard=[[
-                InlineKeyboardButton(text="🔷 PayPal", url="https://paypal.me/pesaventofilippo")
+                InlineKeyboardButton(text="🔷 PayPal", url="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=JCXWVMBZHTJ42&source=url")
             ]])
 
 
