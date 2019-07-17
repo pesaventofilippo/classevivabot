@@ -1,9 +1,9 @@
-from json import dumps
+from json import dumps, loads
 from re import sub
-from requests import get, post
 from datetime import datetime, timedelta
 from json.decoder import JSONDecodeError
-from urllib.parse import quote_plus
+from urllib.parse import quote_plus, urlencode
+from urllib.request import Request, urlopen
 
 
 class AuthenticationFailedError(Exception):
@@ -30,17 +30,16 @@ class ClasseVivaAPI:
 
 
     def login(self, username: str, password: str):
-        r = post(
-            url=self.baseApiUrl + "/auth/login/",
-            headers={"User-Agent": "zorro/1.0",
-                     "Z-Dev-Apikey": "+zorro+",
-                     "Content-Type": "application/json"
-            },
-            data=dumps({"uid": username,
-                        "pass": password
-            })
-        )
-        result = r.json()
+        url=self.baseApiUrl + "/auth/login/"
+        headers={"User-Agent": "zorro/1.0",
+                 "Z-Dev-Apikey": "+zorro+",
+                 "Content-Type": "application/json"}
+        values=dumps({"uid": username,
+                      "pass": password})
+        data = values.encode('ascii')
+        req = Request(url, data, headers)
+        result = urlopen(req).read().decode('utf-8')
+        result = loads(result)
 
         if 'authentication failed' in result.get('error', ''):
             raise AuthenticationFailedError()
@@ -54,28 +53,34 @@ class ClasseVivaAPI:
         self.token = None
 
 
-    def _request(self, *path):
+    def _request(self, *path, returnFile: bool=False):
         url = "{0}/students/{1}".format(self.baseApiUrl, self.id)
         for x in path:
             url += "/{0}".format(quote_plus(x))
 
-        req = get(url=url, headers={"User-Agent": "zorro/1.0",
-                                    "Z-Dev-Apikey": "+zorro+",
-                                    "Z-Auth-Token": self.token,
-                                    "Content-Type": "application/json"})
+        headers={"User-Agent": "zorro/1.0",
+                 "Z-Dev-Apikey": "+zorro+",
+                 "Z-Auth-Token": self.token,
+                 "Content-Type": "application/json"}
+        req = Request(url, headers=headers)
+        result = urlopen(req)
+
+        if returnFile:
+            return result
+
         try:
-            jsonReq = req.json()
-            if jsonReq.get('error'):
-                if 'auth token expired' in jsonReq['error']:
+            jsonResult = loads(result.read().decode('utf-8'))
+            if jsonResult.get('error'):
+                if 'auth token expired' in jsonResult['error']:
                     raise AuthenticationFailedError
-                elif 'content temporarily unavailable' in jsonReq['error']:
+                elif 'content temporarily unavailable' in jsonResult['error']:
                     raise ApiServerError
-                elif 'invalid date range' in jsonReq['error']:
+                elif 'invalid date range' in jsonResult['error']:
                     raise InvalidRequestError
-            return jsonReq
+            return jsonResult
 
         except JSONDecodeError:
-            return req.text
+            return result.read().decode('utf-8')
 
 
     def assenze(self):
@@ -95,7 +100,7 @@ class ClasseVivaAPI:
 
 
     def getFile(self, file_id: str):
-        return self._request('didactics', 'item', file_id)
+        return self._request('didactics', 'item', file_id, returnFile=True)
 
 
     def comunicazioni(self):
@@ -103,7 +108,7 @@ class ClasseVivaAPI:
 
 
     def getMessage(self, file_id: str):
-        return self._request('noticeboard', 'attach', 'CF', file_id)
+        return self._request('noticeboard', 'attach', 'CF', file_id, returnFile=True)
 
 
     def info(self):
