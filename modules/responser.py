@@ -36,7 +36,7 @@ def parseDidattica(data):
 
             for upfile in folder['contents']:
                 fileName = "Senza nome" if upfile['contentName'] == "" else sanitize(upfile['contentName'])
-                result += "\n        📝 {0}".format(fileName)
+                result += "\n        📝 <a href=\"t.me/classevivait_bot?start=get_file_{1}\">{0}</a>".format(fileName, upfile['contentId'])
 
     return result
 
@@ -283,7 +283,7 @@ def parseComunicazioni(data):
         title = sanitize(item['cntTitle'])
         isRead = item['readStatus']
         if (status == 'active') and not isRead:
-            string = "\n✉️ {0}".format(title)
+            string = "\n✉️ <a href=\"t.me/classevivait_bot?start=get_circ_{1}\">{0}</a>".format(title, item['pubId'])
             result += string if isFirst else "\n" + string
             isFirst = False
 
@@ -316,7 +316,7 @@ def parseNewDidattica(oldData, newData):
 
                 for upfile in folder['contents']:
                     fileName = "Senza nome" if upfile['contentName'] == "" else sanitize(upfile['contentName'])
-                    result += "\n        📝 {0}".format(fileName)
+                    result += "\n        📝 <a href=\"t.me/classevivait_bot?start=get_file_{1}\">{0}</a>".format(fileName, upfile['contentId'])
 
         else:
             firstFolder = True
@@ -449,7 +449,7 @@ def parseNewComunicazioni(oldData, newData):
             title = sanitize(item['cntTitle'])
             isRead = item['readStatus']
             if (status == 'active') and not isRead:
-                string = "\n✉️ {0}".format(title)
+                string = "\n✉️ <a href=\"t.me/classevivait_bot?start=get_circ_{1}\">{0}</a>".format(title, item['pubId'])
                 result += string if isFirst else "\n" + string
                 isFirst = False
 

@@ -19,7 +19,7 @@ try:
     token = f.readline().strip()
     f.close()
 except FileNotFoundError:
-    token = input("Please paste the bot Token here: ")
+    token = input("Incolla qui il token di BotFather: ")
     f = open('token.txt', 'w')
     f.write(token)
     f.close()
@@ -324,7 +324,7 @@ def reply(msg):
                   "- /about - Informazioni sul bot\n" \
                   "- /aboutprivacy - Più informazioni sulla privacy\n" \
                   "- /support - Contatta lo staff (emergenze)\n\n" \
-                  "<b>Notifiche</b>: ogni mezz'ora, se vuoi, ti invierò un messaggio se ti sono arrivati nuovi voti, note, compiti, materiali o avvisi."
+                  "<b>Notifiche</b>: ogni mezz'ora, se vuoi, ti invierò un messaggio se ti sono arrivati nuovi voti, note, compiti, materiali, avvisi o circolari."
         bot.sendMessage(chatId, message, parse_mode="HTML")
 
     elif text == "/dona":
@@ -504,6 +504,32 @@ def reply(msg):
                                     "Se hai qualche problema che non riesci a risolvere, scrivi qui un messaggio, e un admin "
                                     "ti contatterà entro 24 ore.\n\n"
                                     "<i>Per annullare, premi</i> /annulla.", parse_mode="HTML")
+        
+        # Custom Start Parameters
+        elif text.startswith("/start "):
+            param = text.split(" ", 1)[1]
+            if param.startswith("get_file_"):
+                file_id = param.replace("get_file_", "")
+                api = ClasseVivaAPI()
+                if userLogin(user, api):
+                try:
+                    bot.sendDocument(chatId, ('file.pdf', api.getFile(file_id)))
+                except ApiServerError:
+                    bot.sendMessage(chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
+                                            "Riprova tra qualche minuto.")
+                    userLogout(api)
+                    return
+            elif param.startswith("get_circ_"):
+                file_id = param.replace("get_circ_", "")
+                api = ClasseVivaAPI()
+                if userLogin(user, api):
+                try:
+                    bot.sendDocument(chatId, ('download.pdf', api.getMessage(file_id)))
+                except ApiServerError:
+                    bot.sendMessage(chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
+                                            "Riprova tra qualche minuto.")
+                    userLogout(api)
+                    return
 
         else:
             bot.sendMessage(chatId, "Non ho capito...\n"
