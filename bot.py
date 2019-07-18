@@ -512,25 +512,24 @@ def reply(msg):
                 file_id = param.replace("get_file_", "")
                 api = ClasseVivaAPI()
                 if userLogin(user, api):
-                try:
-                    bot.sendDocument(chatId, ('file.pdf', api.getFile(file_id)))
-                except ApiServerError:
-                    bot.sendMessage(chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
-                                            "Riprova tra qualche minuto.")
-                    userLogout(api)
-                    return
+                    try:
+                        bot.sendDocument(chatId, ('file.pdf', api.getFile(file_id)))
+                    except ApiServerError:
+                        bot.sendMessage(chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
+                                                "Riprova tra qualche minuto.")
+                        userLogout(api)
+                        return
             elif param.startswith("get_circ_"):
                 file_id = param.replace("get_circ_", "")
                 api = ClasseVivaAPI()
                 if userLogin(user, api):
-                try:
-                    bot.sendDocument(chatId, ('download.pdf', api.getMessage(file_id)))
-                except ApiServerError:
-                    bot.sendMessage(chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
-                                            "Riprova tra qualche minuto.")
-                    userLogout(api)
-                    return
-
+                    try:
+                        bot.sendDocument(chatId, ('download.pdf', api.getMessage(file_id)))
+                    except ApiServerError:
+                        bot.sendMessage(chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
+                                                "Riprova tra qualche minuto.")
+                        userLogout(api)
+                        return
         else:
             bot.sendMessage(chatId, "Non ho capito...\n"
                                     "Serve aiuto? Premi /help")
