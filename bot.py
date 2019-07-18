@@ -9,7 +9,7 @@ from telepot.exception import TelegramError, BotWasBlockedError
 # Custom Modules
 import modules.responser as resp
 import modules.keyboards as keyboards
-from modules.crypter import crypt, decrypt
+from modules.crypter import crypt_password, decrypt_password
 from modules.helpers import sendLongMessage
 from modules.database import User, Data, ParsedData, Settings
 from modules.session import ClasseVivaAPI, AuthenticationFailedError, ApiServerError
@@ -68,7 +68,7 @@ def userLogin(user, api_type):
     if not isUserLogged(user):
         return False
     try:
-        api_type.login(user.username, decrypt(user.password))
+        api_type.login(user.username, decrypt_password(user))
         return True
     except AuthenticationFailedError:
         clearUserData(user)
@@ -277,7 +277,7 @@ def reply(msg):
                                     "Sei preoccupato per la sicurezza della password? /aboutprivacy")
 
         elif user.status == "login_1":
-            user.password = crypt(text)
+            user.password = crypt_password(text, user)
             user.status = "normal"
             api = ClasseVivaAPI()
 

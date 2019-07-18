@@ -107,43 +107,42 @@ def parseVoti(data, user):
 
     votiOrdinati = {}
     media = {}
+    maxPeriod = 0
     for voto in data['grades']:
         period = voto['periodPos']
-        if period > user.lastPeriod:
-            user.lastPeriod = period
-        if period == user.lastPeriod:
-            materia = voto['subjectDesc']
-            value = "Voto " + voto['displayValue']
-            tipo = voto['componentDesc']
-            time = voto['evtDate'].lower().split("-", 2)
-            period = voto['periodPos']
-            desc = "\n<i>{0}</i>".format(sanitize(voto['notesForFamily'])) if voto['notesForFamily'] else ""
-            colore = "📗" if voto['color'] == "green" else "📕" if voto['color'] == "red" else "📘"
-            if period > user.lastPeriod:
-                user.lastPeriod = period
+        if period > maxPeriod:
+            maxPeriod = period
+        materia = voto['subjectDesc']
+        value = "Voto " + voto['displayValue']
+        tipo = voto['componentDesc']
+        time = voto['evtDate'].lower().split("-", 2)
+        desc = "\n<i>{0}</i>".format(sanitize(voto['notesForFamily'])) if voto['notesForFamily'] else ""
+        colore = "📗" if voto['color'] == "green" else "📕" if voto['color'] == "red" else "📘"
+        
+        if tipo == "":
+            str_voto = "\n\n{0} <b>{1}</b> • {2} {3}".format(colore, value, "{0}/{1}/{2}".format(time[2], time[1], time[0]), desc)
+        else:
+            str_voto = "\n\n{0} <b>{1}</b> • {2} • {3} {4}".format(colore, value, tipo, "{0}/{1}/{2}".format(time[2], time[1], time[0]), desc)
+        if materia not in votiOrdinati:
+            votiOrdinati[materia] = []
+        if materia not in media:
+            media[materia] = []
+        votiOrdinati[materia].append(str_voto)
 
-            if tipo == "":
-                str_voto = "\n\n{0} <b>{1}</b> • {2} {3}".format(colore, value, "{0}/{1}/{2}".format(time[2], time[1], time[0]), desc)
+        if colore != "📘":
+            if value[5:][-1] == "½":
+                    media[materia].append(float(value[5:][:-1]) + 0.5)
+            elif value[5:][-1] == "+":
+                    media[materia].append(float(value[5:][:-1]) + 0.25)
+            elif value[5:][-1] == "-":
+                    media[materia].append(float(value[5:][:-1]) - 0.25)
             else:
-                str_voto = "\n\n{0} <b>{1}</b> • {2} • {3} {4}".format(colore, value, tipo, "{0}/{1}/{2}".format(time[2], time[1], time[0]), desc)
-            if materia not in votiOrdinati:
-                votiOrdinati[materia] = []
-            if materia not in media:
-                media[materia] = []
-            votiOrdinati[materia].append(str_voto)
-
-            if colore != "📘":
-                if value[5:][-1] == "½":
-                        media[materia].append(float(value[5:][:-1]) + 0.5)
-                elif value[5:][-1] == "+":
-                        media[materia].append(float(value[5:][:-1]) + 0.25)
-                elif value[5:][-1] == "-":
-                        media[materia].append(float(value[5:][:-1]) - 0.25)
-                else:
-                    try:
-                        media[materia].append(float(value[5:]))
-                    except ValueError:
-                        pass
+                try:
+                    media[materia].append(float(value[5:]))
+                except ValueError:
+                    pass
+    if maxPeriod > 0:
+        user.lastPeriod = maxPeriod
 
     firstMateria = True
     materie = {}
@@ -387,8 +386,12 @@ def parseNewVoti(oldData, newData, user):
         return parseVoti(newData, user)
 
     votiOrdinati = {}
+    maxPeriod = 0
     for voto in newData['grades']:
         if (oldData is None) or (not oldData.get('grades')) or (voto not in oldData['grades']):
+            period = voto['periodPos']
+            if period > maxPeriod:
+                maxPeriod = period
             materia = voto['subjectDesc']
             value = "Voto " + voto['displayValue']
             tipo = voto['componentDesc']
@@ -402,6 +405,8 @@ def parseNewVoti(oldData, newData, user):
             if materia not in votiOrdinati:
                 votiOrdinati[materia] = []
             votiOrdinati[materia].append(str_voto)
+    if maxPeriod > 0:
+        user.lastPeriod = maxPeriod
 
     result = ""
     firstMateria = True
