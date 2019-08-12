@@ -7,12 +7,12 @@ from datetime import datetime, timedelta
 from telepot.exception import TelegramError, BotWasBlockedError
 
 # Custom Modules
-import modules.responser as resp
+import modules.parser as resp
 import modules.keyboards as keyboards
-from modules.crypter import crypt_password, decrypt_password
-from modules.helpers import sendLongMessage
+from modules.crypter import crypt_password
+from modules.helpers import sendLongMessage, isAdmin, isUserLogged, clearUserData, userLogin, userLogout, fetchAndStore, updateUserdata
 from modules.database import User, Data, ParsedData, Settings
-from modules.session import ClasseVivaAPI, AuthenticationFailedError, ApiServerError
+from modules.api import ClasseVivaAPI, ApiServerError
 
 try:
     f = open('token.txt', 'r')
@@ -25,116 +25,12 @@ except FileNotFoundError:
     f.close()
 
 bot = Bot(token)
-adminIds = [368894926] # Bot Creator
-
-
-def isUserLogged(user):
-    return (user.username != "") and (user.password != "")
-
-
-@db_session
-def clearUserData(user):
-    user.username = ""
-    user.password = ""
-    user.status = "normal"
-    user.lastPeriod = 1
-
-    userdata = Data.get(chatId=user.chatId)
-    userdata.didattica = {}
-    userdata.info = {}
-    userdata.prof = {}
-    userdata.note = {}
-    userdata.voti = {}
-    userdata.assenze = {}
-    userdata.agenda = {}
-    userdata.domani = {}
-    userdata.lezioni = {}
-    userdata.comunicazioni = {}
-
-    stored = ParsedData.get(chatId=user.chatId)
-    stored.didattica = ""
-    stored.info = ""
-    stored.prof = ""
-    stored.note = ""
-    stored.voti = ""
-    stored.assenze = ""
-    stored.agenda = ""
-    stored.domani = ""
-    stored.lezioni = ""
-    stored.comunicazioni = ""
-
-
-def userLogin(user, api_type):
-    if not isUserLogged(user):
-        return False
-    try:
-        api_type.login(user.username, decrypt_password(user))
-        return True
-    except AuthenticationFailedError:
-        clearUserData(user)
-        try:
-            bot.sendMessage(user.chatId, "😯 Le tue credenziali di accesso sono errate.\n"
-                                         "Effettua nuovamente il /login per favore.")
-        except (TelegramError, BotWasBlockedError):
-            pass
-        return False
-    except ApiServerError:
-        try:
-            bot.sendMessage(user.chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
-                                         "Riprova tra qualche minuto.")
-        except (TelegramError, BotWasBlockedError):
-            pass
-        return False
-
-
-def userLogout(api_type):
-    api_type.logout()
-
-
-@db_session
-def fetchAndStore(user, api_type, fetch_long=False):
-    newDidattica = api_type.didattica()
-    newNote = api_type.note()
-    newVoti = api_type.voti()
-    newAgenda = api_type.agenda(14)
-    newAssenze = api_type.assenze()
-    newLezioni = api_type.lezioni()
-    newComunicazioni = api_type.comunicazioni()
-
-    stored = ParsedData.get(chatId=user.chatId)
-    stored.note = resp.parseNote(newNote)
-    stored.voti = resp.parseVoti(newVoti, user)
-    stored.assenze = resp.parseAssenze(newAssenze)
-    stored.agenda = resp.parseAgenda(newAgenda)
-    stored.domani = resp.parseDomani(newAgenda)
-    stored.lezioni = resp.parseLezioni(newLezioni)
-    stored.didattica = resp.parseDidattica(newDidattica)
-    stored.comunicazioni = resp.parseComunicazioni(newComunicazioni)
-
-    if fetch_long:
-        newInfo = api_type.info()
-        newProf = api_type.materie()
-        stored.info = resp.parseInfo(newInfo)
-        stored.prof = resp.parseMaterie(newProf)
-
-    userLogout(api_type)
-    return newDidattica, newNote, newVoti, newAgenda, newComunicazioni
-
-
-@db_session
-def updateUserdata(user, newDidattica, newNote, newVoti, newAgenda, newComunicazioni):
-    userdata = Data.get(chatId=user.chatId)
-    userdata.didattica = newDidattica
-    userdata.note = newNote
-    userdata.voti = newVoti
-    userdata.agenda = newAgenda
-    userdata.comunicazioni = newComunicazioni
 
 
 @db_session
 def runUserUpdate(user, long_fetch, crhour):
     api = ClasseVivaAPI()
-    if userLogin(user, api):
+    if userLogin(bot, user, api):
         userdata = Data.get(chatId=user.chatId)
         settings = Settings.get(chatId=user.chatId)
         try:
@@ -281,7 +177,7 @@ def reply(msg):
             user.status = "normal"
             api = ClasseVivaAPI()
 
-            if userLogin(user, api):
+            if userLogin(bot, user, api):
                 bot.sendMessage(chatId, "Fatto 😊\n"
                                         "Premi /help per vedere la lista dei comandi disponibili.")
                 sent = bot.sendMessage(chatId, "🔍 Aggiorno il profilo...")
@@ -291,7 +187,7 @@ def reply(msg):
 
         elif user.status == "calling_support":
             user.status = "normal"
-            for a in adminIds:
+            for a in isAdmin():
                 bot.sendMessage(a, "🆘 <b>Richiesta di aiuto</b>\n"
                                    "Da: <a href=\"tg://user?id={0}\">{1}</a>\n"
                                    "<i>Rispondi al messaggio per parlare con l'utente.</i>".format(chatId, name), parse_mode="HTML")
@@ -349,7 +245,7 @@ def reply(msg):
                                 "<a href=\"https://pesaventofilippo.tk\">Sito Web</a>", parse_mode="HTML")
 
     elif text.startswith("/broadcast "):
-        if chatId in adminIds:
+        if isAdmin(chatId):
             bdText = text.split(" ", 1)[1]
             pendingUsers = select(user for user in User if user.password != "")[:]
             for user in pendingUsers:
@@ -360,20 +256,20 @@ def reply(msg):
             bot.sendMessage(chatId, "📢 Messaggio inviato correttamente a {0} utenti!".format(pendingUsers.__len__()))
 
     elif text.startswith("/sendmsg "):
-        if chatId in adminIds:
+        if isAdmin(chatId):
             selId = int(text.split(" ", 2)[1])
             selText = str(text.split(" ", 2)[2])
             bot.sendMessage(selId, selText, parse_mode="HTML")
             bot.sendMessage(chatId, selText + "\n\n- Messaggio inviato!", parse_mode="HTML")
 
     elif text == "/globalupdate":
-        if chatId in adminIds:
+        if isAdmin(chatId):
             bot.sendMessage(chatId, "🕙 Inizio aggiornamento globale...")
             runUpdates(long_fetch=True)
             bot.sendMessage(chatId, "✅ Aggiornamenti completati!")
 
     elif "reply_to_message" in msg:
-        if chatId in adminIds:
+        if isAdmin(chatId):
             userId = msg['reply_to_message']['forward_from']['id']
             bot.sendMessage(userId, "💬 <b>Risposta dello staff</b>\n"
                                     "{0}".format(text), parse_mode="HTML")
@@ -455,7 +351,7 @@ def reply(msg):
         elif text == "/aggiorna":
             sent = bot.sendMessage(chatId, "📙📙📙 Cerco aggiornamenti... 0%")
             api = ClasseVivaAPI()
-            if userLogin(user, api):
+            if userLogin(bot, user, api):
                 try:
                     newDidattica, newNote, newVoti, newAgenda, newComunicazioni = fetchAndStore(user, api)
                 except ApiServerError:
@@ -511,7 +407,7 @@ def reply(msg):
             if param.startswith("get_file_"):
                 file_id = param.replace("get_file_", "")
                 api = ClasseVivaAPI()
-                if userLogin(user, api):
+                if userLogin(bot, user, api):
                     try:
                         bot.sendDocument(chatId, ('file.pdf', api.getFile(file_id)))
                     except ApiServerError:
@@ -522,7 +418,7 @@ def reply(msg):
             elif param.startswith("get_circ_"):
                 file_id = param.replace("get_circ_", "")
                 api = ClasseVivaAPI()
-                if userLogin(user, api):
+                if userLogin(bot, user, api):
                     try:
                         bot.sendDocument(chatId, ('download.pdf', api.getMessage(file_id)))
                     except ApiServerError:
@@ -782,7 +678,7 @@ def button_press(msg):
 
     else:
         api = ClasseVivaAPI()
-        if userLogin(user, api):
+        if userLogin(bot, user, api):
 
             if (button == "lezioni_prima") or (button == "lezioni_dopo"):
                 selectedDay = int(query_split[2]) - 1 if "prima" in button else int(query_split[2]) + 1

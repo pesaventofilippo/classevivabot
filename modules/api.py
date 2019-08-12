@@ -84,11 +84,10 @@ class ClasseVivaAPI:
 
 
     def assenze(self):
-        try:
-            result = self._request('absences', 'details', str(datetime.now().year)+"0910", datetime.today().strftime("%Y%m%d"))
-        except InvalidRequestError:
-            result = self._request('absences', 'details', str(datetime.now().year - 1)+"0910", datetime.today().strftime("%Y%m%d"))
-        return result
+        now = datetime.now()
+        if (now.month < 9) or (now.month == 9 and now.day < 10):
+            return self._request('absences', 'details', str(now.year - 1)+"0910", datetime.today().strftime("%Y%m%d"))
+        return self._request('absences', 'details', str(now.year)+"0910", datetime.today().strftime("%Y%m%d"))
 
 
     def agenda(self, days: int=14):

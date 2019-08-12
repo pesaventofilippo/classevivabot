@@ -3,7 +3,6 @@ token.txt
 
 # Database
 classevivabot.db
-dbconverter/
 
 # Password Crypting Module
 modules/crypter.py
@@ -13,3 +12,6 @@ modules/crypter.py
 
 # Python Virtual Environment
 venv/
+
+# MacOS Finder Junk
+*.DS_Store
