@@ -25,6 +25,7 @@ except FileNotFoundError:
     f.close()
 
 bot = Bot(token)
+updatesEvery = 15 # minutes
 
 
 @db_session
@@ -220,7 +221,8 @@ def reply(msg):
                   "- /about - Informazioni sul bot\n" \
                   "- /aboutprivacy - Più informazioni sulla privacy\n" \
                   "- /support - Contatta lo staff (emergenze)\n\n" \
-                  "<b>Notifiche</b>: ogni mezz'ora, se vuoi, ti invierò un messaggio se ti sono arrivati nuovi voti, note, compiti, materiali, avvisi o circolari."
+                  "<b>Notifiche</b>: ogni mezz'ora, se vuoi, ti invierò un messaggio se ti sono arrivati nuovi voti, note, compiti, materiali, avvisi o circolari.\n\n" \
+                  "<b>Impostazioni</b>: con /settings puoi cambiare varie impostazioni, tra cui l'orario delle notifiche, quali notifiche ricevere e se riceverle di notte."
         bot.sendMessage(chatId, message, parse_mode="HTML")
 
     elif text == "/dona":
@@ -242,7 +244,7 @@ def reply(msg):
                                 "può continuare ad esistere per te e per tutti gli altri utenti che ogni giorno lo usano.\n"
                                 "Sei veramente una persona speciale! ❤️\n\n"
                                 "<a href=\"https://t.me/pesaventofilippo\">Contattami</a>\n"
-                                "<a href=\"https://pesaventofilippo.tk\">Sito Web</a>", parse_mode="HTML")
+                                "<a href=\"https://pesaventofilippo.tk\">Il mio sito Web</a>", parse_mode="HTML")
 
     elif text.startswith("/broadcast "):
         if isAdmin(chatId):
@@ -704,6 +706,6 @@ bot.message_loop({'chat': accept_message, 'callback_query': accept_button})
 while True:
     sleep(60)
     minute = datetime.now().minute
-    if minute % 30 == 0:
+    if minute % updatesEvery == 0:
         runDailyUpdates(minute)
         runUpdates()
