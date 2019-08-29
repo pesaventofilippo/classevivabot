@@ -136,7 +136,7 @@ def reply(msg):
                                 "Prova ad usarlo per scoprire quanto è comodo!\n\n"
                                 "<b>Sviluppo:</b> Filippo Pesavento\n"
                                 "<b>Hosting:</b> Filippo Pesavento\n\n"
-                                "<b>Donazioni:</b> <a href=\"https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=JCXWVMBZHTJ42&source=url\">PayPal</a>\n"
+                                "<b>Donazioni:</b> <a href=\"kutt.it/cvvbotpaypal\">PayPal</a>\n"
                                 "<b>Info sicurezza:</b> /aboutprivacy", parse_mode="HTML")
 
     elif text == "/aboutprivacy":
@@ -236,7 +236,7 @@ def reply(msg):
     elif text == "/start donation_cancel":
         bot.sendMessage(chatId, "😓 Donazione cancellata.\n"
                                 "Spero di continuare a esserti utile! Se dovessi cambiare idea, puoi scrivere /dona o "
-                                "cliccare <a href=\"https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=JCXWVMBZHTJ42&source=url\">qui</a>.", parse_mode="HTML")
+                                "cliccare <a href=\"kutt.it/cvvbotpaypal\">qui</a>.", parse_mode="HTML")
 
     elif text == "/start donation_success":
         bot.sendMessage(chatId, "😍 <b>GRAZIE!</b>\n"
