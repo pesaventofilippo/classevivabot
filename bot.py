@@ -136,7 +136,7 @@ def reply(msg):
                                 "Prova ad usarlo per scoprire quanto è comodo!\n\n"
                                 "<b>Sviluppo:</b> Filippo Pesavento\n"
                                 "<b>Hosting:</b> Filippo Pesavento\n\n"
-                                "<b>Donazioni:</b> <a href=\"kutt.it/cvvbotpaypal\">PayPal</a>\n"
+                                "<b>Donazioni:</b> <a href=\"cut.pesaventofilippo.com/donacvvbot\">PayPal</a>\n"
                                 "<b>Info sicurezza:</b> /aboutprivacy", parse_mode="HTML")
 
     elif text == "/aboutprivacy":
@@ -157,7 +157,7 @@ def reply(msg):
                                 "io ti posso assicurare che non leggerò mai nè proverò mai a decriptare le password, sia per un discorso di etica "
                                 "che per scelta personale, ma non sono tuo amico nè tuo conoscente: quindi se decidi di non fidarti di uno sconosciuto "
                                 "che ti scrive su Telegram (ti posso capire benissimo) sei libero di non usare il bot 🙂\n\n"
-                                "<a href=\"https://pesaventofilippo.tk/projects/classevivabot\">Altre info & Privacy Policy</a>\n"
+                                "<a href=\"cut.pesaventofilippo.com/infocvvbot\">Altre info & Privacy Policy</a>\n"
                                 "<a href=\"https://t.me/pesaventofilippo\">Contattami</a>", parse_mode="HTML", disable_web_page_preview=True)
 
 
@@ -236,7 +236,7 @@ def reply(msg):
     elif text == "/start donation_cancel":
         bot.sendMessage(chatId, "😓 Donazione cancellata.\n"
                                 "Spero di continuare a esserti utile! Se dovessi cambiare idea, puoi scrivere /dona o "
-                                "cliccare <a href=\"kutt.it/cvvbotpaypal\">qui</a>.", parse_mode="HTML")
+                                "cliccare <a href=\"cut.pesaventofilippo.com/donacvvbot\">qui</a>.", parse_mode="HTML")
 
     elif text == "/start donation_success":
         bot.sendMessage(chatId, "😍 <b>GRAZIE!</b>\n"
@@ -244,7 +244,7 @@ def reply(msg):
                                 "può continuare ad esistere per te e per tutti gli altri utenti che ogni giorno lo usano.\n"
                                 "Sei veramente una persona speciale! ❤️\n\n"
                                 "<a href=\"https://t.me/pesaventofilippo\">Contattami</a>\n"
-                                "<a href=\"https://pesaventofilippo.tk\">Il mio sito Web</a>", parse_mode="HTML")
+                                "<a href=\"https://pesaventofilippo.com\">Il mio sito Web</a>", parse_mode="HTML")
 
     elif text.startswith("/broadcast "):
         if isAdmin(chatId):
