@@ -10,7 +10,7 @@ from telepot.exception import TelegramError, BotWasBlockedError
 import modules.parser as resp
 import modules.keyboards as keyboards
 from modules.crypter import crypt_password
-from modules.helpers import sendLongMessage, isAdmin, isUserLogged, clearUserData, userLogin, userLogout, fetchAndStore, updateUserdata
+from modules.helpers import *
 from modules.database import User, Data, ParsedData, Settings
 from modules.api import ClasseVivaAPI, ApiServerError
 
