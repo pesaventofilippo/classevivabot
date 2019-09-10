@@ -331,7 +331,7 @@ def reply(msg):
 
         elif text == "/circolari":
             bot.sendMessage(chatId, "📩 <b>Circolari da leggere</b>:\n\n"
-                                    "{0}".format(stored.comunicazioni), parse_mode="HTML")
+                                    "{0}".format(stored.comunicazioni), parse_mode="HTML", disable_web_page_preview=True)
 
         elif text == "/lezioni":
             sent = bot.sendMessage(chatId, "📚 <b>Lezioni di oggi</b>:\n\n"
@@ -417,6 +417,10 @@ def reply(msg):
                                                 "Riprova tra qualche minuto.")
                         userLogout(api)
                         return
+                    except Exception:
+                        bot.sendMessage(chatId, "⚠️ Non riesco ad ottenere il file dal registro, riprova fra qualche minuto.")
+                        userLogout(api)
+                        return
             elif param.startswith("get_circ_"):
                 file_id = param.replace("get_circ_", "")
                 api = ClasseVivaAPI()
@@ -426,6 +430,10 @@ def reply(msg):
                     except ApiServerError:
                         bot.sendMessage(chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
                                                 "Riprova tra qualche minuto.")
+                        userLogout(api)
+                        return
+                    except Exception:
+                        bot.sendMessage(chatId, "⚠️ Non riesco ad ottenere la circolare dal registro, riprova fra qualche minuto.")
                         userLogout(api)
                         return
         else:
