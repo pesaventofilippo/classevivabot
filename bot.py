@@ -50,7 +50,7 @@ def runUserUpdate(user, long_fetch, crhour):
                 try:
                     if dataDidattica and ("didattica" in settings.activeNews):
                         bot.sendMessage(user.chatId, "🔔 <b>Nuovi file caricati!</b>"
-                                                            "{0}".format(dataDidattica), parse_mode="HTML")
+                                                            "{0}".format(dataDidattica), parse_mode="HTML", disable_web_page_preview=True)
                     if dataNote and ("note" in settings.activeNews):
                         bot.sendMessage(user.chatId, "🔔 <b>Hai nuove note!</b>"
                                                             "{0}".format(dataNote), parse_mode="HTML")
@@ -62,7 +62,7 @@ def runUserUpdate(user, long_fetch, crhour):
                                                             "{0}".format(dataAgenda), parse_mode="HTML")
                     if dataComunicazioni and ("comunicazioni" in settings.activeNews):
                         bot.sendMessage(user.chatId, "🔔 <b>Hai nuove comunicazioni!</b>"
-                                                     "{0}".format(dataComunicazioni), parse_mode="HTML")
+                                                     "{0}".format(dataComunicazioni), parse_mode="HTML", disable_web_page_preview=True)
                 except BotWasBlockedError:
                     clearUserData(user)
                 except TelegramError:
@@ -355,7 +355,7 @@ def reply(msg):
             api = ClasseVivaAPI()
             if userLogin(bot, user, api):
                 try:
-                    newDidattica, newNote, newVoti, newAgenda, newComunicazioni = fetchAndStore(user, api)
+                    newDidattica, newNote, newVoti, newAgenda, newComunicazioni = fetchAndStore(user, api, fetch_long=True)
                 except ApiServerError:
                     bot.sendMessage(chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
                                             "Riprova tra qualche minuto.")
@@ -376,7 +376,7 @@ def reply(msg):
                 bot.editMessageText((chatId, sent['message_id']), "📗📗📗  Cerco aggiornamenti... 100%")
 
                 if dataDidattica is not None:
-                    bot.sendMessage(chatId, "🔔 <b>Nuovi file caricati!</b>{0}".format(dataDidattica), parse_mode="HTML")
+                    bot.sendMessage(chatId, "🔔 <b>Nuovi file caricati!</b>{0}".format(dataDidattica), parse_mode="HTML", disable_web_page_preview=True)
 
                 if dataNote is not None:
                     bot.sendMessage(chatId, "🔔 <b>Hai nuove note!</b>{0}".format(dataNote), parse_mode="HTML")
@@ -388,7 +388,7 @@ def reply(msg):
                     bot.sendMessage(chatId, "🔔 <b>Hai nuovi impegni!</b>\n{0}".format(dataAgenda), parse_mode="HTML")
 
                 if dataComunicazioni is not None:
-                    bot.sendMessage(chatId, "🔔 <b>Hai nuove comunicazioni!</b>{0}".format(dataComunicazioni), parse_mode="HTML")
+                    bot.sendMessage(chatId, "🔔 <b>Hai nuove comunicazioni!</b>{0}".format(dataComunicazioni), parse_mode="HTML", disable_web_page_preview=True)
 
                 if not any([dataDidattica, dataNote, dataVoti, dataAgenda, dataComunicazioni]):
                     bot.editMessageText((chatId, sent['message_id']), "📗 Dati aggiornati!\n"

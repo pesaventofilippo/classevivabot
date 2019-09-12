@@ -273,18 +273,15 @@ def parseLezioni(data):
 
 def parseComunicazioni(data):
     if (data is None) or (not data.get('items')):
-        return "📩 Non ci sono circolari da leggere."
+        return "\n\n📩 Non ci sono circolari da leggere."
 
     result = ""
-    isFirst = True
     for item in data['items']:
         status = item['cntStatus']
         title = sanitize(item['cntTitle'])
         isRead = item['readStatus']
         if (status == 'active') and not isRead:
-            string = "\n✉️ <a href=\"t.me/classevivait_bot?start=get_circ_{1}\">{0}</a>".format(title, item['pubId'])
-            result += string if isFirst else "\n" + string
-            isFirst = False
+            result += "\n\n✉️ <a href=\"t.me/classevivait_bot?start=get_circ_{1}\">{0}</a>".format(title, item['pubId'])
 
     return result
 
