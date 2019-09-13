@@ -107,11 +107,10 @@ def parseVoti(data, user):
 
     votiOrdinati = {}
     media = {}
-    maxPeriod = 0
+    periods = []
     for voto in data['grades']:
         period = voto['periodPos']
-        if period > maxPeriod:
-            maxPeriod = period
+        periods.append(period)
         materia = voto['subjectDesc']
         value = "Voto " + voto['displayValue']
         tipo = voto['componentDesc']
@@ -141,8 +140,7 @@ def parseVoti(data, user):
                     media[materia].append(float(value[5:]))
                 except ValueError:
                     pass
-    if maxPeriod > 0:
-        user.lastPeriod = maxPeriod
+    user.lastPeriod = max(periods)
 
     firstMateria = True
     materie = {}
@@ -383,12 +381,11 @@ def parseNewVoti(oldData, newData, user):
         return parseVoti(newData, user)
 
     votiOrdinati = {}
-    maxPeriod = 0
+    periods = []
     for voto in newData['grades']:
         if (oldData is None) or (not oldData.get('grades')) or (voto not in oldData['grades']):
             period = voto['periodPos']
-            if period > maxPeriod:
-                maxPeriod = period
+            periods.append(period)
             materia = voto['subjectDesc']
             value = "Voto " + voto['displayValue']
             tipo = voto['componentDesc']
@@ -402,8 +399,7 @@ def parseNewVoti(oldData, newData, user):
             if materia not in votiOrdinati:
                 votiOrdinati[materia] = []
             votiOrdinati[materia].append(str_voto)
-    if maxPeriod > 0:
-        user.lastPeriod = maxPeriod
+    user.lastPeriod = max(periods)
 
     result = ""
     firstMateria = True
