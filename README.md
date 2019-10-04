@@ -3,7 +3,7 @@ A Telegram Bot for Spaggiari's ClasseViva school E-Register
 
 ## Telegram Public Bot
 [Use it on Telegram](https://t.me/classevivait_bot)!  
-[Project Info & Privacy Policy](https://pesaventofilippo.tk/projects/classevivabot)
+[Project Info & Privacy Policy](https://pesaventofilippo.com/projects/classevivabot)
 
 ## Crypting File
 'modules/crypter.py', required by bot.py, is missing in the repo: that's because  
