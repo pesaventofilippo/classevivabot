@@ -1,6 +1,7 @@
 ﻿# Python Libraries
 from time import sleep
 from telepot import Bot, glance
+from os import environ
 from threading import Thread
 from pony.orm import db_session, select
 from datetime import datetime, timedelta
@@ -19,13 +20,17 @@ try:
     token = f.readline().strip()
     f.close()
 except FileNotFoundError:
+    token = environ.get("CLIPSHARE_BOT_TOKEN")
+
+if not token:
     token = input("Incolla qui il token di BotFather: ")
     f = open('token.txt', 'w')
     f.write(token)
     f.close()
+    print("Remember: it's better to use the CLIPSHARE_BOT_TOKEN environment variable instead of the text file.")
 
 bot = Bot(token)
-updatesEvery = 15 # minutes
+updatesEvery = 30 # minutes
 
 
 @db_session
@@ -239,7 +244,7 @@ def reply(msg):
                                 "cliccare <a href=\"cut.pesaventofilippo.com/donacvvbot\">qui</a>.", parse_mode="HTML")
 
     elif text == "/start donation_success":
-        bot.sendMessage(chatId, "😍 <b>GRAZIE!</b>\n"
+        bot.sendMessage(chatId, "😍 <b>Grazie!</b>\n"
                                 "Sono contento che ti sia piaciuto il mio lavoro. Grazie alla tua donazione questo bot "
                                 "può continuare ad esistere per te e per tutti gli altri utenti che ogni giorno lo usano.\n"
                                 "Sei veramente una persona speciale! ❤️\n\n"
