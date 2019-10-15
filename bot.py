@@ -725,9 +725,8 @@ def main():
     sleep(60)
     minute = datetime.now().minute
     if minute % updatesEvery == 0:
-        try:
-            runDailyUpdates(minute)
-            runUpdates()
+        runDailyUpdates(minute)
+        runUpdates()
 
 while True:
     main()
