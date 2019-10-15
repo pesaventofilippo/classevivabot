@@ -13,7 +13,7 @@ bot = None
 adminIds = [368894926] # Bot Creator
 try:
     with open('logchannel.txt', 'r') as f:
-        logChannel = int(f.readline().strip)
+        logChannel = int(f.readline().strip())
 except FileNotFoundError:
     logChannel = None
     print("* Log Channel not enabled.")
