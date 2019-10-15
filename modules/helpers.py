@@ -1,5 +1,6 @@
 from time import sleep
 from pony.orm import db_session
+from telepot import Bot
 from modules.database import Data, ParsedData
 from modules.crypter import decrypt_password
 from modules.api import AuthenticationFailedError, ApiServerError
@@ -8,10 +9,22 @@ import modules.parser as resp
 
 
 maxMessageLength = 4096
+bot = None
 adminIds = [368894926] # Bot Creator
+try:
+    with open('logchannel.txt', 'r') as f:
+        logChannel = int(f.readline().strip)
+except FileNotFoundError:
+    logChannel = None
+    print("* Log Channel not enabled.")
 
 
-def sendLongMessage(bot, chatId, text: str, **kwargs):
+def setBot(token):
+    global bot
+    bot = Bot(token)
+
+
+def sendLongMessage(chatId, text: str, **kwargs):
     if len(text) <= maxMessageLength:
         return bot.sendMessage(chatId, text, **kwargs)
 
@@ -41,6 +54,18 @@ def isAdmin(chatId: None):
     if not chatId:
         return adminIds
     return chatId in adminIds
+
+
+def logErrors(func):
+    def func_wrapper(*args, **kwargs):
+        try:
+           return func(*args, **kwargs)
+        except Exception as e:
+            if logChannel:
+                bot.sendMessage(logChannel, "⚠️ <b>Bot Exception</b>\n\n"
+                                            "<code>{}</code>".format(e), parse_mode="HTML")
+            return None
+    return func_wrapper
 
 
 @db_session
@@ -80,7 +105,7 @@ def clearUserData(user):
     stored.comunicazioni = ""
 
 
-def userLogin(bot, user, api_type):
+def userLogin(user, api_type):
     if not isUserLogged(user):
         return False
     try:

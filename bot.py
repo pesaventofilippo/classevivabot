@@ -30,6 +30,7 @@ if not token:
     print("Remember: it's better to use the CLIPSHARE_BOT_TOKEN environment variable instead of the text file.")
 
 bot = Bot(token)
+setBot(token)
 updatesEvery = 30 # minutes
 
 
@@ -708,17 +709,25 @@ def button_press(msg):
             userLogout(api)
 
 
+@logErrors
 def accept_message(msg):
     Thread(target=reply, args=[msg]).start()
 
+@logErrors
 def accept_button(msg):
     Thread(target=button_press, args=[msg]).start()
 
 bot.message_loop({'chat': accept_message, 'callback_query': accept_button})
 
-while True:
+
+@logErrors
+def main():
     sleep(60)
     minute = datetime.now().minute
     if minute % updatesEvery == 0:
-        runDailyUpdates(minute)
-        runUpdates()
+        try:
+            runDailyUpdates(minute)
+            runUpdates()
+
+while True:
+    main()
