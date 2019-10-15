@@ -37,7 +37,7 @@ updatesEvery = 30 # minutes
 @db_session
 def runUserUpdate(user, long_fetch, crhour):
     api = ClasseVivaAPI()
-    if userLogin(bot, user, api):
+    if userLogin(user, api):
         userdata = Data.get(chatId=user.chatId)
         settings = Settings.get(chatId=user.chatId)
         try:
@@ -184,7 +184,7 @@ def reply(msg):
             user.status = "normal"
             api = ClasseVivaAPI()
 
-            if userLogin(bot, user, api):
+            if userLogin(user, api):
                 bot.sendMessage(chatId, "Fatto 😊\n"
                                         "Premi /help per vedere la lista dei comandi disponibili.")
                 sent = bot.sendMessage(chatId, "🔍 Aggiorno il profilo...")
@@ -303,7 +303,7 @@ def reply(msg):
             bot.editMessageReplyMarkup((chatId, sent['message_id']), keyboards.logout(sent['message_id']))
 
         elif text == "/didattica":
-            sendLongMessage(bot, chatId, "📚 <b>Files caricati in didadttica</b>:\n\n"
+            sendLongMessage(chatId, "📚 <b>Files caricati in didadttica</b>:\n\n"
                                          "{0}".format(stored.didattica), parse_mode="HTML")
 
         elif text == "/info":
@@ -311,19 +311,19 @@ def reply(msg):
                                     "{0}".format(stored.info), parse_mode="HTML")
 
         elif text == "/prof":
-            sendLongMessage(bot, chatId, "📚 <b>Lista materie e prof</b>:\n\n"
+            sendLongMessage(chatId, "📚 <b>Lista materie e prof</b>:\n\n"
                                          "{0}".format(stored.prof), parse_mode="HTML")
 
         elif text == "/note":
-            sendLongMessage(bot, chatId, "❗️<b>Le tue note</b>:\n\n"
+            sendLongMessage(chatId, "❗️<b>Le tue note</b>:\n\n"
                                          "{0}".format(stored.note), parse_mode="HTML")
 
         elif text == "/voti":
-            sendLongMessage(bot, chatId, "📝 <b>I tuoi voti</b>:\n\n"
+            sendLongMessage(chatId, "📝 <b>I tuoi voti</b>:\n\n"
                                          "{0}".format(stored.voti), parse_mode="HTML")
 
         elif text == "/assenze":
-            sendLongMessage(bot, chatId, "{0}".format(stored.assenze), parse_mode="HTML")
+            sendLongMessage(chatId, "{0}".format(stored.assenze), parse_mode="HTML")
 
         elif text == "/agenda":
             bot.sendMessage(chatId, "📆 <b>Agenda compiti per le prossime 2 settimane</b>:\n\n"
@@ -359,7 +359,7 @@ def reply(msg):
         elif text == "/aggiorna":
             sent = bot.sendMessage(chatId, "📙📙📙 Cerco aggiornamenti... 0%")
             api = ClasseVivaAPI()
-            if userLogin(bot, user, api):
+            if userLogin(user, api):
                 try:
                     newDidattica, newNote, newVoti, newAgenda, newComunicazioni = fetchAndStore(user, api, fetch_long=True)
                 except ApiServerError:
@@ -415,7 +415,7 @@ def reply(msg):
             if param.startswith("get_file_"):
                 file_id = param.replace("get_file_", "")
                 api = ClasseVivaAPI()
-                if userLogin(bot, user, api):
+                if userLogin(user, api):
                     try:
                         bot.sendDocument(chatId, ('file.pdf', api.getFile(file_id)))
                     except ApiServerError:
@@ -430,7 +430,7 @@ def reply(msg):
             elif param.startswith("get_circ_"):
                 file_id = param.replace("get_circ_", "")
                 api = ClasseVivaAPI()
-                if userLogin(bot, user, api):
+                if userLogin(user, api):
                     try:
                         bot.sendDocument(chatId, ('download.pdf', api.getMessage(file_id)))
                     except ApiServerError:
@@ -694,7 +694,7 @@ def button_press(msg):
 
     else:
         api = ClasseVivaAPI()
-        if userLogin(bot, user, api):
+        if userLogin(user, api):
 
             if (button == "lezioni_prima") or (button == "lezioni_dopo"):
                 selectedDay = int(query_split[2]) - 1 if "prima" in button else int(query_split[2]) + 1
