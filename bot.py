@@ -172,6 +172,9 @@ def reply(msg):
             bot.sendMessage(chatId, "Comando annullato!")
 
         elif user.status == "login_0":
+            if len(text) < 5:
+                bot.sendMessage(chatId, "⚠️ Errore: l'username è troppo corto. Riprova!")
+                return
             user.username = text
             user.status = "login_1"
             bot.sendMessage(chatId, "👍 Ottimo. Adesso inviami la password.\n"
