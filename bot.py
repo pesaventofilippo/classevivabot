@@ -186,14 +186,31 @@ def reply(msg):
             user.status = "normal"
             commit()
             api = ClasseVivaAPI()
+            
+            try:
+                api.login(user.username, decrypt_password(user))
+            except ApiServerError:
+                try:
+                    bot.sendMessage(user.chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
+                                                    "Riprova tra qualche minuto.")
+                except (TelegramError, BotWasBlockedError):
+                    pass
+                return
+            except Exception:
+                clearUserData(user)
+                try:
+                    bot.sendMessage(user.chatId, "😯 Le tue credenziali di accesso sono errate.\n"
+                                                    "Effettua nuovamente il /login per favore.")
+                except (TelegramError, BotWasBlockedError):
+                    pass
+                return
 
-            if userLogin(user, api):
-                bot.sendMessage(chatId, "Fatto 😊\n"
-                                        "Premi /help per vedere la lista dei comandi disponibili.")
-                sent = bot.sendMessage(chatId, "🔍 Aggiorno il profilo...")
-                newDidattica, newNote, newVoti, newAgenda, newCircolari = fetchAndStore(user, api, fetch_long=True)
-                updateUserdata(user, newDidattica, newNote, newVoti, newAgenda, newCircolari)
-                bot.editMessageText((chatId, sent['message_id']), "✅ Profilo aggiornato!")
+            bot.sendMessage(chatId, "Fatto 😊\n"
+                                    "Premi /help per vedere la lista dei comandi disponibili.")
+            sent = bot.sendMessage(chatId, "🔍 Aggiorno il profilo...")
+            newDidattica, newNote, newVoti, newAgenda, newCircolari = fetchAndStore(user, api, fetch_long=True)
+            updateUserdata(user, newDidattica, newNote, newVoti, newAgenda, newCircolari)
+            bot.editMessageText((chatId, sent['message_id']), "✅ Profilo aggiornato!")
 
         elif user.status == "calling_support":
             user.status = "normal"
