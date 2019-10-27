@@ -22,7 +22,7 @@ class Data(db.Entity):
     agenda = Optional(Json)
     domani = Optional(Json)
     lezioni = Optional(Json)
-    comunicazioni = Optional(Json)
+    circolari = Optional(Json)
 
 
 class ParsedData(db.Entity):
@@ -36,7 +36,7 @@ class ParsedData(db.Entity):
     agenda = Optional(str)
     domani = Optional(str)
     lezioni = Optional(str)
-    comunicazioni = Optional(str)
+    circolari = Optional(str)
 
 
 class Settings(db.Entity):
@@ -45,7 +45,7 @@ class Settings(db.Entity):
     doNotDisturb = Required(bool, default=True)
     wantsDailyUpdates = Required(bool, default=True)
     dailyUpdatesHour = Required(str, default="13:30")
-    activeNews = Required(StrArray, default=["didattica", "note", "voti", "agenda", "comunicazioni"])
+    activeNews = Required(StrArray, default=["didattica", "note", "voti", "agenda", "circolari"])
 
 
 db.generate_mapping(create_tables=True)

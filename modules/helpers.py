@@ -5,18 +5,11 @@ from modules.database import Data, ParsedData
 from modules.crypter import decrypt_password
 from modules.api import AuthenticationFailedError, ApiServerError
 from telepot.exception import TelegramError, BotWasBlockedError
-import modules.parser as resp
-
+from modules import parser
 
 maxMessageLength = 4096
-bot = None
 adminIds = [368894926] # Bot Creator
-try:
-    with open('logchannel.txt', 'r') as f:
-        logChannel = int(f.readline().strip())
-except FileNotFoundError:
-    logChannel = None
-    print("* Log Channel not enabled.")
+bot = None
 
 
 def setBot(token):
@@ -50,22 +43,10 @@ def sendLongMessage(chatId, text: str, **kwargs):
     return msg
 
 
-def isAdmin(chatId: None):
+def isAdmin(chatId=None):
     if not chatId:
         return adminIds
     return chatId in adminIds
-
-
-def logErrors(func):
-    def func_wrapper(*args, **kwargs):
-        try:
-           return func(*args, **kwargs)
-        except Exception as e:
-            if logChannel:
-                bot.sendMessage(logChannel, "⚠️ <b>Bot Exception</b>\n\n"
-                                            "<code>{}</code>".format(e), parse_mode="HTML")
-            return None
-    return func_wrapper
 
 
 @db_session
@@ -90,7 +71,7 @@ def clearUserData(user):
     userdata.agenda = {}
     userdata.domani = {}
     userdata.lezioni = {}
-    userdata.comunicazioni = {}
+    userdata.circolari = {}
 
     stored = ParsedData.get(chatId=user.chatId)
     stored.didattica = ""
@@ -102,9 +83,10 @@ def clearUserData(user):
     stored.agenda = ""
     stored.domani = ""
     stored.lezioni = ""
-    stored.comunicazioni = ""
+    stored.circolari = ""
 
 
+@db_session
 def userLogin(user, api_type):
     if not isUserLogged(user):
         return False
@@ -140,33 +122,33 @@ def fetchAndStore(user, api_type, fetch_long=False):
     newAgenda = api_type.agenda(14)
     newAssenze = api_type.assenze()
     newLezioni = api_type.lezioni()
-    newComunicazioni = api_type.comunicazioni()
+    newCircolari = api_type.circolari()
 
     stored = ParsedData.get(chatId=user.chatId)
-    stored.note = resp.parseNote(newNote)
-    stored.voti = resp.parseVoti(newVoti, user)
-    stored.assenze = resp.parseAssenze(newAssenze)
-    stored.agenda = resp.parseAgenda(newAgenda)
-    stored.domani = resp.parseDomani(newAgenda)
-    stored.lezioni = resp.parseLezioni(newLezioni)
-    stored.didattica = resp.parseDidattica(newDidattica)
-    stored.comunicazioni = resp.parseComunicazioni(newComunicazioni)
+    stored.note = parser.parseNote(newNote)
+    stored.voti = parser.parseVoti(newVoti, user)
+    stored.assenze = parser.parseAssenze(newAssenze)
+    stored.agenda = parser.parseAgenda(newAgenda)
+    stored.domani = parser.parseDomani(newAgenda)
+    stored.lezioni = parser.parseLezioni(newLezioni)
+    stored.didattica = parser.parseDidattica(newDidattica)
+    stored.circolari = parser.parseCircolari(newCircolari)
 
     if fetch_long:
         newInfo = api_type.info()
         newProf = api_type.materie()
-        stored.info = resp.parseInfo(newInfo)
-        stored.prof = resp.parseMaterie(newProf)
+        stored.info = parser.parseInfo(newInfo)
+        stored.prof = parser.parseMaterie(newProf)
 
     userLogout(api_type)
-    return newDidattica, newNote, newVoti, newAgenda, newComunicazioni
+    return newDidattica, newNote, newVoti, newAgenda, newCircolari
 
 
 @db_session
-def updateUserdata(user, newDidattica, newNote, newVoti, newAgenda, newComunicazioni):
+def updateUserdata(user, newDidattica, newNote, newVoti, newAgenda, newCircolari):
     userdata = Data.get(chatId=user.chatId)
     userdata.didattica = newDidattica
     userdata.note = newNote
     userdata.voti = newVoti
     userdata.agenda = newAgenda
-    userdata.comunicazioni = newComunicazioni
+    userdata.circolari = newCircolari
