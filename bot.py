@@ -427,6 +427,21 @@ def reply(msg):
                         bot.sendMessage(chatId, "⚠️ Non riesco ad ottenere il file dal registro, riprova fra qualche minuto.")
                         userLogout(api)
                         return
+            elif param.startswith("get_circ_"):
+                circ_id = param.replace("get_circ_", "")
+                api = ClasseVivaAPI()
+                if userLogin(user, api):
+                    try:
+                        bot.sendDocument(chatId, ('document.pdf', api.getCirc(circ_id)))
+                    except ApiServerError:
+                        bot.sendMessage(chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
+                                                "Riprova tra qualche minuto.")
+                        userLogout(api)
+                        return
+                    except Exception:
+                        bot.sendMessage(chatId, "⚠️ Non riesco ad ottenere il file dal registro, riprova fra qualche minuto.")
+                        userLogout(api)
+                        return
 
         else:
             bot.sendMessage(chatId, "Non ho capito...\n"

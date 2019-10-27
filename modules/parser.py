@@ -281,8 +281,9 @@ def parseCircolari(data):
         status = item['cntStatus']
         title = sanitize(item['cntTitle'])
         isRead = item['readStatus']
+        circId = item['pubId']
         if (status == 'active') and not isRead:
-            result += "\n\n✉️ {0}".format(title)
+            result += "\n\n✉️ <a href=\"t.me/classevivait_bot?start=get_circ_{1}\">{0}</a>".format(title, circId)
 
     return result if result else "\n\n📩 Non ci sono circolari da leggere."
 
@@ -451,8 +452,9 @@ def parseNewCircolari(oldData, newData):
             status = item['cntStatus']
             title = sanitize(item['cntTitle'])
             isRead = item['readStatus']
+            circId = item['pubId']
             if (status == 'active') and not isRead:
-                string = "\n✉️ {0}".format(title)
+                string = "\n✉️ <a href=\"t.me/classevivait_bot?start=get_circ_{1}\">{0}</a>".format(title, circId)
                 result += string if isFirst else "\n" + string
                 isFirst = False
 
