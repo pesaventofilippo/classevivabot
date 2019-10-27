@@ -3,7 +3,7 @@ from time import sleep
 from telepot import Bot, glance
 from os import environ
 from threading import Thread
-from pony.orm import db_session, select
+from pony.orm import db_session, select, commit
 from datetime import datetime, timedelta
 from telepot.exception import TelegramError, BotWasBlockedError
 
@@ -26,7 +26,7 @@ if not token:
     f = open('token.txt', 'w')
     f.write(token)
     f.close()
-    print(" * Ricorda: è più sicuro usare la variabile env CLIPSHARE_BOT_TOKEN invece del file txt!")
+    print(" * Ricorda: è più sicuro usare la variabile ambiente CLIPSHARE_BOT_TOKEN invece del file txt!")
 
 bot = Bot(token)
 setBot(token)
@@ -181,6 +181,7 @@ def reply(msg):
         elif user.status == "login_1":
             user.password = crypt_password(text, user)
             user.status = "normal"
+            commit()
             api = ClasseVivaAPI()
 
             if userLogin(user, api):

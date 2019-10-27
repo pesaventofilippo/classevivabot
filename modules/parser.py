@@ -284,7 +284,7 @@ def parseCircolari(data):
         if (status == 'active') and not isRead:
             result += "\n\n✉️ {0}".format(title)
 
-    return result
+    return result if result else "\n\n📩 Non ci sono circolari da leggere."
 
 
 
