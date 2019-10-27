@@ -7,12 +7,6 @@ def back(msgid):
             ]])
 
 
-def payments():
-    return InlineKeyboardMarkup(inline_keyboard=[[
-                InlineKeyboardButton(text="🔷 PayPal", url="cut.pesaventofilippo.com/donacvvbot")
-            ]])
-
-
 def lezioni(msgid, day=0):
     return InlineKeyboardMarkup(inline_keyboard=[[
                 InlineKeyboardButton(text="⬅️ Prima", callback_data="lezioni_prima#{0}#{1}".format(msgid, day)),

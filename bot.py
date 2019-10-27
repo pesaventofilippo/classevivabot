@@ -8,8 +8,7 @@ from datetime import datetime, timedelta
 from telepot.exception import TelegramError, BotWasBlockedError
 
 # Custom Modules
-import modules.parser as resp
-import modules.keyboards as keyboards
+from modules import parser, keyboards
 from modules.crypter import crypt_password
 from modules.helpers import *
 from modules.database import User, Data, ParsedData, Settings
@@ -23,11 +22,11 @@ except FileNotFoundError:
     token = environ.get("CLIPSHARE_BOT_TOKEN")
 
 if not token:
-    token = input("Incolla qui il token di BotFather: ")
+    token = input(" * Incolla qui il token di BotFather: ")
     f = open('token.txt', 'w')
     f.write(token)
     f.close()
-    print("Remember: it's better to use the CLIPSHARE_BOT_TOKEN environment variable instead of the text file.")
+    print(" * Ricorda: è più sicuro usare la variabile env CLIPSHARE_BOT_TOKEN invece del file txt!")
 
 bot = Bot(token)
 setBot(token)
@@ -41,34 +40,34 @@ def runUserUpdate(user, long_fetch, crhour):
         userdata = Data.get(chatId=user.chatId)
         settings = Settings.get(chatId=user.chatId)
         try:
-            newDidattica, newNote, newVoti, newAgenda, newComunicazioni = fetchAndStore(user, api, long_fetch)
+            newDidattica, newNote, newVoti, newAgenda, newCircolari = fetchAndStore(user, api, long_fetch)
         except ApiServerError:
             return
 
         if settings.wantsNotifications is True:
             if (settings.doNotDisturb is False) or (crhour in range(7, 21)):
-                dataDidattica = resp.parseNewDidattica(userdata.didattica, newDidattica)
-                dataNote = resp.parseNewNote(userdata.note, newNote)
-                dataVoti = resp.parseNewVoti(userdata.voti, newVoti, user)
-                dataAgenda = resp.parseNewAgenda(userdata.agenda, newAgenda)
-                dataComunicazioni = resp.parseNewComunicazioni(userdata.comunicazioni, newComunicazioni)
-                updateUserdata(user, newDidattica, newNote, newVoti, newAgenda, newComunicazioni)
+                dataDidattica = parser.parseNewDidattica(userdata.didattica, newDidattica)
+                dataNote = parser.parseNewNote(userdata.note, newNote)
+                dataVoti = parser.parseNewVoti(userdata.voti, newVoti, user)
+                dataAgenda = parser.parseNewAgenda(userdata.agenda, newAgenda)
+                dataCircolari = parser.parseNewCircolari(userdata.circolari, newCircolari)
+                updateUserdata(user, newDidattica, newNote, newVoti, newAgenda, newCircolari)
                 try:
                     if dataDidattica and ("didattica" in settings.activeNews):
                         bot.sendMessage(user.chatId, "🔔 <b>Nuovi file caricati!</b>"
                                                             "{0}".format(dataDidattica), parse_mode="HTML", disable_web_page_preview=True)
                     if dataNote and ("note" in settings.activeNews):
                         bot.sendMessage(user.chatId, "🔔 <b>Hai nuove note!</b>"
-                                                            "{0}".format(dataNote), parse_mode="HTML")
+                                                            "{0}".format(dataNote), parse_mode="HTML", disable_web_page_preview=True)
                     if dataVoti and ("voti" in settings.activeNews):
                         bot.sendMessage(user.chatId, "🔔 <b>Hai nuovi voti!</b>"
-                                                            "{0}".format(dataVoti), parse_mode="HTML")
+                                                            "{0}".format(dataVoti), parse_mode="HTML", disable_web_page_preview=True)
                     if dataAgenda and ("agenda" in settings.activeNews):
                         bot.sendMessage(user.chatId, "🔔 <b>Hai nuovi impegni!</b>\n"
-                                                            "{0}".format(dataAgenda), parse_mode="HTML")
-                    if dataComunicazioni and ("comunicazioni" in settings.activeNews):
-                        bot.sendMessage(user.chatId, "🔔 <b>Hai nuove comunicazioni!</b>"
-                                                     "{0}".format(dataComunicazioni), parse_mode="HTML", disable_web_page_preview=True)
+                                                            "{0}".format(dataAgenda), parse_mode="HTML", disable_web_page_preview=True)
+                    if dataCircolari and ("circolari" in settings.activeNews):
+                        bot.sendMessage(user.chatId, "🔔 <b>Hai nuove circolari!</b>"
+                                                     "{0}".format(dataCircolari), parse_mode="HTML", disable_web_page_preview=True)
                 except BotWasBlockedError:
                     clearUserData(user)
                 except TelegramError:
@@ -142,7 +141,6 @@ def reply(msg):
                                 "Prova ad usarlo per scoprire quanto è comodo!\n\n"
                                 "<b>Sviluppo:</b> Filippo Pesavento\n"
                                 "<b>Hosting:</b> Filippo Pesavento\n\n"
-                                "<b>Donazioni:</b> <a href=\"cut.pesaventofilippo.com/donacvvbot\">PayPal</a>\n"
                                 "<b>Info sicurezza:</b> /aboutprivacy", parse_mode="HTML")
 
     elif text == "/aboutprivacy":
@@ -164,7 +162,8 @@ def reply(msg):
                                 "che per scelta personale, ma non sono tuo amico nè tuo conoscente: quindi se decidi di non fidarti di uno sconosciuto "
                                 "che ti scrive su Telegram (ti posso capire benissimo) sei libero di non usare il bot 🙂\n\n"
                                 "<a href=\"cut.pesaventofilippo.com/infocvvbot\">Altre info & Privacy Policy</a>\n"
-                                "<a href=\"https://t.me/pesaventofilippo\">Contattami</a>", parse_mode="HTML", disable_web_page_preview=True)
+                                "<a href=\"https://t.me/pesaventofilippo\">Contattami</a>\n\n"
+                                "<i>Se sei venuto qui prima di digitare la password per il login, scrivila adesso!</i>", parse_mode="HTML", disable_web_page_preview=True)
 
 
     elif user.status != "normal":
@@ -188,8 +187,8 @@ def reply(msg):
                 bot.sendMessage(chatId, "Fatto 😊\n"
                                         "Premi /help per vedere la lista dei comandi disponibili.")
                 sent = bot.sendMessage(chatId, "🔍 Aggiorno il profilo...")
-                newDidattica, newNote, newVoti, newAgenda, newComunicazioni = fetchAndStore(user, api, fetch_long=True)
-                updateUserdata(user, newDidattica, newNote, newVoti, newAgenda, newComunicazioni)
+                newDidattica, newNote, newVoti, newAgenda, newCircolari = fetchAndStore(user, api, fetch_long=True)
+                updateUserdata(user, newDidattica, newNote, newVoti, newAgenda, newCircolari)
                 bot.editMessageText((chatId, sent['message_id']), "✅ Profilo aggiornato!")
 
         elif user.status == "calling_support":
@@ -223,68 +222,48 @@ def reply(msg):
                   "- /info - Visualizza le tue info utente\n" \
                   "- /prof - Visualizza la lista delle materie e dei prof\n" \
                   "- /settings - Modifica le impostazioni personali del bot\n" \
-                  "- /dona - Supporta il bot e il mio lavoro, se ti senti generoso :)\n" \
                   "- /about - Informazioni sul bot\n" \
                   "- /aboutprivacy - Più informazioni sulla privacy\n" \
                   "- /support - Contatta lo staff (emergenze)\n\n" \
-                  "<b>Notifiche</b>: ogni mezz'ora, se vuoi, ti invierò un messaggio se ti sono arrivati nuovi voti, note, compiti, materiali, avvisi o circolari.\n\n" \
+                  "<b>Notifiche</b>: ogni mezz'ora, se vuoi, ti invierò un messaggio se ti sono arrivati nuovi voti, note, compiti, materiali, avvisi o circolari.\n" \
                   "<b>Impostazioni</b>: con /settings puoi cambiare varie impostazioni, tra cui l'orario delle notifiche, quali notifiche ricevere e se riceverle di notte."
         bot.sendMessage(chatId, message, parse_mode="HTML")
 
-    elif text == "/dona":
-        bot.sendMessage(chatId, "<b>Grazie per aver pensato di supportarmi!</b>\n"
-                                "Ho dedicato ore di lavoro a questo bot, ma ho deciso di renderlo open-source e completamente gratuito.\n"
-                                "Tuttavia, il numero di utenti che usano questo bot continua a crescere, e crescono anche i costi di gestione del server. "
-                                "Non preoccuparti, per adesso non è un problema e questo bot continuerà ad essere gratuito, ma se proprio ti senti generoso e "
-                                "hai voglia di farmi un regalo, sei il benvenuto :)\n\n"
-                                "<i>Grazie di cuore.</i> ❤️", parse_mode="HTML", reply_markup=keyboards.payments())
+    elif text.startswith("/broadcast ") and isAdmin(chatId):
+        bdText = text.split(" ", 1)[1]
+        pendingUsers = select(user for user in User if user.password != "")[:]
+        userCount = pendingUsers.__len__()
+        for user in pendingUsers:
+            try:
+                bot.sendMessage(user.chatId, bdText, parse_mode="HTML", disable_web_page_preview=True)
+            except (TelegramError, BotWasBlockedError):
+                userCount -= 1
+                pass
+        bot.sendMessage(chatId, "📢 Messaggio inviato correttamente a {0} utenti!".format(userCount))
 
-    elif text == "/start donation_cancel":
-        bot.sendMessage(chatId, "😓 Donazione cancellata.\n"
-                                "Spero di continuare a esserti utile! Se dovessi cambiare idea, puoi scrivere /dona o "
-                                "cliccare <a href=\"cut.pesaventofilippo.com/donacvvbot\">qui</a>.", parse_mode="HTML")
+    elif text.startswith("/sendmsg ") and isAdmin(chatId):
+        selId = int(text.split(" ", 2)[1])
+        selText = str(text.split(" ", 2)[2])
+        bot.sendMessage(selId, selText, parse_mode="HTML")
+        bot.sendMessage(chatId, selText + "\n\n- Messaggio inviato!", parse_mode="HTML")
 
-    elif text == "/start donation_success":
-        bot.sendMessage(chatId, "😍 <b>Grazie!</b>\n"
-                                "Sono contento che ti sia piaciuto il mio lavoro. Grazie alla tua donazione questo bot "
-                                "può continuare ad esistere per te e per tutti gli altri utenti che ogni giorno lo usano.\n"
-                                "Sei veramente una persona speciale! ❤️\n\n"
-                                "<a href=\"https://t.me/pesaventofilippo\">Contattami</a>\n"
-                                "<a href=\"https://pesaventofilippo.com\">Il mio sito Web</a>", parse_mode="HTML")
-
-    elif text.startswith("/broadcast "):
-        if isAdmin(chatId):
-            bdText = text.split(" ", 1)[1]
-            pendingUsers = select(user for user in User if user.password != "")[:]
-            for user in pendingUsers:
-                try:
-                    bot.sendMessage(user.chatId, bdText, parse_mode="HTML", disable_web_page_preview=True)
-                except (TelegramError, BotWasBlockedError):
-                    pass
-            bot.sendMessage(chatId, "📢 Messaggio inviato correttamente a {0} utenti!".format(pendingUsers.__len__()))
-
-    elif text.startswith("/sendmsg "):
-        if isAdmin(chatId):
-            selId = int(text.split(" ", 2)[1])
-            selText = str(text.split(" ", 2)[2])
-            bot.sendMessage(selId, selText, parse_mode="HTML")
-            bot.sendMessage(chatId, selText + "\n\n- Messaggio inviato!", parse_mode="HTML")
-
-    elif text == "/globalupdate":
-        if isAdmin(chatId):
-            bot.sendMessage(chatId, "🕙 Inizio aggiornamento globale...")
-            runUpdates(long_fetch=True)
-            bot.sendMessage(chatId, "✅ Aggiornamenti completati!")
+    elif text == "/globalupdate" and isAdmin(chatId):
+        bot.sendMessage(chatId, "🕙 Inizio aggiornamento globale...")
+        runUpdates(long_fetch=True)
+        bot.sendMessage(chatId, "✅ Aggiornamenti completati!")
 
     elif "reply_to_message" in msg:
         if isAdmin(chatId):
-            userId = msg['reply_to_message']['forward_from']['id']
-            bot.sendMessage(userId, "💬 <b>Risposta dello staff</b>\n"
-                                    "{0}".format(text), parse_mode="HTML")
-            bot.sendMessage(chatId, "Risposta inviata!")
+            try:
+                userId = msg['reply_to_message']['forward_from']['id']
+                bot.sendMessage(userId, "💬 <b>Risposta dello staff</b>\n"
+                                        "{0}".format(text), parse_mode="HTML")
+                bot.sendMessage(chatId, "Risposta inviata!")
+            except Exception:
+                pass
         else:
             bot.sendMessage(chatId, "Premi /support per parlare con lo staff.")
-    
+
     elif text == "/annulla":
         bot.sendMessage(chatId, "😴 Nessun comando da annullare!")
 
@@ -304,7 +283,7 @@ def reply(msg):
 
         elif text == "/didattica":
             sendLongMessage(chatId, "📚 <b>Files caricati in didadttica</b>:\n\n"
-                                         "{0}".format(stored.didattica), parse_mode="HTML")
+                                    "{0}".format(stored.didattica), parse_mode="HTML", disable_web_page_preview=True)
 
         elif text == "/info":
             bot.sendMessage(chatId, "ℹ️ <b>Ecco le tue info</b>:\n\n"
@@ -312,36 +291,36 @@ def reply(msg):
 
         elif text == "/prof":
             sendLongMessage(chatId, "📚 <b>Lista materie e prof</b>:\n\n"
-                                         "{0}".format(stored.prof), parse_mode="HTML")
+                                    "{0}".format(stored.prof), parse_mode="HTML")
 
         elif text == "/note":
             sendLongMessage(chatId, "❗️<b>Le tue note</b>:\n\n"
-                                         "{0}".format(stored.note), parse_mode="HTML")
+                                    "{0}".format(stored.note), parse_mode="HTML")
 
         elif text == "/voti":
             sendLongMessage(chatId, "📝 <b>I tuoi voti</b>:\n\n"
-                                         "{0}".format(stored.voti), parse_mode="HTML")
+                                    "{0}".format(stored.voti), parse_mode="HTML")
 
         elif text == "/assenze":
             sendLongMessage(chatId, "{0}".format(stored.assenze), parse_mode="HTML")
 
         elif text == "/agenda":
             bot.sendMessage(chatId, "📆 <b>Agenda compiti per le prossime 2 settimane</b>:\n\n"
-                                    "{0}".format(stored.agenda), parse_mode="HTML")
+                                    "{0}".format(stored.agenda), parse_mode="HTML", disable_web_page_preview=True)
 
         elif text == "/domani":
             isSaturday = datetime.now().isoweekday() == 6
             dayString = "lunedì" if isSaturday else "domani"
             bot.sendMessage(chatId, "📆 <b>Compiti e verifiche per {0}</b>:\n\n"
-                                    "{1}".format(dayString, stored.domani), parse_mode="HTML")
+                                    "{1}".format(dayString, stored.domani), parse_mode="HTML", disable_web_page_preview=True)
 
         elif text == "/circolari":
             bot.sendMessage(chatId, "📩 <b>Circolari da leggere</b>:\n\n"
-                                    "{0}".format(stored.comunicazioni), parse_mode="HTML", disable_web_page_preview=True)
+                                    "{0}".format(stored.circolari), parse_mode="HTML", disable_web_page_preview=True)
 
         elif text == "/lezioni":
             sent = bot.sendMessage(chatId, "📚 <b>Lezioni di oggi</b>:\n\n"
-                                           "{0}".format(stored.lezioni), parse_mode="HTML", reply_markup=None)
+                                           "{0}".format(stored.lezioni), parse_mode="HTML", reply_markup=None, disable_web_page_preview=True)
             bot.editMessageReplyMarkup((chatId, sent['message_id']), keyboards.lezioni(sent['message_id']))
 
         elif text == "/settings":
@@ -354,31 +333,31 @@ def reply(msg):
                                     "📆 <b>Cosa devi fare per domani</b>:\n\n"
                                     "{0}\n\n\n"
                                     "📚 <b>Le lezioni di oggi</b>:\n\n"
-                                    "{1}".format(stored.domani, stored.lezioni), parse_mode="HTML")
+                                    "{1}".format(stored.domani, stored.lezioni), parse_mode="HTML", disable_web_page_preview=True)
 
         elif text == "/aggiorna":
             sent = bot.sendMessage(chatId, "📙📙📙 Cerco aggiornamenti... 0%")
             api = ClasseVivaAPI()
             if userLogin(user, api):
                 try:
-                    newDidattica, newNote, newVoti, newAgenda, newComunicazioni = fetchAndStore(user, api, fetch_long=True)
+                    newDidattica, newNote, newVoti, newAgenda, newCircolari = fetchAndStore(user, api, fetch_long=True)
                 except ApiServerError:
                     bot.sendMessage(chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
                                             "Riprova tra qualche minuto.")
                     userLogout(api)
                     return
                 bot.editMessageText((chatId, sent['message_id']), "📗📙📙 Cerco aggiornamenti... 10%")
-                dataDidattica = resp.parseNewDidattica(userdata.didattica, newDidattica)
+                dataDidattica = parser.parseNewDidattica(userdata.didattica, newDidattica)
                 bot.editMessageText((chatId, sent['message_id']), "📗📙📙  Cerco aggiornamenti... 25%")
-                dataNote = resp.parseNewNote(userdata.note, newNote)
+                dataNote = parser.parseNewNote(userdata.note, newNote)
                 bot.editMessageText((chatId, sent['message_id']), "📗📙📙  Cerco aggiornamenti... 40%")
-                dataVoti = resp.parseNewVoti(userdata.voti, newVoti, user)
+                dataVoti = parser.parseNewVoti(userdata.voti, newVoti, user)
                 bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 55%")
-                dataAgenda = resp.parseNewAgenda(userdata.agenda, newAgenda)
+                dataAgenda = parser.parseNewAgenda(userdata.agenda, newAgenda)
                 bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 70%")
-                dataComunicazioni = resp.parseNewComunicazioni(userdata.comunicazioni, newComunicazioni)
+                dataCircolari = parser.parseNewCircolari(userdata.circolari, newCircolari)
                 bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 85%")
-                updateUserdata(user, newDidattica, newNote, newVoti, newAgenda, newComunicazioni)
+                updateUserdata(user, newDidattica, newNote, newVoti, newAgenda, newCircolari)
                 bot.editMessageText((chatId, sent['message_id']), "📗📗📗  Cerco aggiornamenti... 100%")
 
                 if dataDidattica is not None:
@@ -391,12 +370,12 @@ def reply(msg):
                     bot.sendMessage(chatId, "🔔 <b>Hai nuovi voti!</b>{0}".format(dataVoti), parse_mode="HTML")
 
                 if dataAgenda is not None:
-                    bot.sendMessage(chatId, "🔔 <b>Hai nuovi impegni!</b>\n{0}".format(dataAgenda), parse_mode="HTML")
+                    bot.sendMessage(chatId, "🔔 <b>Hai nuovi impegni!</b>\n{0}".format(dataAgenda), parse_mode="HTML", disable_web_page_preview=True)
 
-                if dataComunicazioni is not None:
-                    bot.sendMessage(chatId, "🔔 <b>Hai nuove comunicazioni!</b>{0}".format(dataComunicazioni), parse_mode="HTML", disable_web_page_preview=True)
+                if dataCircolari is not None:
+                    bot.sendMessage(chatId, "🔔 <b>Hai nuove circolari!</b>{0}".format(dataCircolari), parse_mode="HTML", disable_web_page_preview=True)
 
-                if not any([dataDidattica, dataNote, dataVoti, dataAgenda, dataComunicazioni]):
+                if not any([dataDidattica, dataNote, dataVoti, dataAgenda, dataCircolari]):
                     bot.editMessageText((chatId, sent['message_id']), "📗 Dati aggiornati!\n"
                                                                       "📗 Nessuna novità!")
                 else:
@@ -406,9 +385,9 @@ def reply(msg):
             user.status = "calling_support"
             bot.sendMessage(chatId, "🆘 <b>Richiesta di supporto</b>\n"
                                     "Se hai qualche problema che non riesci a risolvere, scrivi qui un messaggio, e un admin "
-                                    "ti contatterà entro 24 ore.\n\n"
+                                    "ti contatterà il prima possibile.\n\n"
                                     "<i>Per annullare, premi</i> /annulla.", parse_mode="HTML")
-        
+
         # Custom Start Parameters
         elif text.startswith("/start "):
             param = text.split(" ", 1)[1]
@@ -417,7 +396,7 @@ def reply(msg):
                 api = ClasseVivaAPI()
                 if userLogin(user, api):
                     try:
-                        bot.sendDocument(chatId, ('file.pdf', api.getFile(file_id)))
+                        bot.sendDocument(chatId, ('document.pdf', api.getFile(file_id)))
                     except ApiServerError:
                         bot.sendMessage(chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
                                                 "Riprova tra qualche minuto.")
@@ -427,21 +406,7 @@ def reply(msg):
                         bot.sendMessage(chatId, "⚠️ Non riesco ad ottenere il file dal registro, riprova fra qualche minuto.")
                         userLogout(api)
                         return
-            elif param.startswith("get_circ_"):
-                file_id = param.replace("get_circ_", "")
-                api = ClasseVivaAPI()
-                if userLogin(user, api):
-                    try:
-                        bot.sendDocument(chatId, ('download.pdf', api.getMessage(file_id)))
-                    except ApiServerError:
-                        bot.sendMessage(chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
-                                                "Riprova tra qualche minuto.")
-                        userLogout(api)
-                        return
-                    except Exception:
-                        bot.sendMessage(chatId, "⚠️ Non riesco ad ottenere la circolare dal registro, riprova fra qualche minuto.")
-                        userLogout(api)
-                        return
+
         else:
             bot.sendMessage(chatId, "Non ho capito...\n"
                                     "Serve aiuto? Premi /help")
@@ -451,7 +416,6 @@ def reply(msg):
             user.status = "login_0"
             bot.sendMessage(chatId, "Per favore, inviami il tuo <b>username</b> (quello che usi per accedere al registro).\n"
                                     "Usa /annulla se serve.", parse_mode="HTML")
-
         else:
             bot.sendMessage(chatId, "Benvenuto, <b>{0}</b>!\n"
                                     "Per favore, premi /login per utilizzarmi.\n\n"
@@ -507,7 +471,7 @@ def button_press(msg):
                                                             "🔔 Attivo" if "note" in settings.activeNews else "🔕 Disattivo",
                                                             "🔔 Attivo" if "voti" in settings.activeNews else "🔕 Disattivo",
                                                             "🔔 Attivo" if "agenda" in settings.activeNews else "🔕 Disattivo",
-                                                            "🔔 Attivo" if "comunicazioni" in settings.activeNews else "🔕 Disattivo"),
+                                                            "🔔 Attivo" if "circolari" in settings.activeNews else "🔕 Disattivo"),
                                                     parse_mode="HTML", reply_markup=keyboards.settings_selectnews(message_id))
 
     elif button == "news_didattica":
@@ -526,7 +490,7 @@ def button_press(msg):
                                                             "🔔 Attivo" if "note" in settings.activeNews else "🔕 Disattivo",
                                                             "🔔 Attivo" if "voti" in settings.activeNews else "🔕 Disattivo",
                                                             "🔔 Attivo" if "agenda" in settings.activeNews else "🔕 Disattivo",
-                                                            "🔔 Attivo" if "comunicazioni" in settings.activeNews else "🔕 Disattivo"),
+                                                            "🔔 Attivo" if "circolari" in settings.activeNews else "🔕 Disattivo"),
                                                     parse_mode="HTML", reply_markup=keyboards.settings_selectnews(message_id))
 
     elif button == "news_note":
@@ -545,7 +509,7 @@ def button_press(msg):
                                                             "🔔 Attivo" if "note" in settings.activeNews else "🔕 Disattivo",
                                                             "🔔 Attivo" if "voti" in settings.activeNews else "🔕 Disattivo",
                                                             "🔔 Attivo" if "agenda" in settings.activeNews else "🔕 Disattivo",
-                                                            "🔔 Attivo" if "comunicazioni" in settings.activeNews else "🔕 Disattivo"),
+                                                            "🔔 Attivo" if "circolari" in settings.activeNews else "🔕 Disattivo"),
                                                     parse_mode="HTML", reply_markup=keyboards.settings_selectnews(message_id))
 
     elif button == "news_voti":
@@ -564,7 +528,7 @@ def button_press(msg):
                                                             "🔔 Attivo" if "note" in settings.activeNews else "🔕 Disattivo",
                                                             "🔔 Attivo" if "voti" in settings.activeNews else "🔕 Disattivo",
                                                             "🔔 Attivo" if "agenda" in settings.activeNews else "🔕 Disattivo",
-                                                            "🔔 Attivo" if "comunicazioni" in settings.activeNews else "🔕 Disattivo"),
+                                                            "🔔 Attivo" if "circolari" in settings.activeNews else "🔕 Disattivo"),
                                                     parse_mode="HTML", reply_markup=keyboards.settings_selectnews(message_id))
 
     elif button == "news_agenda":
@@ -583,14 +547,14 @@ def button_press(msg):
                                                             "🔔 Attivo" if "note" in settings.activeNews else "🔕 Disattivo",
                                                             "🔔 Attivo" if "voti" in settings.activeNews else "🔕 Disattivo",
                                                             "🔔 Attivo" if "agenda" in settings.activeNews else "🔕 Disattivo",
-                                                            "🔔 Attivo" if "comunicazioni" in settings.activeNews else "🔕 Disattivo"),
+                                                            "🔔 Attivo" if "circolari" in settings.activeNews else "🔕 Disattivo"),
                                                     parse_mode="HTML", reply_markup=keyboards.settings_selectnews(message_id))
 
     elif button == "news_circolari":
-        if "comunicazioni" in settings.activeNews:
-            settings.activeNews.remove("comunicazioni")
+        if "circolari" in settings.activeNews:
+            settings.activeNews.remove("circolari")
         else:
-            settings.activeNews.append("comunicazioni")
+            settings.activeNews.append("circolari")
         bot.editMessageText((chatId, message_id), "📲 <b>Selezione notifiche</b>\n\n"
                                                   "📚 Didattica: {0}\n"
                                                   "❗️ Note: {1}\n"
@@ -602,7 +566,7 @@ def button_press(msg):
                                                             "🔔 Attivo" if "note" in settings.activeNews else "🔕 Disattivo",
                                                             "🔔 Attivo" if "voti" in settings.activeNews else "🔕 Disattivo",
                                                             "🔔 Attivo" if "agenda" in settings.activeNews else "🔕 Disattivo",
-                                                            "🔔 Attivo" if "comunicazioni" in settings.activeNews else "🔕 Disattivo"),
+                                                            "🔔 Attivo" if "circolari" in settings.activeNews else "🔕 Disattivo"),
                                                     parse_mode="HTML", reply_markup=keyboards.settings_selectnews(message_id))
 
     elif button == "settings_notif_yes":
@@ -695,38 +659,31 @@ def button_press(msg):
     else:
         api = ClasseVivaAPI()
         if userLogin(user, api):
-
             if (button == "lezioni_prima") or (button == "lezioni_dopo"):
                 selectedDay = int(query_split[2]) - 1 if "prima" in button else int(query_split[2]) + 1
                 dateformat = (datetime.now() + timedelta(days=selectedDay)).strftime("%d/%m/%Y")
                 try:
-                    data = resp.parseLezioni(api.lezioni(selectedDay))
+                    data = parser.parseLezioni(api.lezioni(selectedDay))
                     bot.editMessageText((chatId, message_id), "📚 <b>Lezioni del {0}</b>:\n\n{1}".format(dateformat, data),
-                                        parse_mode="HTML", reply_markup=keyboards.lezioni(message_id, selectedDay))
+                                        parse_mode="HTML", reply_markup=keyboards.lezioni(message_id, selectedDay), disable_web_page_preview=True)
                 except ApiServerError:
                     bot.editMessageText((chatId, message_id), "⚠️ I server di ClasseViva non sono raggiungibili.\n"
                                                               "Riprova tra qualche minuto.", reply_markup=None)
             userLogout(api)
 
 
-@logErrors
 def accept_message(msg):
     Thread(target=reply, args=[msg]).start()
 
-@logErrors
 def accept_button(msg):
     Thread(target=button_press, args=[msg]).start()
 
 bot.message_loop({'chat': accept_message, 'callback_query': accept_button})
 
 
-@logErrors
-def main():
+while True:
     sleep(60)
     minute = datetime.now().minute
     if minute % updatesEvery == 0:
         runDailyUpdates(minute)
         runUpdates()
-
-while True:
-    main()

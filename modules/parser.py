@@ -56,13 +56,14 @@ def parseInfo(data):
            "🏫 Nome Scuola: <b>{7}</b>\n" \
            "🏫 Tipo Scuola: <b>{8}</b>\n" \
            "🏫 ID Scuola: <b>{9}</b>\n" \
-           "🏛 Città: <b>{10}</b>\n" \
-           "📍 Provincia: <b>{11}</b>\n" \
+           "🏫 ID MIUR Scuola: <b>{10}</b>\n" \
+           "🏛 Città: <b>{11}</b>\n" \
+           "📍 Provincia: <b>{12}</b>\n" \
            "\n" \
-           "👤 UserID: <b>{12}</b>\n" \
-           "👤 Tipo Utente: <b>{13}</b>" \
+           "👤 UserID: <b>{13}</b>\n" \
+           "👤 Tipo Utente: <b>{14}</b>" \
            "".format(info['firstName'], info['lastName'], time[2], time[1], time[0], info['fiscalCode'], info['ident'],
-                     info['schDedication'], info['schName'], info['schCode'], info['schCity'], info['schProv'],
+                     info['schDedication'], info['schName'], info['schCode'], info['miurSchoolCode'], info['schCity'], info['schProv'],
                      info['usrId'], info['usrType'])
 
 
@@ -117,7 +118,7 @@ def parseVoti(data, user):
         time = voto['evtDate'].lower().split("-", 2)
         desc = "\n<i>{0}</i>".format(sanitize(voto['notesForFamily'])) if voto['notesForFamily'] else ""
         colore = "📗" if voto['color'] == "green" else "📕" if voto['color'] == "red" else "📘"
-        
+
         if tipo == "":
             str_voto = "\n\n{0} <b>{1}</b> • {2} {3}".format(colore, value, "{0}/{1}/{2}".format(time[2], time[1], time[0]), desc)
         else:
@@ -140,7 +141,7 @@ def parseVoti(data, user):
                     media[materia].append(float(value[5:]))
                 except ValueError:
                     pass
-    user.lastPeriod = max(periods)
+    user.lastPeriod = max(periods) if periods else 1
 
     firstMateria = True
     materie = {}
@@ -257,7 +258,9 @@ def parseLezioni(data):
         return "🎈 Nessuna lezione, per oggi."
 
     result = ""
-    for lezione in data['lessons']:
+    lessonsList = data['lessons']
+    lessonsList.sort(key=lambda x: str(x['evtHPos']))
+    for lezione in lessonsList:
         ora = lezione['evtHPos']
         desc = lezione['lessonArg']
         tipo = lezione['lessonType']
@@ -269,7 +272,7 @@ def parseLezioni(data):
     return result
 
 
-def parseComunicazioni(data):
+def parseCircolari(data):
     if (data is None) or (not data.get('items')):
         return "\n\n📩 Non ci sono circolari da leggere."
 
@@ -279,7 +282,7 @@ def parseComunicazioni(data):
         title = sanitize(item['cntTitle'])
         isRead = item['readStatus']
         if (status == 'active') and not isRead:
-            result += "\n\n✉️ <a href=\"t.me/classevivait_bot?start=get_circ_{1}\">{0}</a>".format(title, item['pubId'])
+            result += "\n\n✉️ {0}".format(title)
 
     return result
 
@@ -288,8 +291,9 @@ def parseComunicazioni(data):
 def parseNewDidattica(oldData, newData):
     if (newData is None) or (not newData.get('didacticts')):
         return None
-    if oldData is None:
+    if (oldData is None) or (not oldData.get('didacticts')):
         return parseDidattica(newData)
+
 
     result = ""
     firstProf = True
@@ -352,22 +356,22 @@ def parseNewDidattica(oldData, newData):
 def parseNewNote(oldData, newData):
     if (newData is None) or (not newData.get('NTCL') and not newData.get('NTWN') and not newData.get('NTTE')):
         return None
-    if oldData is None:
+    if (oldData is None) or (not oldData.get('NTCL') and not oldData.get('NTWN') and not oldData.get('NTTE')):
         return parseNote(newData)
 
     result = ""
     for nota in newData['NTCL']:
-        if (oldData is None) or (not oldData.get('NTCL')) or (nota not in oldData['NTCL']):
+        if (not oldData.get('NTCL')) or (nota not in oldData['NTCL']):
             author, time, text = innerParseNotes(nota)
             result += "\n\n🚫 <b>Nota disciplinare</b> di <b>{0}</b> del {1}/{2}/{3}:\n{4}".format(author, time[2], time[1], time[0], text)
 
     for avviso in newData['NTWN']:
-        if (oldData is None) or (not oldData.get('NTWN')) or (avviso not in oldData['NTWN']):
+        if (not oldData.get('NTWN')) or (avviso not in oldData['NTWN']):
             author, time, text = innerParseNotes(avviso)
             result += "\n\n⚠️ <b>Richiamo ({0})</b> di <b>{1}</b> del {2}/{3}/{4}:\n{5}".format(avviso['warningType'].lower(), author, time[2], time[1], time[0], text)
 
     for annotazione in newData['NTTE']:
-        if (oldData is None) or (not oldData.get('NTTE')) or (annotazione not in oldData['NTTE']):
+        if (not oldData.get('NTTE')) or (annotazione not in oldData['NTTE']):
             author, time, text = innerParseNotes(annotazione)
             result += "\n\nℹ️ <b>Annotazione</b> di <b>{0}</b> del {1}/{2}/{3}:\n{4}".format(author, time[2], time[1], time[0], text)
 
@@ -377,13 +381,13 @@ def parseNewNote(oldData, newData):
 def parseNewVoti(oldData, newData, user):
     if (newData is None) or (not newData.get('grades')):
         return None
-    if oldData is None:
+    if (oldData is None) or (not oldData.get('grades')):
         return parseVoti(newData, user)
 
     votiOrdinati = {}
     periods = []
     for voto in newData['grades']:
-        if (oldData is None) or (not oldData.get('grades')) or (voto not in oldData['grades']):
+        if voto not in oldData['grades']:
             period = voto['periodPos']
             periods.append(period)
             materia = voto['subjectDesc']
@@ -399,7 +403,8 @@ def parseNewVoti(oldData, newData, user):
             if materia not in votiOrdinati:
                 votiOrdinati[materia] = []
             votiOrdinati[materia].append(str_voto)
-    user.lastPeriod = max(periods)
+    if periods:
+        user.lastPeriod = max(periods)
 
     result = ""
     firstMateria = True
@@ -416,13 +421,13 @@ def parseNewVoti(oldData, newData, user):
 def parseNewAgenda(oldData, newData):
     if (newData is None) or (not newData.get('agenda')):
         return None
-    if oldData is None:
+    if (oldData is None) or (not oldData.get('agenda')):
         return parseAgenda(newData)
 
     result = ""
     firstEvent = True
     for event in newData['agenda']:
-        if (oldData is None) or (not oldData.get('agenda')) or (event not in oldData['agenda']):
+        if event not in oldData['agenda']:
             date = str(event['evtDatetimeBegin']).split("T", 1)[0]
             date = date.split("-", 2)
             evtType = "📌" if event['evtCode'] == "AGNT" else "📝"
@@ -433,21 +438,21 @@ def parseNewAgenda(oldData, newData):
     return result if result != "" else None
 
 
-def parseNewComunicazioni(oldData, newData):
+def parseNewCircolari(oldData, newData):
     if (newData is None) or (not newData.get('items')):
         return None
-    if oldData is None:
-        return parseComunicazioni(newData)
+    if (oldData is None) or (not oldData.get('items')):
+        return parseCircolari(newData)
 
     result = ""
     isFirst = True
     for item in newData['items']:
-        if (not oldData.get('items')) or (item not in oldData['items']):
+        if item not in oldData['items']:
             status = item['cntStatus']
             title = sanitize(item['cntTitle'])
             isRead = item['readStatus']
             if (status == 'active') and not isRead:
-                string = "\n✉️ <a href=\"t.me/classevivait_bot?start=get_circ_{1}\">{0}</a>".format(title, item['pubId'])
+                string = "\n✉️ {0}".format(title)
                 result += string if isFirst else "\n" + string
                 isFirst = False
 

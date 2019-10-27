@@ -2,7 +2,7 @@ from json import dumps, loads
 from re import sub
 from datetime import datetime, timedelta
 from json.decoder import JSONDecodeError
-from urllib.parse import quote_plus, urlencode
+from urllib.parse import quote_plus
 from urllib.request import Request, urlopen
 
 
@@ -30,8 +30,8 @@ class ClasseVivaAPI:
 
 
     def login(self, username: str, password: str):
-        url=self.baseApiUrl + "/auth/login/"
-        headers={"User-Agent": "zorro/1.0",
+        url = self.baseApiUrl + "/auth/login/"
+        headers={"User-Agent":   "zorro/1.0",
                  "Z-Dev-Apikey": "+zorro+",
                  "Content-Type": "application/json"}
         values=dumps({"uid": username,
@@ -102,12 +102,8 @@ class ClasseVivaAPI:
         return self._request('didactics', 'item', file_id, returnFile=True)
 
 
-    def comunicazioni(self):
+    def circolari(self):
         return self._request('noticeboard')
-
-
-    def getMessage(self, file_id: str):
-        return self._request('noticeboard', 'attach', 'CF', file_id, returnFile=True)
 
 
     def info(self):

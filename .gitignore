@@ -12,6 +12,7 @@ modules/crypter.py
 
 # Python Virtual Environment
 venv/
+.idea/
 
 # MacOS Finder Junk
 *.DS_Store
