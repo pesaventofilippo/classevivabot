@@ -104,74 +104,74 @@ def parseNote(data):
     return result
 
 
+@db_session
 def parseVoti(data, user):
-    with db_session:
-        if (data is None) or (not data.get('grades')):
-            return "\n📕 Non hai ancora nessun voto!"
+    if (data is None) or (not data.get('grades')):
+        return "\n📕 Non hai ancora nessun voto!"
 
-        votiOrdinati = {}
-        media = {}
-        periods = []
-        for voto in data['grades']:
-            period = voto['periodPos']
-            periods.append(period)
-            materia = voto['subjectDesc']
-            value = "Voto " + voto['displayValue']
-            tipo = voto['componentDesc']
-            time = voto['evtDate'].lower().split("-", 2)
-            desc = "\n<i>{0}</i>".format(sanitize(voto['notesForFamily'])) if voto['notesForFamily'] else ""
-            colore = "📗" if voto['color'] == "green" else "📕" if voto['color'] == "red" else "📘"
+    votiOrdinati = {}
+    media = {}
+    periods = []
+    for voto in data['grades']:
+        period = voto['periodPos']
+        periods.append(period)
+        materia = voto['subjectDesc']
+        value = "Voto " + voto['displayValue']
+        tipo = voto['componentDesc']
+        time = voto['evtDate'].lower().split("-", 2)
+        desc = "\n<i>{0}</i>".format(sanitize(voto['notesForFamily'])) if voto['notesForFamily'] else ""
+        colore = "📗" if voto['color'] == "green" else "📕" if voto['color'] == "red" else "📘"
 
-            if tipo == "":
-                str_voto = "\n\n{0} <b>{1}</b> • {2} {3}".format(colore, value, "{0}/{1}/{2}".format(time[2], time[1], time[0]), desc)
+        if tipo == "":
+            str_voto = "\n\n{0} <b>{1}</b> • {2} {3}".format(colore, value, "{0}/{1}/{2}".format(time[2], time[1], time[0]), desc)
+        else:
+            str_voto = "\n\n{0} <b>{1}</b> • {2} • {3} {4}".format(colore, value, tipo, "{0}/{1}/{2}".format(time[2], time[1], time[0]), desc)
+        if materia not in votiOrdinati:
+            votiOrdinati[materia] = []
+        if materia not in media:
+            media[materia] = []
+        votiOrdinati[materia].append(str_voto)
+
+        if colore != "📘":
+            if value[5:][-1] == "½":
+                    media[materia].append(float(value[5:][:-1]) + 0.5)
+            elif value[5:][-1] == "+":
+                    media[materia].append(float(value[5:][:-1]) + 0.25)
+            elif value[5:][-1] == "-":
+                    media[materia].append(float(value[5:][:-1]) - 0.25)
             else:
-                str_voto = "\n\n{0} <b>{1}</b> • {2} • {3} {4}".format(colore, value, tipo, "{0}/{1}/{2}".format(time[2], time[1], time[0]), desc)
-            if materia not in votiOrdinati:
-                votiOrdinati[materia] = []
-            if materia not in media:
-                media[materia] = []
-            votiOrdinati[materia].append(str_voto)
+                try:
+                    media[materia].append(float(value[5:]))
+                except ValueError:
+                    pass
+    user.lastPeriod = max(periods) if periods else 1
 
-            if colore != "📘":
-                if value[5:][-1] == "½":
-                        media[materia].append(float(value[5:][:-1]) + 0.5)
-                elif value[5:][-1] == "+":
-                        media[materia].append(float(value[5:][:-1]) + 0.25)
-                elif value[5:][-1] == "-":
-                        media[materia].append(float(value[5:][:-1]) - 0.25)
-                else:
-                    try:
-                        media[materia].append(float(value[5:]))
-                    except ValueError:
-                        pass
-        user.lastPeriod = max(periods) if periods else 1
+    firstMateria = True
+    materie = {}
+    for materia, voti in votiOrdinati.items():
+        if materia not in materie:
+            materie[materia] = ""
+        for voto in voti:
+            materie[materia] += voto
+        if len(media[materia]) == 0:
+            media[materia] = False
+        else:
+            media[materia] = round(sum(media[materia]) / len(media[materia]), 2)
 
-        firstMateria = True
-        materie = {}
-        for materia, voti in votiOrdinati.items():
-            if materia not in materie:
-                materie[materia] = ""
-            for voto in voti:
-                materie[materia] += voto
-            if len(media[materia]) == 0:
-                media[materia] = False
-            else:
-                media[materia] = round(sum(media[materia]) / len(media[materia]), 2)
+        if media[materia]:
+            string = "\n\n📚 <b>{0}\n    Media: {1} </b>".format(materia, media[materia]) + materie[materia]
+            materie[materia] = string if firstMateria else "\n\n" + string
+            firstMateria = False
+        else:
+            string = "\n\n📚 <b>{0} </b>".format(materia) + materie[materia]
+            materie[materia] = string if firstMateria else "\n\n" + string
+            firstMateria = False
 
-            if media[materia]:
-                string = "\n\n📚 <b>{0}\n    Media: {1} </b>".format(materia, media[materia]) + materie[materia]
-                materie[materia] = string if firstMateria else "\n\n" + string
-                firstMateria = False
-            else:
-                string = "\n\n📚 <b>{0} </b>".format(materia) + materie[materia]
-                materie[materia] = string if firstMateria else "\n\n" + string
-                firstMateria = False
+    result = ""
+    for materia in materie:
+        result += materie[materia]
 
-        result = ""
-        for materia in materie:
-            result += materie[materia]
-
-        return result
+    return result
 
 
 def parseAssenze(data):
@@ -286,7 +286,7 @@ def parseCircolari(data):
         isRead = item['readStatus']
         circId = item['pubId']
         if (status == 'active') and not isRead:
-            result += "\n\n✉️ <a href=\"t.me/classevivait_bot?start=get_circ_{1}\">{0}</a>".format(title, circId)
+            result += "\n\n✉️ {0}".format(title)
 
     return result if result else "\n\n📩 Non ci sono circolari da leggere."
 
@@ -382,45 +382,45 @@ def parseNewNote(oldData, newData):
     return result if result != "" else None
 
 
+@db_session
 def parseNewVoti(oldData, newData, user):
-    with db_session:
-        if (newData is None) or (not newData.get('grades')):
-            return None
-        if (oldData is None) or (not oldData.get('grades')):
-            return parseVoti(newData, user)
+    if (newData is None) or (not newData.get('grades')):
+        return None
+    if (oldData is None) or (not oldData.get('grades')):
+        return parseVoti(newData, user)
 
-        votiOrdinati = {}
-        periods = []
-        for voto in newData['grades']:
-            if voto not in oldData['grades']:
-                period = voto['periodPos']
-                periods.append(period)
-                materia = voto['subjectDesc']
-                value = "Voto " + voto['displayValue']
-                tipo = voto['componentDesc']
-                time = voto['evtDate'].lower().split("-", 2)
-                desc = "\n<i>{0}</i>".format(sanitize(voto['notesForFamily'])) if voto['notesForFamily'] else ""
-                colore = "📗" if voto['color'] == "green" else "📕" if voto['color'] == "red" else "📘"
-                if tipo == "":
-                    str_voto = "\n\n{0} <b>{1}</b> • {2} {3}".format(colore, value, "{0}/{1}/{2}".format(time[2], time[1], time[0]), desc)
-                else:
-                    str_voto = "\n\n{0} <b>{1}</b> • {2} • {3} {4}".format(colore, value, tipo, "{0}/{1}/{2}".format(time[2], time[1], time[0]), desc)
-                if materia not in votiOrdinati:
-                    votiOrdinati[materia] = []
-                votiOrdinati[materia].append(str_voto)
-        if periods:
-            user.lastPeriod = max(periods)
+    votiOrdinati = {}
+    periods = []
+    for voto in newData['grades']:
+        if voto not in oldData['grades']:
+            period = voto['periodPos']
+            periods.append(period)
+            materia = voto['subjectDesc']
+            value = "Voto " + voto['displayValue']
+            tipo = voto['componentDesc']
+            time = voto['evtDate'].lower().split("-", 2)
+            desc = "\n<i>{0}</i>".format(sanitize(voto['notesForFamily'])) if voto['notesForFamily'] else ""
+            colore = "📗" if voto['color'] == "green" else "📕" if voto['color'] == "red" else "📘"
+            if tipo == "":
+                str_voto = "\n\n{0} <b>{1}</b> • {2} {3}".format(colore, value, "{0}/{1}/{2}".format(time[2], time[1], time[0]), desc)
+            else:
+                str_voto = "\n\n{0} <b>{1}</b> • {2} • {3} {4}".format(colore, value, tipo, "{0}/{1}/{2}".format(time[2], time[1], time[0]), desc)
+            if materia not in votiOrdinati:
+                votiOrdinati[materia] = []
+            votiOrdinati[materia].append(str_voto)
+    if periods:
+        user.lastPeriod = max(periods)
 
-        result = ""
-        firstMateria = True
-        for materia, voti in votiOrdinati.items():
-            string = "\n\n📚 <b>{0}</b>".format(materia)
-            result += string if firstMateria else "\n\n" + string
-            firstMateria = False
-            for voto in voti:
-                result += voto
+    result = ""
+    firstMateria = True
+    for materia, voti in votiOrdinati.items():
+        string = "\n\n📚 <b>{0}</b>".format(materia)
+        result += string if firstMateria else "\n\n" + string
+        firstMateria = False
+        for voto in voti:
+            result += voto
 
-        return result if result != "" else None
+    return result if result != "" else None
 
 
 def parseNewAgenda(oldData, newData):
@@ -458,7 +458,7 @@ def parseNewCircolari(oldData, newData):
             isRead = item['readStatus']
             circId = item['pubId']
             if (status == 'active') and not isRead:
-                string = "\n✉️ <a href=\"t.me/classevivait_bot?start=get_circ_{1}\">{0}</a>".format(title, circId)
+                string = "\n✉️ {0}".format(title)
                 result += string if isFirst else "\n" + string
                 isFirst = False
 

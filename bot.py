@@ -79,7 +79,8 @@ def runUpdates(long_fetch=False):
     crhour = datetime.now().hour
     pendingUsers = select(user for user in User if user.password != "")[:]
     for currentUser in pendingUsers:
-        Thread(target=runUserUpdate, args=[currentUser, long_fetch, crhour]).start()
+        # Thread(target=runUserUpdate, args=[currentUser, long_fetch, crhour]).start()
+        runUserUpdate(currentUser, long_fetch, crhour)
 
 
 @db_session
@@ -108,7 +109,8 @@ def runDailyUpdates(crminute):
     dayString = "lunedì" if isSaturday else "domani"
     pendingUsers = select(user for user in User if user.password != "")[:]
     for currentUser in pendingUsers:
-        Thread(target=runUserDaily, args=[currentUser, crhour, crminute, dayString]).start()
+        # Thread(target=runUserDaily, args=[currentUser, crhour, crminute, dayString]).start()
+        runUserDaily(currentUser, crhour, crminute, dayString)
 
 
 @db_session
@@ -186,7 +188,7 @@ def reply(msg):
             user.status = "normal"
             commit()
             api = ClasseVivaAPI()
-            
+
             try:
                 api.login(user.username, decrypt_password(user))
             except ApiServerError:
