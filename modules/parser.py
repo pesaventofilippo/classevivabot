@@ -1,4 +1,6 @@
-﻿def sanitize(dinput):
+﻿from pony.orm import db_session
+
+def sanitize(dinput):
     if not dinput:
         return None
     from xml.sax.saxutils import escape
@@ -102,6 +104,7 @@ def parseNote(data):
     return result
 
 
+@db_session
 def parseVoti(data, user):
     if (data is None) or (not data.get('grades')):
         return "\n📕 Non hai ancora nessun voto!"
@@ -379,6 +382,7 @@ def parseNewNote(oldData, newData):
     return result if result != "" else None
 
 
+@db_session
 def parseNewVoti(oldData, newData, user):
     if (newData is None) or (not newData.get('grades')):
         return None
