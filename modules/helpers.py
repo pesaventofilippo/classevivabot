@@ -126,7 +126,7 @@ def fetchAndStore(user, api_type, fetch_long=False):
 
     stored = ParsedData.get(chatId=user.chatId)
     stored.note = parser.parseNote(newNote)
-    stored.voti = parser.parseVoti(newVoti, user)
+    stored.voti = parser.parseVoti(newVoti, user.chatId)
     stored.assenze = parser.parseAssenze(newAssenze)
     stored.agenda = parser.parseAgenda(newAgenda)
     stored.domani = parser.parseDomani(newAgenda)

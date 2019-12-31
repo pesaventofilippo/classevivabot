@@ -1,4 +1,5 @@
 ﻿from pony.orm import db_session
+from modules.database import User
 
 def sanitize(dinput):
     if not dinput:
@@ -105,7 +106,8 @@ def parseNote(data):
 
 
 @db_session
-def parseVoti(data, user):
+def parseVoti(data, chat_id):
+    user = User.get(chat_id=chat_id)
     if (data is None) or (not data.get('grades')):
         return "\n📕 Non hai ancora nessun voto!"
 
@@ -387,7 +389,7 @@ def parseNewVoti(oldData, newData, user):
     if (newData is None) or (not newData.get('grades')):
         return None
     if (oldData is None) or (not oldData.get('grades')):
-        return parseVoti(newData, user)
+        return parseVoti(newData, user.chatId)
 
     votiOrdinati = {}
     periods = []
