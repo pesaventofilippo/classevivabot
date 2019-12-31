@@ -77,7 +77,7 @@ def runUpdates(long_fetch=False):
     for currentUser in pendingUsers:
         t = Thread(target=runUserUpdate, args=[currentUser, long_fetch, crhour])
         t.start()
-        t.join()
+        t.join() # Wait for the thread, until multithreading fix
 
 
 @db_session
