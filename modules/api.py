@@ -98,14 +98,6 @@ class ClasseVivaAPI:
         return self._request('didactics')
 
 
-    def getFile(self, file_id: str):
-        return self._request('didactics', 'item', file_id, returnFile=True)
-    
-
-    def getCirc(self, circ_id: str):
-        return self._request('noticeboard', 'attach', 'CF', circ_id, returnFile=True)
-
-
     def circolari(self):
         return self._request('noticeboard')
 

@@ -1,7 +1,6 @@
 ﻿# Python Libraries
 from time import sleep
 from telepot import Bot, glance
-from os import environ
 from threading import Thread
 from pony.orm import db_session, select, commit
 from datetime import datetime, timedelta
@@ -19,18 +18,15 @@ try:
     token = f.readline().strip()
     f.close()
 except FileNotFoundError:
-    token = environ.get("CLIPSHARE_BOT_TOKEN")
-
-if not token:
     token = input(" * Incolla qui il token di BotFather: ")
     f = open('token.txt', 'w')
     f.write(token)
     f.close()
-    print(" * Ricorda: è più sicuro usare la variabile ambiente CLIPSHARE_BOT_TOKEN invece del file txt!")
 
 bot = Bot(token)
 setBot(token)
-updatesEvery = 5 # minutes
+updatesEvery = 15 # minutes
+betaVersion = True
 
 
 @db_session
@@ -79,7 +75,9 @@ def runUpdates(long_fetch=False):
     crhour = datetime.now().hour
     pendingUsers = select(user for user in User if user.password != "")[:]
     for currentUser in pendingUsers:
-        Thread(target=runUserUpdate, args=[currentUser, long_fetch, crhour]).start()
+        t = Thread(target=runUserUpdate, args=[currentUser, long_fetch, crhour])
+        t.start()
+        t.join()
 
 
 @db_session
@@ -114,27 +112,27 @@ def runDailyUpdates(crminute):
 @db_session
 def reply(msg):
     chatId = msg['chat']['id']
-    if chatId == 368894926:
-        text = msg['text']
-        name = msg['from']['first_name']
+    text = msg['text']
+    name = msg['from']['first_name']
 
-        if not User.exists(lambda u: u.chatId == chatId):
-            User(chatId=chatId)
+    if not User.exists(lambda u: u.chatId == chatId):
+        User(chatId=chatId)
 
-        if not Data.exists(lambda u: u.chatId == chatId):
-            Data(chatId=chatId)
+    if not Data.exists(lambda u: u.chatId == chatId):
+        Data(chatId=chatId)
 
-        if not ParsedData.exists(lambda u: u.chatId == chatId):
-            ParsedData(chatId=chatId)
+    if not ParsedData.exists(lambda u: u.chatId == chatId):
+        ParsedData(chatId=chatId)
 
-        if not Settings.exists(lambda u: u.chatId == chatId):
-            Settings(chatId=chatId)
+    if not Settings.exists(lambda u: u.chatId == chatId):
+        Settings(chatId=chatId)
 
-        user = User.get(chatId=chatId)
-        userdata = Data.get(chatId=chatId)
-        stored = ParsedData.get(chatId=chatId)
-
-
+    user = User.get(chatId=chatId)
+    userdata = Data.get(chatId=chatId)
+    stored = ParsedData.get(chatId=chatId)
+    
+    if (not betaVersion) or user.isBetaTester:
+        
         if text == "/about":
             bot.sendMessage(chatId, "ℹ️ <b>Informazioni sul bot</b>\n"
                                     "ClasseVivaBot è un bot creato e sviluppato da Filippo Pesavento, che ti può aiutare "
@@ -218,7 +216,8 @@ def reply(msg):
                 for a in isAdmin():
                     bot.sendMessage(a, "🆘 <b>Richiesta di aiuto</b>\n"
                                        "Da: <a href=\"tg://user?id={0}\">{1}</a>\n"
-                                       "<i>Rispondi al messaggio per parlare con l'utente.</i>".format(chatId, name), parse_mode="HTML")
+                                       "{2}\n"
+                                       "<i>Rispondi al messaggio per parlare con l'utente.</i>".format(chatId, name, "♦️ Beta Tester\n" if user.isBetaTester else ""), parse_mode="HTML")
                     bot.forwardMessage(a, chatId, msg['message_id'])
                 bot.sendMessage(chatId, "<i>Richiesta inviata.</i>\n"
                                         "Un admin ti risponderà il prima possibile.", parse_mode="HTML")
@@ -410,40 +409,6 @@ def reply(msg):
                                         "ti contatterà il prima possibile.\n\n"
                                         "<i>Per annullare, premi</i> /annulla.", parse_mode="HTML")
 
-            # Custom Start Parameters
-            elif text.startswith("/start "):
-                param = text.split(" ", 1)[1]
-                if param.startswith("get_file_"):
-                    file_id = param.replace("get_file_", "")
-                    api = ClasseVivaAPI()
-                    if userLogin(user, api):
-                        try:
-                            bot.sendDocument(chatId, ('document.pdf', api.getFile(file_id)))
-                        except ApiServerError:
-                            bot.sendMessage(chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
-                                                    "Riprova tra qualche minuto.")
-                            userLogout(api)
-                            return
-                        except Exception:
-                            bot.sendMessage(chatId, "⚠️ Non riesco ad ottenere il file dal registro, riprova fra qualche minuto.")
-                            userLogout(api)
-                            return
-                elif param.startswith("get_circ_"):
-                    circ_id = param.replace("get_circ_", "")
-                    api = ClasseVivaAPI()
-                    if userLogin(user, api):
-                        try:
-                            bot.sendDocument(chatId, ('document.pdf', api.getCirc(circ_id)))
-                        except ApiServerError:
-                            bot.sendMessage(chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
-                                                    "Riprova tra qualche minuto.")
-                            userLogout(api)
-                            return
-                        except Exception:
-                            bot.sendMessage(chatId, "⚠️ Non riesco ad ottenere il file dal registro, riprova fra qualche minuto.")
-                            userLogout(api)
-                            return
-
             else:
                 bot.sendMessage(chatId, "Non ho capito...\n"
                                         "Serve aiuto? Premi /help")
@@ -458,10 +423,18 @@ def reply(msg):
                                         "Per favore, premi /login per utilizzarmi.\n\n"
                                         "Premi /help se serve aiuto.".format(name), parse_mode="HTML")
 
+    # Utente non beta
     else:
-        bot.sendMessage(chatId, "<b>Bot in manutenzione.</b>\n"
-                                "Per un problema che non dipende da me, purtroppo, il bot è attualmente non disponibile "
-                                "e non so quando potrò riattivarlo. Nel frattempo, ti consiglio di scaricare l'app.", parse_mode="HTML")
+        if text == "/beta":
+            user.isBetaTester = True
+            bot.sendMessage(chatId, "Grazie per esserti iscritto al programma di beta testing!\n"
+                                    "Adesso puoi iniziare ad usare il bot in modalità beta.")
+
+        else:
+            bot.sendMessage(chatId, "<b>Bot in manutenzione.</b>\n"
+                                    "Per un problema che non dipende da me, purtroppo, il bot è attualmente non disponibile "
+                                    "e non so quando potrò riattivarlo. Nel frattempo, ti consiglio di scaricare l'app.\n\n"
+                                    "Altrimenti, puoi iscriverti al programma /beta e testare il bot mentre viene sviluppato!", parse_mode="HTML")
 
 
 @db_session

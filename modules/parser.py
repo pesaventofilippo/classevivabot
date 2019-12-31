@@ -38,7 +38,7 @@ def parseDidattica(data):
 
             for upfile in folder['contents']:
                 fileName = "Senza nome" if upfile['contentName'] == "" else sanitize(upfile['contentName'])
-                result += "\n        📝 <a href=\"t.me/classevivait_bot?start=get_file_{1}\">{0}</a>".format(fileName, upfile['contentId'])
+                result += "\n        📝 {0}".format(fileName)
 
     return result
 
@@ -318,7 +318,7 @@ def parseNewDidattica(oldData, newData):
 
                 for upfile in folder['contents']:
                     fileName = "Senza nome" if upfile['contentName'] == "" else sanitize(upfile['contentName'])
-                    result += "\n        📝 <a href=\"t.me/classevivait_bot?start=get_file_{1}\">{0}</a>".format(fileName, upfile['contentId'])
+                    result += "\n        📝 {0}".format(fileName)
 
         else:
             firstFolder = True

@@ -9,6 +9,7 @@ class User(db.Entity):
     password = Optional(str)
     status = Required(str, default="normal")
     lastPeriod = Required(int, default=1)
+    isBetaTester = Required(bool, default=False)
 
 
 class Data(db.Entity):
