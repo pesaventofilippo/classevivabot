@@ -50,7 +50,7 @@ def isAdmin(chatId=None):
 
 
 @db_session
-def isUserLogged(user):
+def hasStoredCredentials(user):
     return (user.username != "") and (user.password != "")
 
 
@@ -88,7 +88,7 @@ def clearUserData(user):
 
 @db_session
 def userLogin(user, api_type):
-    if not isUserLogged(user):
+    if not hasStoredCredentials(user):
         return False
     try:
         api_type.login(user.username, decrypt_password(user))
@@ -126,7 +126,7 @@ def fetchAndStore(user, api_type, fetch_long=False):
 
     stored = ParsedData.get(chatId=user.chatId)
     stored.note = parser.parseNote(newNote)
-    stored.voti = parser.parseVoti(newVoti, user)
+    stored.voti = parser.parseVoti(newVoti, user.chatId)
     stored.assenze = parser.parseAssenze(newAssenze)
     stored.agenda = parser.parseAgenda(newAgenda)
     stored.domani = parser.parseDomani(newAgenda)

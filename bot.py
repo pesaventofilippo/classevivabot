@@ -44,7 +44,7 @@ def runUserUpdate(user, long_fetch, crhour):
             if (settings.doNotDisturb is False) or (crhour in range(7, 21)):
                 dataDidattica = parser.parseNewDidattica(userdata.didattica, newDidattica)
                 dataNote = parser.parseNewNote(userdata.note, newNote)
-                dataVoti = parser.parseNewVoti(userdata.voti, newVoti, user)
+                dataVoti = parser.parseNewVoti(userdata.voti, newVoti, user.chatId)
                 dataAgenda = parser.parseNewAgenda(userdata.agenda, newAgenda)
                 dataCircolari = parser.parseNewCircolari(userdata.circolari, newCircolari)
                 updateUserdata(user, newDidattica, newNote, newVoti, newAgenda, newCircolari)
@@ -77,7 +77,7 @@ def runUpdates(long_fetch=False):
     for currentUser in pendingUsers:
         t = Thread(target=runUserUpdate, args=[currentUser, long_fetch, crhour])
         t.start()
-        t.join() # Wait for the thread, until multithreading fix
+        sleep(1) # Wait for the thread, until request limit error fix
 
 
 @db_session
@@ -87,16 +87,17 @@ def runUserDaily(user, crhour, crminute, dayString):
         hoursplit = settings.dailyUpdatesHour.split(":")
         if (int(hoursplit[0]) == crhour) and (int(hoursplit[1]) == crminute):
             stored = ParsedData.get(chatId=user.chatId)
-            try:
-                bot.sendMessage(user.chatId, "🕙 <b>Promemoria!</b>\n\n"
-                                              "📆 <b>Cosa devi fare per {0}</b>:\n\n"
-                                              "{1}\n\n\n"
-                                              "📚 <b>Le lezioni di oggi</b>:\n\n"
-                                              "{2}".format(dayString, stored.domani, stored.lezioni), parse_mode="HTML")
-            except BotWasBlockedError:
-                clearUserData(user)
-            except TelegramError:
-                pass
+            if stored.domani != "🗓 Non hai compiti per domani." or stored.lezioni != "🎈 Nessuna lezione, per oggi.":
+                try:
+                    bot.sendMessage(user.chatId, "🕙 <b>Promemoria!</b>\n\n"
+                                                    "📆 <b>Cosa devi fare per {0}</b>:\n\n"
+                                                    "{1}\n\n\n"
+                                                    "📚 <b>Le lezioni di oggi</b>:\n\n"
+                                                    "{2}".format(dayString, stored.domani, stored.lezioni), parse_mode="HTML")
+                except BotWasBlockedError:
+                    clearUserData(user)
+                except TelegramError:
+                    pass
 
 
 @db_session
@@ -288,7 +289,7 @@ def reply(msg):
         elif text == "/annulla":
             bot.sendMessage(chatId, "😴 Nessun comando da annullare!")
 
-        elif isUserLogged(user):
+        elif hasStoredCredentials(user):
             if text == "/start":
                 bot.sendMessage(chatId, "Bentornato, <b>{0}</b>!\n"
                                         "Cosa posso fare per te? 😊".format(name), parse_mode="HTML")
@@ -372,7 +373,7 @@ def reply(msg):
                     bot.editMessageText((chatId, sent['message_id']), "📗📙📙  Cerco aggiornamenti... 25%")
                     dataNote = parser.parseNewNote(userdata.note, newNote)
                     bot.editMessageText((chatId, sent['message_id']), "📗📙📙  Cerco aggiornamenti... 40%")
-                    dataVoti = parser.parseNewVoti(userdata.voti, newVoti, user)
+                    dataVoti = parser.parseNewVoti(userdata.voti, newVoti, user.chatId)
                     bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 55%")
                     dataAgenda = parser.parseNewAgenda(userdata.agenda, newAgenda)
                     bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 70%")
