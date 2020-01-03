@@ -115,7 +115,7 @@ def userLogout(api_type):
 
 
 @db_session
-def fetchAndStore(user, api_type, fetch_long=False):
+def fetchAndStore(user, api_type, _apiLock, fetch_long=False):
     newDidattica = api_type.didattica()
     newNote = api_type.note()
     newVoti = api_type.voti()
@@ -123,6 +123,11 @@ def fetchAndStore(user, api_type, fetch_long=False):
     newAssenze = api_type.assenze()
     newLezioni = api_type.lezioni()
     newCircolari = api_type.circolari()
+    if fetch_long:
+        newInfo = api_type.info()
+        newProf = api_type.materie()
+    _apiLock.release()
+    userLogout(api_type)
 
     stored = ParsedData.get(chatId=user.chatId)
     stored.note = parser.parseNote(newNote)
@@ -133,14 +138,10 @@ def fetchAndStore(user, api_type, fetch_long=False):
     stored.lezioni = parser.parseLezioni(newLezioni)
     stored.didattica = parser.parseDidattica(newDidattica)
     stored.circolari = parser.parseCircolari(newCircolari)
-
     if fetch_long:
-        newInfo = api_type.info()
-        newProf = api_type.materie()
         stored.info = parser.parseInfo(newInfo)
         stored.prof = parser.parseMaterie(newProf)
 
-    userLogout(api_type)
     return newDidattica, newNote, newVoti, newAgenda, newCircolari
 
 

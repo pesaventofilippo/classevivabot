@@ -1,7 +1,7 @@
 ﻿# Python Libraries
 from time import sleep
 from telepot import Bot, glance
-from threading import Thread
+from threading import Thread, Lock
 from pony.orm import db_session, select, commit
 from datetime import datetime, timedelta
 from telepot.exception import TelegramError, BotWasBlockedError
@@ -28,16 +28,20 @@ setBot(token)
 updatesEvery = 15 # minutes
 betaVersion = True
 
+apiLock = Lock()
+
 
 @db_session
 def runUserUpdate(user, long_fetch, crhour):
     api = ClasseVivaAPI()
+    apiLock.acquire()
     if userLogin(user, api):
         userdata = Data.get(chatId=user.chatId)
         settings = Settings.get(chatId=user.chatId)
         try:
-            newDidattica, newNote, newVoti, newAgenda, newCircolari = fetchAndStore(user, api, long_fetch)
+            newDidattica, newNote, newVoti, newAgenda, newCircolari = fetchAndStore(user, api, apiLock, long_fetch)
         except ApiServerError:
+            apiLock.release()
             return
 
         if settings.wantsNotifications is True:
@@ -75,9 +79,7 @@ def runUpdates(long_fetch=False):
     crhour = datetime.now().hour
     pendingUsers = select(user for user in User if user.password != "")[:]
     for currentUser in pendingUsers:
-        t = Thread(target=runUserUpdate, args=[currentUser, long_fetch, crhour])
-        t.start()
-        sleep(1) # Wait for the thread, until request limit error fix
+        Thread(target=runUserUpdate, args=[currentUser, long_fetch, crhour]).start()
 
 
 @db_session
@@ -185,11 +187,13 @@ def reply(msg):
                 user.password = crypt_password(text, user)
                 user.status = "normal"
                 commit()
+                apiLock.acquire()
                 api = ClasseVivaAPI()
 
                 try:
                     api.login(user.username, decrypt_password(user))
                 except ApiServerError:
+                    apiLock.release()
                     try:
                         bot.sendMessage(user.chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
                                                         "Riprova tra qualche minuto.")
@@ -197,6 +201,7 @@ def reply(msg):
                         pass
                     return
                 except Exception:
+                    apiLock.release()
                     clearUserData(user)
                     try:
                         bot.sendMessage(user.chatId, "😯 Le tue credenziali di accesso sono errate.\n"
@@ -208,7 +213,7 @@ def reply(msg):
                 bot.sendMessage(chatId, "Fatto 😊\n"
                                         "Premi /help per vedere la lista dei comandi disponibili.")
                 sent = bot.sendMessage(chatId, "🔍 Aggiorno il profilo...")
-                newDidattica, newNote, newVoti, newAgenda, newCircolari = fetchAndStore(user, api, fetch_long=True)
+                newDidattica, newNote, newVoti, newAgenda, newCircolari = fetchAndStore(user, api, apiLock, fetch_long=True)
                 updateUserdata(user, newDidattica, newNote, newVoti, newAgenda, newCircolari)
                 bot.editMessageText((chatId, sent['message_id']), "✅ Profilo aggiornato!")
 
@@ -260,7 +265,6 @@ def reply(msg):
                     bot.sendMessage(user.chatId, bdText, parse_mode="HTML", disable_web_page_preview=True)
                 except (TelegramError, BotWasBlockedError):
                     userCount -= 1
-                    pass
             bot.sendMessage(chatId, "📢 Messaggio inviato correttamente a {0} utenti!".format(userCount))
 
         elif text.startswith("/sendmsg ") and isAdmin(chatId):
@@ -359,11 +363,13 @@ def reply(msg):
 
             elif text == "/aggiorna":
                 sent = bot.sendMessage(chatId, "📙📙📙 Cerco aggiornamenti... 0%")
+                apiLock.acquire()
                 api = ClasseVivaAPI()
                 if userLogin(user, api):
                     try:
-                        newDidattica, newNote, newVoti, newAgenda, newCircolari = fetchAndStore(user, api, fetch_long=True)
+                        newDidattica, newNote, newVoti, newAgenda, newCircolari = fetchAndStore(user, api, apiLock, fetch_long=True)
                     except ApiServerError:
+                        apiLock.release()
                         bot.sendMessage(chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
                                                 "Riprova tra qualche minuto.")
                         userLogout(api)
@@ -673,6 +679,7 @@ def button_press(msg):
 
 
     else:
+        apiLock.acquire()
         api = ClasseVivaAPI()
         if userLogin(user, api):
             if (button == "lezioni_prima") or (button == "lezioni_dopo"):
@@ -685,6 +692,8 @@ def button_press(msg):
                 except ApiServerError:
                     bot.editMessageText((chatId, message_id), "⚠️ I server di ClasseViva non sono raggiungibili.\n"
                                                               "Riprova tra qualche minuto.", reply_markup=None)
+                finally:
+                    apiLock.release()
             userLogout(api)
 
 
