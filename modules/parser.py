@@ -136,13 +136,17 @@ def parseVoti(data, chat_id):
         if colore != "📘":
             if value[5:][-1] == "½":
                     media[materia].append(float(value[5:][:-1]) + 0.5)
+                    media["total"].append(float(value[5:][:-1]) + 0.5)
             elif value[5:][-1] == "+":
                     media[materia].append(float(value[5:][:-1]) + 0.25)
+                    media["total"].append(float(value[5:][:-1]) + 0.25)
             elif value[5:][-1] == "-":
                     media[materia].append(float(value[5:][:-1]) - 0.25)
+                    media["total"].append(float(value[5:][:-1]) - 0.25)
             else:
                 try:
                     media[materia].append(float(value[5:]))
+                    media["total"].append(float(value[5:]))
                 except ValueError:
                     pass
     user = User.get(chatId=chat_id)
@@ -172,6 +176,7 @@ def parseVoti(data, chat_id):
     result = ""
     for materia in materie:
         result += materie[materia]
+    result += "\n\n📚 <b>Media totale: {}</b>".format(media["total"])
 
     return result
 
