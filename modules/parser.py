@@ -133,6 +133,7 @@ def parseVoti(data, chat_id):
             media[materia] = []
         votiOrdinati[materia].append(str_voto)
 
+        media["total"] = []
         if colore != "📘":
             if value[5:][-1] == "½":
                     media[materia].append(float(value[5:][:-1]) + 0.5)
@@ -173,6 +174,7 @@ def parseVoti(data, chat_id):
             materie[materia] = string if firstMateria else "\n\n" + string
             firstMateria = False
 
+    media["total"] = round(sum(media["total"]) / len(media["total"]), 2)
     result = ""
     for materia in materie:
         result += materie[materia]
