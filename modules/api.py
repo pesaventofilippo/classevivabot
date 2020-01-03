@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from json.decoder import JSONDecodeError
 from urllib.parse import quote_plus
 from urllib.request import Request, urlopen
+from urllib.error import HTTPError
 
 
 class AuthenticationFailedError(Exception):
@@ -38,11 +39,14 @@ class ClasseVivaAPI:
                       "pass": password})
         data = values.encode('ascii')
         req = Request(url, data, headers)
-        result = urlopen(req).read().decode('utf-8')
+        try:
+            result = urlopen(req).read().decode('utf-8')
+        except HTTPError:
+            raise ApiServerError
         result = loads(result)
 
         if 'authentication failed' in result.get('error', ''):
-            raise AuthenticationFailedError()
+            raise AuthenticationFailedError
 
         self.token = result['token']
         self.id = sub(r"\D", "", result['ident'])
