@@ -26,7 +26,6 @@ except FileNotFoundError:
 bot = Bot(token)
 setBot(token)
 updatesEvery = 15 # minutes
-betaVersion = True
 
 apiLock = Lock()
 
@@ -134,314 +133,299 @@ def reply(msg):
     userdata = Data.get(chatId=chatId)
     stored = ParsedData.get(chatId=chatId)
     
-    if (not betaVersion) or user.isBetaTester:
-        
-        if text == "/about":
-            bot.sendMessage(chatId, "ℹ️ <b>Informazioni sul bot</b>\n"
-                                    "ClasseVivaBot è un bot creato e sviluppato da Filippo Pesavento, che ti può aiutare "
-                                    "durante l'anno scolastico mandando notifiche per le novità del registro e molto altro.\n"
-                                    "Prova ad usarlo per scoprire quanto è comodo!\n\n"
-                                    "<b>Sviluppo:</b> Filippo Pesavento\n"
-                                    "<b>Hosting:</b> Filippo Pesavento\n\n"
-                                    "<b>Info sicurezza:</b> /aboutprivacy", parse_mode="HTML")
+    if text == "/about":
+        bot.sendMessage(chatId, "ℹ️ <b>Informazioni sul bot</b>\n"
+                                "ClasseVivaBot è un bot creato e sviluppato da Filippo Pesavento, che ti può aiutare "
+                                "durante l'anno scolastico mandando notifiche per le novità del registro e molto altro.\n"
+                                "Prova ad usarlo per scoprire quanto è comodo!\n\n"
+                                "<b>Sviluppo:</b> Filippo Pesavento\n"
+                                "<b>Hosting:</b> Filippo Pesavento\n\n"
+                                "<b>Info sicurezza:</b> /aboutprivacy", parse_mode="HTML")
 
-        elif text == "/aboutprivacy":
-            bot.sendMessage(chatId, "ℹ️ <b>Informazioni sulla privacy</b>\n"
-                                    "La mia password è al sicuro? 🤔\n\n"
-                                    "🔐 <b>Sì: la tua password viene criptata.</b>\n"
-                                    "Il bot conserva la tua password in maniera sicura, salvandola in un formato non leggibile da "
-                                    "persone estranee. Sei al sicuro: i tuoi dati non verranno visti nè rubati da nessuno!\n\n"
-                                    "🔐 <b>Spiegazione dettagliata:</b>\n"
-                                    "Tecnicamente potrei decriptare a mano le password e vederle, ma sostanzialmente è complicato, "
-                                    "perchè il bot genera una chiave per l'algoritmo (visto che il cripting deve essere reversibile, "
-                                    "per poter mandare le notifiche automatiche) prendendo come dati una chiave comune (che salvo nella RAM "
-                                    "e inserisco ad ogni avvio, per evitare che qualcuno che non sia io possa leggere il database e i dati degli utenti) "
-                                    "e anche l'username dell'utente. Quindi ogni utente ha la propria password criptata con una chiave diversa da tutti "
-                                    "gli altri, e sarebbe difficile anche per me risalire alla password, dovendo sapere di chi è l'username collegato a "
-                                    "quella password specifica.\n"
-                                    "Questo non vuol dire che non possa farlo: con un po' di lavoro ci riuscirei. Quindi alla fine devi decidere tu: "
-                                    "io ti posso assicurare che non leggerò mai nè proverò mai a decriptare le password, sia per un discorso di etica "
-                                    "che per scelta personale, ma non sono tuo amico nè tuo conoscente: quindi se decidi di non fidarti di uno sconosciuto "
-                                    "che ti scrive su Telegram (ti posso capire benissimo) sei libero di non usare il bot 🙂\n\n"
-                                    "<a href=\"cut.pesaventofilippo.com/infocvvbot\">Altre info & Privacy Policy</a>\n"
-                                    "<a href=\"https://t.me/pesaventofilippo\">Contattami</a>\n\n"
-                                    "<i>Se sei venuto qui prima di digitare la password per il login, scrivila adesso!</i>", parse_mode="HTML", disable_web_page_preview=True)
+    elif text == "/aboutprivacy":
+        bot.sendMessage(chatId, "ℹ️ <b>Informazioni sulla privacy</b>\n"
+                                "La mia password è al sicuro? 🤔\n\n"
+                                "🔐 <b>Sì: la tua password viene criptata.</b>\n"
+                                "Il bot conserva la tua password in maniera sicura, salvandola in un formato non leggibile da "
+                                "persone estranee. Sei al sicuro: i tuoi dati non verranno visti nè rubati da nessuno!\n\n"
+                                "🔐 <b>Spiegazione dettagliata:</b>\n"
+                                "Tecnicamente potrei decriptare a mano le password e vederle, ma sostanzialmente è complicato, "
+                                "perchè il bot genera una chiave per l'algoritmo (visto che il cripting deve essere reversibile, "
+                                "per poter mandare le notifiche automatiche) prendendo come dati una chiave comune (che salvo nella RAM "
+                                "e inserisco ad ogni avvio, per evitare che qualcuno che non sia io possa leggere il database e i dati degli utenti) "
+                                "e anche l'username dell'utente. Quindi ogni utente ha la propria password criptata con una chiave diversa da tutti "
+                                "gli altri, e sarebbe difficile anche per me risalire alla password, dovendo sapere di chi è l'username collegato a "
+                                "quella password specifica.\n"
+                                "Questo non vuol dire che non possa farlo: con un po' di lavoro ci riuscirei. Quindi alla fine devi decidere tu: "
+                                "io ti posso assicurare che non leggerò mai nè proverò mai a decriptare le password, sia per un discorso di etica "
+                                "che per scelta personale, ma non sono tuo amico nè tuo conoscente: quindi se decidi di non fidarti di uno sconosciuto "
+                                "che ti scrive su Telegram (ti posso capire benissimo) sei libero di non usare il bot 🙂\n\n"
+                                "<a href=\"cut.pesaventofilippo.com/infocvvbot\">Altre info & Privacy Policy</a>\n"
+                                "<a href=\"https://t.me/pesaventofilippo\">Contattami</a>\n\n"
+                                "<i>Se sei venuto qui prima di digitare la password per il login, scrivila adesso!</i>", parse_mode="HTML", disable_web_page_preview=True)
 
 
-        elif user.status != "normal":
-            if text == "/annulla":
-                user.status = "normal"
-                bot.sendMessage(chatId, "Comando annullato!")
+    elif user.status != "normal":
+        if text == "/annulla":
+            user.status = "normal"
+            bot.sendMessage(chatId, "Comando annullato!")
 
-            elif user.status == "login_0":
-                if len(text) < 5:
-                    bot.sendMessage(chatId, "⚠️ Errore: l'username è troppo corto. Riprova!")
-                    return
-                user.username = text
-                user.status = "login_1"
-                bot.sendMessage(chatId, "👍 Ottimo. Adesso inviami la password.\n"
-                                        "Ricorda che la password viene salvata solo per te e viene criptata, nessuno potrà leggerla.\n\n"
-                                        "Sei preoccupato per la sicurezza della password? /aboutprivacy")
+        elif user.status == "login_0":
+            if len(text) < 5:
+                bot.sendMessage(chatId, "⚠️ Errore: l'username è troppo corto. Riprova!")
+                return
+            user.username = text
+            user.status = "login_1"
+            bot.sendMessage(chatId, "👍 Ottimo. Adesso inviami la password.\n"
+                                    "Ricorda che la password viene salvata solo per te e viene criptata, nessuno potrà leggerla.\n\n"
+                                    "Sei preoccupato per la sicurezza della password? /aboutprivacy")
 
-            elif user.status == "login_1":
-                user.password = crypt_password(text, user)
-                user.status = "normal"
-                commit()
-                apiLock.acquire()
-                api = ClasseVivaAPI()
+        elif user.status == "login_1":
+            user.password = crypt_password(text, user)
+            user.status = "normal"
+            commit()
+            apiLock.acquire()
+            api = ClasseVivaAPI()
 
+            try:
+                api.login(user.username, decrypt_password(user))
+            except ApiServerError:
+                apiLock.release()
                 try:
-                    api.login(user.username, decrypt_password(user))
+                    bot.sendMessage(user.chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
+                                                    "Riprova tra qualche minuto.")
+                except (TelegramError, BotWasBlockedError):
+                    pass
+                return
+            except Exception:
+                apiLock.release()
+                clearUserData(user)
+                try:
+                    bot.sendMessage(user.chatId, "😯 Le tue credenziali di accesso sono errate.\n"
+                                                    "Effettua nuovamente il /login per favore.")
+                except (TelegramError, BotWasBlockedError):
+                    pass
+                return
+
+            bot.sendMessage(chatId, "Fatto 😊\n"
+                                    "Premi /help per vedere la lista dei comandi disponibili.")
+            sent = bot.sendMessage(chatId, "🔍 Aggiorno il profilo...")
+            newDidattica, newNote, newVoti, newAgenda, newCircolari = fetchAndStore(user, api, apiLock, fetch_long=True)
+            updateUserdata(user, newDidattica, newNote, newVoti, newAgenda, newCircolari)
+            bot.editMessageText((chatId, sent['message_id']), "✅ Profilo aggiornato!")
+
+        elif user.status == "calling_support":
+            user.status = "normal"
+            for a in isAdmin():
+                bot.sendMessage(a, "🆘 <b>Richiesta di aiuto</b>\n"
+                                    "Da: <a href=\"tg://user?id={0}\">{1}</a>\n"
+                                    "{2}\n"
+                                    "<i>Rispondi al messaggio per parlare con l'utente.</i>".format(chatId, name, "♦️ Beta Tester\n" if user.isBetaTester else ""), parse_mode="HTML")
+                bot.forwardMessage(a, chatId, msg['message_id'])
+            bot.sendMessage(chatId, "<i>Richiesta inviata.</i>\n"
+                                    "Un admin ti risponderà il prima possibile.", parse_mode="HTML")
+
+
+    elif text == "/help":
+        message = "Ciao, sono il bot di <b>ClasseViva</b>! 👋🏻\n" \
+                    "Posso aiutarti a <b>navigare</b> nel registro e posso mandarti <b>notifiche</b> quando hai nuovi avvisi.\n\n" \
+                    "<b>Lista dei comandi</b>:\n" \
+                    "- /login - Effettua il login\n" \
+                    "- /logout - Disconnettiti\n" \
+                    "- /aggiorna - Aggiorna manualmente tutti i dati, per controllare se ci sono nuovi avvisi.\n" \
+                                "Oppure, puoi lasciarlo fare a me, ogni mezz'ora :)\n" \
+                    "- /promemoria - Vedi un promemoria con i compiti da fare per domani e le lezioni svolte oggi.\n" \
+                    "- /agenda - Visualizza agenda (compiti e verifiche)\n" \
+                    "- /domani - Vedi i compiti che hai per domani\n" \
+                    "- /assenze - Visualizza assenze, ritardi e uscite anticipate\n" \
+                    "- /didattica - Visualizza la lista dei file in didattica\n" \
+                    "- /lezioni - Visualizza la lista delle lezioni\n" \
+                    "- /voti - Visualizza la lista dei voti\n" \
+                    "- /note - Visualizza la lista delle note\n" \
+                    "- /circolari - Visualizza le circolari da leggere\n" \
+                    "- /info - Visualizza le tue info utente\n" \
+                    "- /prof - Visualizza la lista delle materie e dei prof\n" \
+                    "- /settings - Modifica le impostazioni personali del bot\n" \
+                    "- /about - Informazioni sul bot\n" \
+                    "- /aboutprivacy - Più informazioni sulla privacy\n" \
+                    "- /support - Contatta lo staff (emergenze)\n\n" \
+                    "<b>Notifiche</b>: ogni mezz'ora, se vuoi, ti invierò un messaggio se ti sono arrivati nuovi voti, note, compiti, materiali, avvisi o circolari.\n" \
+                    "<b>Impostazioni</b>: con /settings puoi cambiare varie impostazioni, tra cui l'orario delle notifiche, quali notifiche ricevere e se riceverle di notte."
+        bot.sendMessage(chatId, message, parse_mode="HTML")
+
+    elif text.startswith("/broadcast ") and isAdmin(chatId):
+        bdText = text.split(" ", 1)[1]
+        pendingUsers = select(user for user in User if user.password != "")[:]
+        userCount = pendingUsers.__len__()
+        for user in pendingUsers:
+            try:
+                bot.sendMessage(user.chatId, bdText, parse_mode="HTML", disable_web_page_preview=True)
+            except (TelegramError, BotWasBlockedError):
+                userCount -= 1
+        bot.sendMessage(chatId, "📢 Messaggio inviato correttamente a {0} utenti!".format(userCount))
+
+    elif text.startswith("/sendmsg ") and isAdmin(chatId):
+        selId = int(text.split(" ", 2)[1])
+        selText = str(text.split(" ", 2)[2])
+        bot.sendMessage(selId, selText, parse_mode="HTML")
+        bot.sendMessage(chatId, selText + "\n\n- Messaggio inviato!", parse_mode="HTML")
+
+    elif text == "/globalupdate" and isAdmin(chatId):
+        bot.sendMessage(chatId, "🕙 Inizio aggiornamento globale...")
+        runUpdates(long_fetch=True)
+        bot.sendMessage(chatId, "✅ Aggiornamenti completati!")
+
+    elif "reply_to_message" in msg:
+        if isAdmin(chatId):
+            try:
+                userId = msg['reply_to_message']['forward_from']['id']
+                bot.sendMessage(userId, "💬 <b>Risposta dello staff</b>\n"
+                                        "{0}".format(text), parse_mode="HTML")
+                bot.sendMessage(chatId, "Risposta inviata!")
+            except Exception:
+                pass
+        else:
+            bot.sendMessage(chatId, "Premi /support per parlare con lo staff.")
+
+    elif text == "/annulla":
+        bot.sendMessage(chatId, "😴 Nessun comando da annullare!")
+
+    elif hasStoredCredentials(user):
+        if text == "/start":
+            bot.sendMessage(chatId, "Bentornato, <b>{0}</b>!\n"
+                                    "Cosa posso fare per te? 😊".format(name), parse_mode="HTML")
+
+        elif text == "/login":
+            bot.sendMessage(chatId, "Sei già loggato.\n"
+                                    "Premi /logout per uscire.")
+
+        elif text == "/logout":
+            sent = bot.sendMessage(chatId, "Tutti i tuoi dati scolastici e le credenziali verranno eliminate dal bot.\n"
+                                            "Sei <b>veramente sicuro</b> di voler uscire?", parse_mode="HTML")
+            bot.editMessageReplyMarkup((chatId, sent['message_id']), keyboards.logout(sent['message_id']))
+
+        elif text == "/didattica":
+            sendLongMessage(chatId, "📚 <b>Files caricati in didadttica</b>:\n\n"
+                                    "{0}".format(stored.didattica), parse_mode="HTML", disable_web_page_preview=True)
+
+        elif text == "/info":
+            bot.sendMessage(chatId, "ℹ️ <b>Ecco le tue info</b>:\n\n"
+                                    "{0}".format(stored.info), parse_mode="HTML")
+
+        elif text == "/prof":
+            sendLongMessage(chatId, "📚 <b>Lista materie e prof</b>:\n\n"
+                                    "{0}".format(stored.prof), parse_mode="HTML")
+
+        elif text == "/note":
+            sendLongMessage(chatId, "❗️<b>Le tue note</b>:\n\n"
+                                    "{0}".format(stored.note), parse_mode="HTML")
+
+        elif text == "/voti":
+            sendLongMessage(chatId, "📝 <b>I tuoi voti</b>:\n\n"
+                                    "{0}".format(stored.voti), parse_mode="HTML")
+
+        elif text == "/assenze":
+            sendLongMessage(chatId, "{0}".format(stored.assenze), parse_mode="HTML")
+
+        elif text == "/agenda":
+            bot.sendMessage(chatId, "📆 <b>Agenda compiti per le prossime 2 settimane</b>:\n\n"
+                                    "{0}".format(stored.agenda), parse_mode="HTML", disable_web_page_preview=True)
+
+        elif text == "/domani":
+            isSaturday = datetime.now().isoweekday() == 6
+            dayString = "lunedì" if isSaturday else "domani"
+            bot.sendMessage(chatId, "📆 <b>Compiti e verifiche per {0}</b>:\n\n"
+                                    "{1}".format(dayString, stored.domani), parse_mode="HTML", disable_web_page_preview=True)
+
+        elif text == "/circolari":
+            bot.sendMessage(chatId, "📩 <b>Circolari da leggere</b>:\n\n"
+                                    "{0}".format(stored.circolari), parse_mode="HTML", disable_web_page_preview=True)
+
+        elif text == "/lezioni":
+            sent = bot.sendMessage(chatId, "📚 <b>Lezioni di oggi</b>:\n\n"
+                                            "{0}".format(stored.lezioni), parse_mode="HTML", reply_markup=None, disable_web_page_preview=True)
+            bot.editMessageReplyMarkup((chatId, sent['message_id']), keyboards.lezioni(sent['message_id']))
+
+        elif text == "/settings":
+            sent = bot.sendMessage(chatId, "🛠 <b>Impostazioni</b>\n"
+                                            "Ecco le impostazioni del bot. Cosa vuoi modificare?", parse_mode="HTML", reply_markup=None)
+            bot.editMessageReplyMarkup((chatId, sent['message_id']), keyboards.settings_menu(sent['message_id']))
+
+        elif text == "/promemoria":
+            bot.sendMessage(chatId, "🕙 <b>Promemoria!</b>\n\n"
+                                    "📆 <b>Cosa devi fare per domani</b>:\n\n"
+                                    "{0}\n\n\n"
+                                    "📚 <b>Le lezioni di oggi</b>:\n\n"
+                                    "{1}".format(stored.domani, stored.lezioni), parse_mode="HTML", disable_web_page_preview=True)
+
+        elif text == "/aggiorna":
+            sent = bot.sendMessage(chatId, "📙📙📙 Cerco aggiornamenti... 0%")
+            apiLock.acquire()
+            api = ClasseVivaAPI()
+            if userLogin(user, api):
+                try:
+                    newDidattica, newNote, newVoti, newAgenda, newCircolari = fetchAndStore(user, api, apiLock, fetch_long=True)
                 except ApiServerError:
                     apiLock.release()
-                    try:
-                        bot.sendMessage(user.chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
-                                                        "Riprova tra qualche minuto.")
-                    except (TelegramError, BotWasBlockedError):
-                        pass
+                    bot.sendMessage(chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
+                                            "Riprova tra qualche minuto.")
+                    userLogout(api)
                     return
-                except Exception:
-                    apiLock.release()
-                    clearUserData(user)
-                    try:
-                        bot.sendMessage(user.chatId, "😯 Le tue credenziali di accesso sono errate.\n"
-                                                        "Effettua nuovamente il /login per favore.")
-                    except (TelegramError, BotWasBlockedError):
-                        pass
-                    return
-
-                bot.sendMessage(chatId, "Fatto 😊\n"
-                                        "Premi /help per vedere la lista dei comandi disponibili.")
-                sent = bot.sendMessage(chatId, "🔍 Aggiorno il profilo...")
-                newDidattica, newNote, newVoti, newAgenda, newCircolari = fetchAndStore(user, api, apiLock, fetch_long=True)
+                bot.editMessageText((chatId, sent['message_id']), "📗📙📙 Cerco aggiornamenti... 10%")
+                dataDidattica = parser.parseNewDidattica(userdata.didattica, newDidattica)
+                bot.editMessageText((chatId, sent['message_id']), "📗📙📙  Cerco aggiornamenti... 25%")
+                dataNote = parser.parseNewNote(userdata.note, newNote)
+                bot.editMessageText((chatId, sent['message_id']), "📗📙📙  Cerco aggiornamenti... 40%")
+                dataVoti = parser.parseNewVoti(userdata.voti, newVoti, user.chatId)
+                bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 55%")
+                dataAgenda = parser.parseNewAgenda(userdata.agenda, newAgenda)
+                bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 70%")
+                dataCircolari = parser.parseNewCircolari(userdata.circolari, newCircolari)
+                bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 85%")
                 updateUserdata(user, newDidattica, newNote, newVoti, newAgenda, newCircolari)
-                bot.editMessageText((chatId, sent['message_id']), "✅ Profilo aggiornato!")
+                bot.editMessageText((chatId, sent['message_id']), "📗📗📗  Cerco aggiornamenti... 100%")
 
-            elif user.status == "calling_support":
-                user.status = "normal"
-                for a in isAdmin():
-                    bot.sendMessage(a, "🆘 <b>Richiesta di aiuto</b>\n"
-                                       "Da: <a href=\"tg://user?id={0}\">{1}</a>\n"
-                                       "{2}\n"
-                                       "<i>Rispondi al messaggio per parlare con l'utente.</i>".format(chatId, name, "♦️ Beta Tester\n" if user.isBetaTester else ""), parse_mode="HTML")
-                    bot.forwardMessage(a, chatId, msg['message_id'])
-                bot.sendMessage(chatId, "<i>Richiesta inviata.</i>\n"
-                                        "Un admin ti risponderà il prima possibile.", parse_mode="HTML")
+                if dataDidattica is not None:
+                    bot.sendMessage(chatId, "🔔 <b>Nuovi file caricati!</b>{0}".format(dataDidattica), parse_mode="HTML", disable_web_page_preview=True)
 
+                if dataNote is not None:
+                    bot.sendMessage(chatId, "🔔 <b>Hai nuove note!</b>{0}".format(dataNote), parse_mode="HTML")
 
-        elif text == "/help":
-            message = "Ciao, sono il bot di <b>ClasseViva</b>! 👋🏻\n" \
-                      "Posso aiutarti a <b>navigare</b> nel registro e posso mandarti <b>notifiche</b> quando hai nuovi avvisi.\n\n" \
-                      "<b>Lista dei comandi</b>:\n" \
-                      "- /login - Effettua il login\n" \
-                      "- /logout - Disconnettiti\n" \
-                      "- /aggiorna - Aggiorna manualmente tutti i dati, per controllare se ci sono nuovi avvisi.\n" \
-                                    "Oppure, puoi lasciarlo fare a me, ogni mezz'ora :)\n" \
-                      "- /promemoria - Vedi un promemoria con i compiti da fare per domani e le lezioni svolte oggi.\n" \
-                      "- /agenda - Visualizza agenda (compiti e verifiche)\n" \
-                      "- /domani - Vedi i compiti che hai per domani\n" \
-                      "- /assenze - Visualizza assenze, ritardi e uscite anticipate\n" \
-                      "- /didattica - Visualizza la lista dei file in didattica\n" \
-                      "- /lezioni - Visualizza la lista delle lezioni\n" \
-                      "- /voti - Visualizza la lista dei voti\n" \
-                      "- /note - Visualizza la lista delle note\n" \
-                      "- /circolari - Visualizza le circolari da leggere\n" \
-                      "- /info - Visualizza le tue info utente\n" \
-                      "- /prof - Visualizza la lista delle materie e dei prof\n" \
-                      "- /settings - Modifica le impostazioni personali del bot\n" \
-                      "- /about - Informazioni sul bot\n" \
-                      "- /aboutprivacy - Più informazioni sulla privacy\n" \
-                      "- /support - Contatta lo staff (emergenze)\n\n" \
-                      "<b>Notifiche</b>: ogni mezz'ora, se vuoi, ti invierò un messaggio se ti sono arrivati nuovi voti, note, compiti, materiali, avvisi o circolari.\n" \
-                      "<b>Impostazioni</b>: con /settings puoi cambiare varie impostazioni, tra cui l'orario delle notifiche, quali notifiche ricevere e se riceverle di notte."
-            bot.sendMessage(chatId, message, parse_mode="HTML")
+                if dataVoti is not None:
+                    bot.sendMessage(chatId, "🔔 <b>Hai nuovi voti!</b>{0}".format(dataVoti), parse_mode="HTML")
 
-        elif text.startswith("/broadcast ") and isAdmin(chatId):
-            bdText = text.split(" ", 1)[1]
-            pendingUsers = select(user for user in User if user.password != "")[:]
-            userCount = pendingUsers.__len__()
-            for user in pendingUsers:
-                try:
-                    bot.sendMessage(user.chatId, bdText, parse_mode="HTML", disable_web_page_preview=True)
-                except (TelegramError, BotWasBlockedError):
-                    userCount -= 1
-            bot.sendMessage(chatId, "📢 Messaggio inviato correttamente a {0} utenti!".format(userCount))
+                if dataAgenda is not None:
+                    bot.sendMessage(chatId, "🔔 <b>Hai nuovi impegni!</b>\n{0}".format(dataAgenda), parse_mode="HTML", disable_web_page_preview=True)
 
-        elif text.startswith("/sendmsg ") and isAdmin(chatId):
-            selId = int(text.split(" ", 2)[1])
-            selText = str(text.split(" ", 2)[2])
-            bot.sendMessage(selId, selText, parse_mode="HTML")
-            bot.sendMessage(chatId, selText + "\n\n- Messaggio inviato!", parse_mode="HTML")
+                if dataCircolari is not None:
+                    bot.sendMessage(chatId, "🔔 <b>Hai nuove circolari!</b>{0}".format(dataCircolari), parse_mode="HTML", disable_web_page_preview=True)
 
-        elif text == "/globalupdate" and isAdmin(chatId):
-            bot.sendMessage(chatId, "🕙 Inizio aggiornamento globale...")
-            runUpdates(long_fetch=True)
-            bot.sendMessage(chatId, "✅ Aggiornamenti completati!")
+                if not any([dataDidattica, dataNote, dataVoti, dataAgenda, dataCircolari]):
+                    bot.editMessageText((chatId, sent['message_id']), "📗 Dati aggiornati!\n"
+                                                                        "📗 Nessuna novità!")
+                else:
+                    bot.deleteMessage((chatId, sent['message_id']))
 
-        elif "reply_to_message" in msg:
-            if isAdmin(chatId):
-                try:
-                    userId = msg['reply_to_message']['forward_from']['id']
-                    bot.sendMessage(userId, "💬 <b>Risposta dello staff</b>\n"
-                                            "{0}".format(text), parse_mode="HTML")
-                    bot.sendMessage(chatId, "Risposta inviata!")
-                except Exception:
-                    pass
-            else:
-                bot.sendMessage(chatId, "Premi /support per parlare con lo staff.")
-
-        elif text == "/annulla":
-            bot.sendMessage(chatId, "😴 Nessun comando da annullare!")
-
-        elif hasStoredCredentials(user):
-            if text == "/start":
-                bot.sendMessage(chatId, "Bentornato, <b>{0}</b>!\n"
-                                        "Cosa posso fare per te? 😊".format(name), parse_mode="HTML")
-
-            elif text == "/login":
-                bot.sendMessage(chatId, "Sei già loggato.\n"
-                                        "Premi /logout per uscire.")
-
-            elif text == "/logout":
-                sent = bot.sendMessage(chatId, "Tutti i tuoi dati scolastici e le credenziali verranno eliminate dal bot.\n"
-                                               "Sei <b>veramente sicuro</b> di voler uscire?", parse_mode="HTML")
-                bot.editMessageReplyMarkup((chatId, sent['message_id']), keyboards.logout(sent['message_id']))
-
-            elif text == "/didattica":
-                sendLongMessage(chatId, "📚 <b>Files caricati in didadttica</b>:\n\n"
-                                        "{0}".format(stored.didattica), parse_mode="HTML", disable_web_page_preview=True)
-
-            elif text == "/info":
-                bot.sendMessage(chatId, "ℹ️ <b>Ecco le tue info</b>:\n\n"
-                                        "{0}".format(stored.info), parse_mode="HTML")
-
-            elif text == "/prof":
-                sendLongMessage(chatId, "📚 <b>Lista materie e prof</b>:\n\n"
-                                        "{0}".format(stored.prof), parse_mode="HTML")
-
-            elif text == "/note":
-                sendLongMessage(chatId, "❗️<b>Le tue note</b>:\n\n"
-                                        "{0}".format(stored.note), parse_mode="HTML")
-
-            elif text == "/voti":
-                sendLongMessage(chatId, "📝 <b>I tuoi voti</b>:\n\n"
-                                        "{0}".format(stored.voti), parse_mode="HTML")
-
-            elif text == "/assenze":
-                sendLongMessage(chatId, "{0}".format(stored.assenze), parse_mode="HTML")
-
-            elif text == "/agenda":
-                bot.sendMessage(chatId, "📆 <b>Agenda compiti per le prossime 2 settimane</b>:\n\n"
-                                        "{0}".format(stored.agenda), parse_mode="HTML", disable_web_page_preview=True)
-
-            elif text == "/domani":
-                isSaturday = datetime.now().isoweekday() == 6
-                dayString = "lunedì" if isSaturday else "domani"
-                bot.sendMessage(chatId, "📆 <b>Compiti e verifiche per {0}</b>:\n\n"
-                                        "{1}".format(dayString, stored.domani), parse_mode="HTML", disable_web_page_preview=True)
-
-            elif text == "/circolari":
-                bot.sendMessage(chatId, "📩 <b>Circolari da leggere</b>:\n\n"
-                                        "{0}".format(stored.circolari), parse_mode="HTML", disable_web_page_preview=True)
-
-            elif text == "/lezioni":
-                sent = bot.sendMessage(chatId, "📚 <b>Lezioni di oggi</b>:\n\n"
-                                               "{0}".format(stored.lezioni), parse_mode="HTML", reply_markup=None, disable_web_page_preview=True)
-                bot.editMessageReplyMarkup((chatId, sent['message_id']), keyboards.lezioni(sent['message_id']))
-
-            elif text == "/settings":
-                sent = bot.sendMessage(chatId, "🛠 <b>Impostazioni</b>\n"
-                                               "Ecco le impostazioni del bot. Cosa vuoi modificare?", parse_mode="HTML", reply_markup=None)
-                bot.editMessageReplyMarkup((chatId, sent['message_id']), keyboards.settings_menu(sent['message_id']))
-
-            elif text == "/promemoria":
-                bot.sendMessage(chatId, "🕙 <b>Promemoria!</b>\n\n"
-                                        "📆 <b>Cosa devi fare per domani</b>:\n\n"
-                                        "{0}\n\n\n"
-                                        "📚 <b>Le lezioni di oggi</b>:\n\n"
-                                        "{1}".format(stored.domani, stored.lezioni), parse_mode="HTML", disable_web_page_preview=True)
-
-            elif text == "/aggiorna":
-                sent = bot.sendMessage(chatId, "📙📙📙 Cerco aggiornamenti... 0%")
-                apiLock.acquire()
-                api = ClasseVivaAPI()
-                if userLogin(user, api):
-                    try:
-                        newDidattica, newNote, newVoti, newAgenda, newCircolari = fetchAndStore(user, api, apiLock, fetch_long=True)
-                    except ApiServerError:
-                        apiLock.release()
-                        bot.sendMessage(chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
-                                                "Riprova tra qualche minuto.")
-                        userLogout(api)
-                        return
-                    bot.editMessageText((chatId, sent['message_id']), "📗📙📙 Cerco aggiornamenti... 10%")
-                    dataDidattica = parser.parseNewDidattica(userdata.didattica, newDidattica)
-                    bot.editMessageText((chatId, sent['message_id']), "📗📙📙  Cerco aggiornamenti... 25%")
-                    dataNote = parser.parseNewNote(userdata.note, newNote)
-                    bot.editMessageText((chatId, sent['message_id']), "📗📙📙  Cerco aggiornamenti... 40%")
-                    dataVoti = parser.parseNewVoti(userdata.voti, newVoti, user.chatId)
-                    bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 55%")
-                    dataAgenda = parser.parseNewAgenda(userdata.agenda, newAgenda)
-                    bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 70%")
-                    dataCircolari = parser.parseNewCircolari(userdata.circolari, newCircolari)
-                    bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 85%")
-                    updateUserdata(user, newDidattica, newNote, newVoti, newAgenda, newCircolari)
-                    bot.editMessageText((chatId, sent['message_id']), "📗📗📗  Cerco aggiornamenti... 100%")
-
-                    if dataDidattica is not None:
-                        bot.sendMessage(chatId, "🔔 <b>Nuovi file caricati!</b>{0}".format(dataDidattica), parse_mode="HTML", disable_web_page_preview=True)
-
-                    if dataNote is not None:
-                        bot.sendMessage(chatId, "🔔 <b>Hai nuove note!</b>{0}".format(dataNote), parse_mode="HTML")
-
-                    if dataVoti is not None:
-                        bot.sendMessage(chatId, "🔔 <b>Hai nuovi voti!</b>{0}".format(dataVoti), parse_mode="HTML")
-
-                    if dataAgenda is not None:
-                        bot.sendMessage(chatId, "🔔 <b>Hai nuovi impegni!</b>\n{0}".format(dataAgenda), parse_mode="HTML", disable_web_page_preview=True)
-
-                    if dataCircolari is not None:
-                        bot.sendMessage(chatId, "🔔 <b>Hai nuove circolari!</b>{0}".format(dataCircolari), parse_mode="HTML", disable_web_page_preview=True)
-
-                    if not any([dataDidattica, dataNote, dataVoti, dataAgenda, dataCircolari]):
-                        bot.editMessageText((chatId, sent['message_id']), "📗 Dati aggiornati!\n"
-                                                                          "📗 Nessuna novità!")
-                    else:
-                        bot.deleteMessage((chatId, sent['message_id']))
-
-            elif text == "/support":
-                user.status = "calling_support"
-                bot.sendMessage(chatId, "🆘 <b>Richiesta di supporto</b>\n"
-                                        "Se hai qualche problema che non riesci a risolvere, scrivi qui un messaggio, e un admin "
-                                        "ti contatterà il prima possibile.\n\n"
-                                        "<i>Per annullare, premi</i> /annulla.", parse_mode="HTML")
-
-            else:
-                bot.sendMessage(chatId, "Non ho capito...\n"
-                                        "Serve aiuto? Premi /help")
+        elif text == "/support":
+            user.status = "calling_support"
+            bot.sendMessage(chatId, "🆘 <b>Richiesta di supporto</b>\n"
+                                    "Se hai qualche problema che non riesci a risolvere, scrivi qui un messaggio, e un admin "
+                                    "ti contatterà il prima possibile.\n\n"
+                                    "<i>Per annullare, premi</i> /annulla.", parse_mode="HTML")
 
         else:
-            if text == "/login":
-                user.status = "login_0"
-                bot.sendMessage(chatId, "Per favore, inviami il tuo <b>username</b> (quello che usi per accedere al registro).\n"
-                                        "Usa /annulla se serve.", parse_mode="HTML")
-            else:
-                bot.sendMessage(chatId, "Benvenuto, <b>{0}</b>!\n"
-                                        "Per favore, premi /login per utilizzarmi.\n\n"
-                                        "Premi /help se serve aiuto.".format(name), parse_mode="HTML")
+            bot.sendMessage(chatId, "Non ho capito...\n"
+                                    "Serve aiuto? Premi /help")
 
-    # Utente non beta
     else:
-        if text == "/beta":
-            user.isBetaTester = True
-            bot.sendMessage(chatId, "Grazie per esserti iscritto al programma di beta testing!\n"
-                                    "Adesso puoi iniziare ad usare il bot in modalità beta.")
-
+        if text == "/login":
+            user.status = "login_0"
+            bot.sendMessage(chatId, "Per favore, inviami il tuo <b>username</b> (quello che usi per accedere al registro).\n"
+                                    "Usa /annulla se serve.", parse_mode="HTML")
         else:
-            bot.sendMessage(chatId, "<b>Bot in manutenzione.</b>\n"
-                                    "Per un problema che non dipende da me, purtroppo, il bot è attualmente non disponibile "
-                                    "e non so quando potrò riattivarlo. Nel frattempo, ti consiglio di scaricare l'app.\n\n"
-                                    "Altrimenti, puoi iscriverti al programma /beta e testare il bot mentre viene sviluppato!", parse_mode="HTML")
+            bot.sendMessage(chatId, "Benvenuto, <b>{0}</b>!\n"
+                                    "Per favore, premi /login per utilizzarmi.\n\n"
+                                    "Premi /help se serve aiuto.".format(name), parse_mode="HTML")
 
 
 @db_session
