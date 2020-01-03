@@ -174,11 +174,17 @@ def parseVoti(data, chat_id):
             materie[materia] = string if firstMateria else "\n\n" + string
             firstMateria = False
 
-    media["total"] = round(sum(media["total"]) / len(media["total"]), 2)
+    if len(media["total"]) == 0:
+        media["total"] = False
+    else:
+        media["total"] = round(sum(media["total"]) / len(media["total"]), 2)
+    
     result = ""
     for materia in materie:
         result += materie[materia]
-    result += "\n\n📚 <b>Media totale: {}</b>".format(media["total"])
+    
+    if media["total"]:
+        result += "\n\n📚 <b>Media totale: {}</b>".format(media["total"])
 
     return result
 
