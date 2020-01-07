@@ -88,7 +88,7 @@ def runUserDaily(user, crhour, crminute, dayString):
         hoursplit = settings.dailyUpdatesHour.split(":")
         if (int(hoursplit[0]) == crhour) and (int(hoursplit[1]) == crminute):
             stored = ParsedData.get(chatId=user.chatId)
-            if stored.domani != "🗓 Non hai compiti per domani." or stored.lezioni != "🎈 Nessuna lezione, per oggi.":
+            if (stored.domani != "🗓 Non hai compiti per domani.") or (stored.lezioni != "🎈 Nessuna lezione, per oggi."):
                 try:
                     bot.sendMessage(user.chatId, "🕙 <b>Promemoria!</b>\n\n"
                                                     "📆 <b>Cosa devi fare per {0}</b>:\n\n"
@@ -255,8 +255,8 @@ def reply(msg):
 
     elif text.startswith("/broadcast ") and isAdmin(chatId):
         bdText = text.split(" ", 1)[1]
-        pendingUsers = select(user for user in User if user.password != "")[:]
-        userCount = pendingUsers.__len__()
+        pendingUsers = select(user for user in User)[:]
+        userCount = len(pendingUsers)
         for user in pendingUsers:
             try:
                 bot.sendMessage(user.chatId, bdText, parse_mode="HTML", disable_web_page_preview=True)
@@ -276,7 +276,7 @@ def reply(msg):
 
     elif text == "/users" and isAdmin(chatId):
         totalUsers = len(select(u for u in User)[:])
-        loggedUsers = len(select(u for u in User if hasStoredCredentials(u))[:])
+        loggedUsers = len(select(u for u in User if u.password != "")[:])
         bot.sendMessage(chatId, "👤 Utenti totali: <b>{}</b>\n"
                                 "👤 Utenti loggati: <b>{}</b>".format(totalUsers, loggedUsers), parse_mode="HTML")
 
