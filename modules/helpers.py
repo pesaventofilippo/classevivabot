@@ -126,8 +126,9 @@ def fetchAndStore(user, api_type, _apiLock, fetch_long=False):
     if fetch_long:
         newInfo = api_type.info()
         newProf = api_type.materie()
+    userLogout(api_type)    
     _apiLock.release()
-    userLogout(api_type)
+    print("Released API Lock")
 
     stored = ParsedData.get(chatId=user.chatId)
     stored.note = parser.parseNote(newNote)
