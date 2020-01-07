@@ -34,7 +34,7 @@ apiLock = Lock()
 def runUserUpdate(user, long_fetch, crhour):
     api = ClasseVivaAPI()
     apiLock.acquire()
-    print("Acquired API Lock.")
+    print("Acquired API Lock at runUserUpdate")
     if userLogin(user, api):
         userdata = Data.get(chatId=user.chatId)
         settings = Settings.get(chatId=user.chatId)
@@ -189,7 +189,7 @@ def reply(msg):
             api = ClasseVivaAPI()
 
             apiLock.acquire()
-            print("Acquired API Lock.")
+            print("Acquired API Lock at User Login s1")
             try:
                 api.login(user.username, decrypt_password(user))
             except ApiServerError:
@@ -367,7 +367,7 @@ def reply(msg):
             sent = bot.sendMessage(chatId, "📙📙📙 Cerco aggiornamenti... 0%")
             api = ClasseVivaAPI()
             apiLock.acquire()
-            print("Acquired API Lock.")
+            print("Acquired API Lock at user command")
             if userLogin(user, api):
                 try:
                     newDidattica, newNote, newVoti, newAgenda, newCircolari = fetchAndStore(user, api, apiLock, fetch_long=True)
@@ -672,7 +672,7 @@ def button_press(msg):
     else:
         api = ClasseVivaAPI()
         apiLock.acquire()
-        print("Acquired API Lock.")
+        print("Acquired API Lock at user button press")
         if userLogin(user, api):
             if (button == "lezioni_prima") or (button == "lezioni_dopo"):
                 selectedDay = int(query_split[2]) - 1 if "prima" in button else int(query_split[2]) + 1
