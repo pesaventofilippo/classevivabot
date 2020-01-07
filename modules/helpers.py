@@ -87,13 +87,17 @@ def clearUserData(user):
 
 
 @db_session
-def userLogin(user, api_type):
+def userLogin(user, api_type, _apiLock=None):
     if not hasStoredCredentials(user):
+        if _apiLock:
+            _apiLock.release()
         return False
     try:
         api_type.login(user.username, decrypt_password(user))
         return True
     except AuthenticationFailedError:
+        if _apiLock:
+            _apiLock.release()
         clearUserData(user)
         try:
             bot.sendMessage(user.chatId, "😯 Le tue credenziali di accesso sono errate.\n"
@@ -102,6 +106,8 @@ def userLogin(user, api_type):
             pass
         return False
     except ApiServerError:
+        if _apiLock:
+            _apiLock.release()
         try:
             bot.sendMessage(user.chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
                                             "Riprova tra qualche minuto.")
@@ -128,8 +134,7 @@ def fetchAndStore(user, api_type, _apiLock, fetch_long=False):
         newProf = api_type.materie()
     userLogout(api_type)    
     _apiLock.release()
-    print("Released API Lock")
-
+    
     stored = ParsedData.get(chatId=user.chatId)
     stored.note = parser.parseNote(newNote)
     stored.voti = parser.parseVoti(newVoti, user.chatId)

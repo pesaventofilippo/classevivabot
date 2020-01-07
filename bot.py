@@ -34,15 +34,13 @@ apiLock = Lock()
 def runUserUpdate(user, long_fetch, crhour):
     api = ClasseVivaAPI()
     apiLock.acquire()
-    print("Acquired API Lock at runUserUpdate")
-    if userLogin(user, api):
+    if userLogin(user, api, apiLock):
         userdata = Data.get(chatId=user.chatId)
         settings = Settings.get(chatId=user.chatId)
         try:
             newDidattica, newNote, newVoti, newAgenda, newCircolari = fetchAndStore(user, api, apiLock, long_fetch)
         except ApiServerError:
             apiLock.release()
-            print("Released API Lock")
             return
 
         if settings.wantsNotifications is True:
@@ -189,12 +187,10 @@ def reply(msg):
             api = ClasseVivaAPI()
 
             apiLock.acquire()
-            print("Acquired API Lock at User Login s1")
             try:
                 api.login(user.username, decrypt_password(user))
             except ApiServerError:
                 apiLock.release()
-                print("Released API Lock")
                 try:
                     bot.sendMessage(user.chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
                                                     "Riprova tra qualche minuto.")
@@ -203,7 +199,6 @@ def reply(msg):
                 return
             except Exception:
                 apiLock.release()
-                print("Released API Lock")
                 clearUserData(user)
                 try:
                     bot.sendMessage(user.chatId, "😯 Le tue credenziali di accesso sono errate.\n"
@@ -276,9 +271,14 @@ def reply(msg):
         bot.sendMessage(chatId, selText + "\n\n- Messaggio inviato!", parse_mode="HTML")
 
     elif text == "/globalupdate" and isAdmin(chatId):
-        bot.sendMessage(chatId, "🕙 Inizio aggiornamento globale...")
         runUpdates(long_fetch=True)
-        bot.sendMessage(chatId, "✅ Aggiornamenti completati!")
+        bot.sendMessage(chatId, "✅ Aggiornamento globale iniziato!")
+
+    elif text == "/users" and isAdmin(chatId):
+        totalUsers = len(select(u for u in User)[:])
+        loggedUsers = len(select(u for u in User if hasStoredCredentials(u))[:])
+        bot.sendMessage(chatId, "👤 Utenti totali: <b>{}</b>\n"
+                                "👤 Utenti loggati: <b>{}</b>".format(totalUsers, loggedUsers), parse_mode="HTML")
 
     elif "reply_to_message" in msg:
         if isAdmin(chatId):
@@ -367,13 +367,11 @@ def reply(msg):
             sent = bot.sendMessage(chatId, "📙📙📙 Cerco aggiornamenti... 0%")
             api = ClasseVivaAPI()
             apiLock.acquire()
-            print("Acquired API Lock at user command")
-            if userLogin(user, api):
+            if userLogin(user, api, apiLock):
                 try:
                     newDidattica, newNote, newVoti, newAgenda, newCircolari = fetchAndStore(user, api, apiLock, fetch_long=True)
                 except ApiServerError:
                     apiLock.release()
-                    print("Released API Lock")
                     bot.sendMessage(chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
                                             "Riprova tra qualche minuto.")
                     userLogout(api)
@@ -668,25 +666,22 @@ def button_press(msg):
     elif button == "logout_no":
         bot.editMessageText((chatId, message_id), "<i>Logout annullato.</i>", parse_mode="HTML", reply_markup=None)
 
-
-    else:
+    elif (button == "lezioni_prima") or (button == "lezioni_dopo"):
         api = ClasseVivaAPI()
         apiLock.acquire()
-        print("Acquired API Lock at user button press")
-        if userLogin(user, api):
-            if (button == "lezioni_prima") or (button == "lezioni_dopo"):
-                selectedDay = int(query_split[2]) - 1 if "prima" in button else int(query_split[2]) + 1
-                dateformat = (datetime.now() + timedelta(days=selectedDay)).strftime("%d/%m/%Y")
-                try:
-                    data = parser.parseLezioni(api.lezioni(selectedDay))
-                    bot.editMessageText((chatId, message_id), "📚 <b>Lezioni del {0}</b>:\n\n{1}".format(dateformat, data),
-                                        parse_mode="HTML", reply_markup=keyboards.lezioni(message_id, selectedDay), disable_web_page_preview=True)
-                except ApiServerError:
-                    bot.editMessageText((chatId, message_id), "⚠️ I server di ClasseViva non sono raggiungibili.\n"
-                                                              "Riprova tra qualche minuto.", reply_markup=None)
-                finally:
-                    apiLock.release()
-                    print("Released API Lock")
+        if userLogin(user, api, apiLock):
+            selectedDay = int(query_split[2]) - 1 if "prima" in button else int(query_split[2]) + 1
+            dateformat = (datetime.now() + timedelta(days=selectedDay)).strftime("%d/%m/%Y")
+            try:
+                apiRes = api.lezioni(selectedDay)
+                apiLock.release()
+                data = parser.parseLezioni(apiRes)
+                bot.editMessageText((chatId, message_id), "📚 <b>Lezioni del {0}</b>:\n\n{1}".format(dateformat, data),
+                                    parse_mode="HTML", reply_markup=keyboards.lezioni(message_id, selectedDay), disable_web_page_preview=True)
+            except ApiServerError:
+                apiLock.release()
+                bot.editMessageText((chatId, message_id), "⚠️ I server di ClasseViva non sono raggiungibili.\n"
+                                                            "Riprova tra qualche minuto.", reply_markup=None)
             userLogout(api)
 
 
