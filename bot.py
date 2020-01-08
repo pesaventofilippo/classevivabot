@@ -26,6 +26,8 @@ except FileNotFoundError:
 bot = Bot(token)
 setBot(token)
 updatesEvery = 15 # minutes
+userApiTimeout = 20 # seconds
+threadApiTimeout = 300 # seconds
 
 apiLock = Lock()
 
@@ -33,8 +35,8 @@ apiLock = Lock()
 @db_session
 def runUserUpdate(user, long_fetch, crhour):
     api = ClasseVivaAPI()
-    apiLock.acquire()
-    if userLogin(user, api, apiLock):
+    lockAcquired = apiLock.acquire(timeout=threadApiTimeout)
+    if lockAcquired and userLogin(user, api, apiLock):
         userdata = Data.get(chatId=user.chatId)
         settings = Settings.get(chatId=user.chatId)
         try:
@@ -186,33 +188,38 @@ def reply(msg):
             commit()
             api = ClasseVivaAPI()
 
-            apiLock.acquire()
-            try:
-                api.login(user.username, decrypt_password(user))
-            except ApiServerError:
-                apiLock.release()
+            lockAcquired = apiLock.acquire(timeout=userApiTimeout)
+            if lockAcquired:
                 try:
-                    bot.sendMessage(user.chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
-                                                    "Riprova tra qualche minuto.")
-                except (TelegramError, BotWasBlockedError):
-                    pass
-                return
-            except Exception:
-                apiLock.release()
-                clearUserData(user)
-                try:
-                    bot.sendMessage(user.chatId, "😯 Le tue credenziali di accesso sono errate.\n"
-                                                    "Effettua nuovamente il /login per favore.")
-                except (TelegramError, BotWasBlockedError):
-                    pass
-                return
+                    api.login(user.username, decrypt_password(user))
+                except ApiServerError:
+                    apiLock.release()
+                    try:
+                        bot.sendMessage(user.chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
+                                                        "Riprova tra qualche minuto.")
+                    except (TelegramError, BotWasBlockedError):
+                        pass
+                    return
+                except Exception:
+                    apiLock.release()
+                    clearUserData(user)
+                    try:
+                        bot.sendMessage(user.chatId, "😯 Le tue credenziali di accesso sono errate.\n"
+                                                        "Effettua nuovamente il /login per favore.")
+                    except (TelegramError, BotWasBlockedError):
+                        pass
+                    return
 
-            bot.sendMessage(chatId, "Fatto 😊\n"
-                                    "Premi /help per vedere la lista dei comandi disponibili.")
-            sent = bot.sendMessage(chatId, "🔍 Aggiorno il profilo...")
-            newDidattica, newNote, newVoti, newAgenda, newCircolari = fetchAndStore(user, api, apiLock, fetch_long=True)
-            updateUserdata(user, newDidattica, newNote, newVoti, newAgenda, newCircolari)
-            bot.editMessageText((chatId, sent['message_id']), "✅ Profilo aggiornato!")
+                bot.sendMessage(chatId, "Fatto 😊\n"
+                                        "Premi /help per vedere la lista dei comandi disponibili.")
+                sent = bot.sendMessage(chatId, "🔍 Aggiorno il profilo...")
+                newDidattica, newNote, newVoti, newAgenda, newCircolari = fetchAndStore(user, api, apiLock, fetch_long=True)
+                updateUserdata(user, newDidattica, newNote, newVoti, newAgenda, newCircolari)
+                bot.editMessageText((chatId, sent['message_id']), "✅ Profilo aggiornato!")
+            
+            else:
+                bot.sendMessage(chatId, "⚠️ Il bot è troppo carico al momento, ma ho comunque salvato le tue credenziali.\n"
+                                        "Prova a fare /aggiorna tra qualche minuto.")
 
         elif user.status == "calling_support":
             user.status = "normal"
@@ -366,50 +373,59 @@ def reply(msg):
         elif text == "/aggiorna":
             sent = bot.sendMessage(chatId, "📙📙📙 Cerco aggiornamenti... 0%")
             api = ClasseVivaAPI()
-            apiLock.acquire()
-            if userLogin(user, api, apiLock):
-                try:
-                    newDidattica, newNote, newVoti, newAgenda, newCircolari = fetchAndStore(user, api, apiLock, fetch_long=True)
-                except ApiServerError:
-                    apiLock.release()
-                    bot.sendMessage(chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
-                                            "Riprova tra qualche minuto.")
-                    userLogout(api)
-                    return
-                bot.editMessageText((chatId, sent['message_id']), "📗📙📙 Cerco aggiornamenti... 10%")
-                dataDidattica = parser.parseNewDidattica(userdata.didattica, newDidattica)
-                bot.editMessageText((chatId, sent['message_id']), "📗📙📙  Cerco aggiornamenti... 25%")
-                dataNote = parser.parseNewNote(userdata.note, newNote)
-                bot.editMessageText((chatId, sent['message_id']), "📗📙📙  Cerco aggiornamenti... 40%")
-                dataVoti = parser.parseNewVoti(userdata.voti, newVoti, user.chatId)
-                bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 55%")
-                dataAgenda = parser.parseNewAgenda(userdata.agenda, newAgenda)
-                bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 70%")
-                dataCircolari = parser.parseNewCircolari(userdata.circolari, newCircolari)
-                bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 85%")
-                updateUserdata(user, newDidattica, newNote, newVoti, newAgenda, newCircolari)
-                bot.editMessageText((chatId, sent['message_id']), "📗📗📗  Cerco aggiornamenti... 100%")
+            lockAcquired = apiLock.acquire(timeout=5)
+            if not lockAcquired:
+                bot.editMessageText((chatId, sent['message_id']), "📙📙📙 Cerco aggiornamenti... 0%\n"
+                                    "<i>Potrebbe volerci un po', aspetta...</i>", parse_mode="HTML")
+                lockAcquired = apiLock.acquire(timeout=userApiTimeout)
 
-                if dataDidattica is not None:
-                    bot.sendMessage(chatId, "🔔 <b>Nuovi file caricati!</b>{0}".format(dataDidattica), parse_mode="HTML", disable_web_page_preview=True)
+            
+            if lockAcquired:
+                if userLogin(user, api, apiLock):
+                    try:
+                        newDidattica, newNote, newVoti, newAgenda, newCircolari = fetchAndStore(user, api, apiLock, fetch_long=True)
+                    except ApiServerError:
+                        apiLock.release()
+                        bot.sendMessage(chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
+                                                "Riprova tra qualche minuto.")
+                        userLogout(api)
+                        return
+                    bot.editMessageText((chatId, sent['message_id']), "📗📙📙 Cerco aggiornamenti... 10%")
+                    dataDidattica = parser.parseNewDidattica(userdata.didattica, newDidattica)
+                    bot.editMessageText((chatId, sent['message_id']), "📗📙📙  Cerco aggiornamenti... 25%")
+                    dataNote = parser.parseNewNote(userdata.note, newNote)
+                    bot.editMessageText((chatId, sent['message_id']), "📗📙📙  Cerco aggiornamenti... 40%")
+                    dataVoti = parser.parseNewVoti(userdata.voti, newVoti, user.chatId)
+                    bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 55%")
+                    dataAgenda = parser.parseNewAgenda(userdata.agenda, newAgenda)
+                    bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 70%")
+                    dataCircolari = parser.parseNewCircolari(userdata.circolari, newCircolari)
+                    bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 85%")
+                    updateUserdata(user, newDidattica, newNote, newVoti, newAgenda, newCircolari)
+                    bot.editMessageText((chatId, sent['message_id']), "📗📗📗  Cerco aggiornamenti... 100%")
 
-                if dataNote is not None:
-                    bot.sendMessage(chatId, "🔔 <b>Hai nuove note!</b>{0}".format(dataNote), parse_mode="HTML")
+                    if dataDidattica is not None:
+                        bot.sendMessage(chatId, "🔔 <b>Nuovi file caricati!</b>{0}".format(dataDidattica), parse_mode="HTML", disable_web_page_preview=True)
 
-                if dataVoti is not None:
-                    bot.sendMessage(chatId, "🔔 <b>Hai nuovi voti!</b>{0}".format(dataVoti), parse_mode="HTML")
+                    if dataNote is not None:
+                        bot.sendMessage(chatId, "🔔 <b>Hai nuove note!</b>{0}".format(dataNote), parse_mode="HTML")
 
-                if dataAgenda is not None:
-                    bot.sendMessage(chatId, "🔔 <b>Hai nuovi impegni!</b>\n{0}".format(dataAgenda), parse_mode="HTML", disable_web_page_preview=True)
+                    if dataVoti is not None:
+                        bot.sendMessage(chatId, "🔔 <b>Hai nuovi voti!</b>{0}".format(dataVoti), parse_mode="HTML")
 
-                if dataCircolari is not None:
-                    bot.sendMessage(chatId, "🔔 <b>Hai nuove circolari!</b>{0}".format(dataCircolari), parse_mode="HTML", disable_web_page_preview=True)
+                    if dataAgenda is not None:
+                        bot.sendMessage(chatId, "🔔 <b>Hai nuovi impegni!</b>\n{0}".format(dataAgenda), parse_mode="HTML", disable_web_page_preview=True)
 
-                if not any([dataDidattica, dataNote, dataVoti, dataAgenda, dataCircolari]):
-                    bot.editMessageText((chatId, sent['message_id']), "📗 Dati aggiornati!\n"
-                                                                        "📗 Nessuna novità!")
-                else:
-                    bot.deleteMessage((chatId, sent['message_id']))
+                    if dataCircolari is not None:
+                        bot.sendMessage(chatId, "🔔 <b>Hai nuove circolari!</b>{0}".format(dataCircolari), parse_mode="HTML", disable_web_page_preview=True)
+
+                    if not any([dataDidattica, dataNote, dataVoti, dataAgenda, dataCircolari]):
+                        bot.editMessageText((chatId, sent['message_id']), "📗 Dati aggiornati!\n"
+                                                                            "📗 Nessuna novità!")
+                    else:
+                        bot.deleteMessage((chatId, sent['message_id']))
+            else:
+                bot.editMessageText((chatId, sent['message_id']), "😓 Il bot è troppo carico al momento.\nRiprova fra qualche minuto!")
 
         elif text == "/support":
             user.status = "calling_support"
@@ -668,8 +684,8 @@ def button_press(msg):
 
     elif (button == "lezioni_prima") or (button == "lezioni_dopo"):
         api = ClasseVivaAPI()
-        apiLock.acquire()
-        if userLogin(user, api, apiLock):
+        lockAcquired = apiLock.acquire(timeout=userApiTimeout)
+        if lockAcquired and userLogin(user, api, apiLock):
             selectedDay = int(query_split[2]) - 1 if "prima" in button else int(query_split[2]) + 1
             dateformat = (datetime.now() + timedelta(days=selectedDay)).strftime("%d/%m/%Y")
             try:
