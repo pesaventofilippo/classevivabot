@@ -67,7 +67,10 @@ class ClasseVivaAPI:
                  "Z-Auth-Token": self.token,
                  "Content-Type": "application/json"}
         req = Request(url, headers=headers)
-        result = urlopen(req)
+        try:
+            result = urlopen(req)
+        except HTTPError:
+            raise ApiServerError
 
         if returnFile:
             return result
