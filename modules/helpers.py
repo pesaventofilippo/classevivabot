@@ -140,7 +140,7 @@ def fetchAndStore(chatId, api_type, _apiLock, fetch_long=False):
     
     stored = ParsedData.get(chatId=chatId)
     stored.note = parser.parseNote(newNote)
-    stored.voti = parser.parseVoti(newVoti, user.chatId)
+    stored.voti = parser.parseVoti(newVoti, chatId)
     stored.assenze = parser.parseAssenze(newAssenze)
     stored.agenda = parser.parseAgenda(newAgenda)
     stored.domani = parser.parseDomani(newAgenda)

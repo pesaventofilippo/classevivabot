@@ -195,7 +195,7 @@ def reply(msg):
                 except ApiServerError:
                     apiLock.release()
                     try:
-                        bot.sendMessage(user.chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
+                        bot.sendMessage(chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
                                                         "Riprova tra qualche minuto.")
                     except (TelegramError, BotWasBlockedError):
                         pass
@@ -204,7 +204,7 @@ def reply(msg):
                     apiLock.release()
                     clearUserData(chatId)
                     try:
-                        bot.sendMessage(user.chatId, "😯 Le tue credenziali di accesso sono errate.\n"
+                        bot.sendMessage(chatId, "😯 Le tue credenziali di accesso sono errate.\n"
                                                         "Effettua nuovamente il /login per favore.")
                     except (TelegramError, BotWasBlockedError):
                         pass
@@ -395,7 +395,7 @@ def reply(msg):
                     bot.editMessageText((chatId, sent['message_id']), "📗📙📙  Cerco aggiornamenti... 25%")
                     dataNote = parser.parseNewNote(userdata.note, newNote)
                     bot.editMessageText((chatId, sent['message_id']), "📗📙📙  Cerco aggiornamenti... 40%")
-                    dataVoti = parser.parseNewVoti(userdata.voti, newVoti, user.chatId)
+                    dataVoti = parser.parseNewVoti(userdata.voti, newVoti, chatId)
                     bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 55%")
                     dataAgenda = parser.parseNewAgenda(userdata.agenda, newAgenda)
                     bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 70%")
