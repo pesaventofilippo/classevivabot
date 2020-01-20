@@ -106,7 +106,7 @@ def parseNote(data):
 
 
 @db_session
-def parseVoti(data, chat_id):
+def parseVoti(data, chatId):
     if (data is None) or (not data.get('grades')):
         return "\n📕 Non hai ancora nessun voto!"
 
@@ -152,7 +152,7 @@ def parseVoti(data, chat_id):
                     media["total"].append(float(value[5:]))
                 except ValueError:
                     pass
-    user = User.get(chatId=chat_id)
+    user = User.get(chatId=chatId)
     user.lastPeriod = max(periods) if periods else 1
 
     firstMateria = True
@@ -400,11 +400,11 @@ def parseNewNote(oldData, newData):
 
 
 @db_session
-def parseNewVoti(oldData, newData, chat_id):
+def parseNewVoti(oldData, newData, chatId):
     if (newData is None) or (not newData.get('grades')):
         return None
     if (oldData is None) or (not oldData.get('grades')):
-        return parseVoti(newData, chat_id)
+        return parseVoti(newData, chatId)
 
     votiOrdinati = {}
     periods = []
@@ -426,7 +426,7 @@ def parseNewVoti(oldData, newData, chat_id):
                 votiOrdinati[materia] = []
             votiOrdinati[materia].append(str_voto)
     if periods:
-        user = User.get(chatId=chat_id)
+        user = User.get(chatId=chatId)
         user.lastPeriod = max(periods)
 
     result = ""

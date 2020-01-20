@@ -33,14 +33,14 @@ apiLock = Lock()
 
 
 @db_session
-def runUserUpdate(user, long_fetch, crhour):
+def runUserUpdate(chatId, long_fetch, crhour):
     api = ClasseVivaAPI()
     lockAcquired = apiLock.acquire(timeout=threadApiTimeout)
-    if lockAcquired and userLogin(user, api, apiLock):
-        userdata = Data.get(chatId=user.chatId)
-        settings = Settings.get(chatId=user.chatId)
+    if lockAcquired and userLogin(chatId, api, apiLock):
+        userdata = Data.get(chatId=chatId)
+        settings = Settings.get(chatId=chatId)
         try:
-            newDidattica, newNote, newVoti, newAgenda, newCircolari = fetchAndStore(user, api, apiLock, long_fetch)
+            newDidattica, newNote, newVoti, newAgenda, newCircolari = fetchAndStore(chatId, api, apiLock, long_fetch)
         except ApiServerError:
             apiLock.release()
             return
@@ -49,28 +49,28 @@ def runUserUpdate(user, long_fetch, crhour):
             if (settings.doNotDisturb is False) or (crhour in range(7, 21)):
                 dataDidattica = parser.parseNewDidattica(userdata.didattica, newDidattica)
                 dataNote = parser.parseNewNote(userdata.note, newNote)
-                dataVoti = parser.parseNewVoti(userdata.voti, newVoti, user.chatId)
+                dataVoti = parser.parseNewVoti(userdata.voti, newVoti, chatId)
                 dataAgenda = parser.parseNewAgenda(userdata.agenda, newAgenda)
                 dataCircolari = parser.parseNewCircolari(userdata.circolari, newCircolari)
-                updateUserdata(user, newDidattica, newNote, newVoti, newAgenda, newCircolari)
+                updateUserdata(chatId, newDidattica, newNote, newVoti, newAgenda, newCircolari)
                 try:
                     if dataDidattica and ("didattica" in settings.activeNews):
-                        bot.sendMessage(user.chatId, "🔔 <b>Nuovi file caricati!</b>"
+                        bot.sendMessage(chatId, "🔔 <b>Nuovi file caricati!</b>"
                                                             "{0}".format(dataDidattica), parse_mode="HTML", disable_web_page_preview=True)
                     if dataNote and ("note" in settings.activeNews):
-                        bot.sendMessage(user.chatId, "🔔 <b>Hai nuove note!</b>"
+                        bot.sendMessage(chatId, "🔔 <b>Hai nuove note!</b>"
                                                             "{0}".format(dataNote), parse_mode="HTML", disable_web_page_preview=True)
                     if dataVoti and ("voti" in settings.activeNews):
-                        bot.sendMessage(user.chatId, "🔔 <b>Hai nuovi voti!</b>"
+                        bot.sendMessage(chatId, "🔔 <b>Hai nuovi voti!</b>"
                                                             "{0}".format(dataVoti), parse_mode="HTML", disable_web_page_preview=True)
                     if dataAgenda and ("agenda" in settings.activeNews):
-                        bot.sendMessage(user.chatId, "🔔 <b>Hai nuovi impegni!</b>\n"
+                        bot.sendMessage(chatId, "🔔 <b>Hai nuovi impegni!</b>\n"
                                                             "{0}".format(dataAgenda), parse_mode="HTML", disable_web_page_preview=True)
                     if dataCircolari and ("circolari" in settings.activeNews):
-                        bot.sendMessage(user.chatId, "🔔 <b>Hai nuove circolari!</b>"
+                        bot.sendMessage(chatId, "🔔 <b>Hai nuove circolari!</b>"
                                                      "{0}".format(dataCircolari), parse_mode="HTML", disable_web_page_preview=True)
                 except BotWasBlockedError:
-                    clearUserData(user)
+                    clearUserData(chatId)
                 except TelegramError:
                     pass
 
@@ -78,27 +78,27 @@ def runUserUpdate(user, long_fetch, crhour):
 @db_session
 def runUpdates(long_fetch=False):
     crhour = datetime.now().hour
-    pendingUsers = select(user for user in User if user.password != "")[:]
+    pendingUsers = select(user.chatId for user in User if user.password != "")[:]
     for currentUser in pendingUsers:
         Thread(target=runUserUpdate, args=[currentUser, long_fetch, crhour]).start()
 
 
 @db_session
-def runUserDaily(user, crhour, crminute, dayString):
-    settings = Settings.get(chatId=user.chatId)
+def runUserDaily(chatId, crhour, crminute, dayString):
+    settings = Settings.get(chatId=chatId)
     if settings.wantsDailyUpdates:
         hoursplit = settings.dailyUpdatesHour.split(":")
         if (int(hoursplit[0]) == crhour) and (int(hoursplit[1]) == crminute):
-            stored = ParsedData.get(chatId=user.chatId)
+            stored = ParsedData.get(chatId=chatId)
             if (stored.domani != "🗓 Non hai compiti per domani.") or (stored.lezioni != "🎈 Nessuna lezione, per oggi."):
                 try:
-                    bot.sendMessage(user.chatId, "🕙 <b>Promemoria!</b>\n\n"
-                                                    "📆 <b>Cosa devi fare per {0}</b>:\n\n"
-                                                    "{1}\n\n\n"
-                                                    "📚 <b>Le lezioni di oggi</b>:\n\n"
-                                                    "{2}".format(dayString, stored.domani, stored.lezioni), parse_mode="HTML")
+                    bot.sendMessage(chatId, "🕙 <b>Promemoria!</b>\n\n"
+                                            "📆 <b>Cosa devi fare per {0}</b>:\n\n"
+                                            "{1}\n\n\n"
+                                            "📚 <b>Le lezioni di oggi</b>:\n\n"
+                                            "{2}".format(dayString, stored.domani, stored.lezioni), parse_mode="HTML")
                 except BotWasBlockedError:
-                    clearUserData(user)
+                    clearUserData(chatId)
                 except TelegramError:
                     pass
 
@@ -108,7 +108,7 @@ def runDailyUpdates(crminute):
     crhour = datetime.now().hour
     isSaturday = datetime.now().isoweekday() == 6
     dayString = "lunedì" if isSaturday else "domani"
-    pendingUsers = select(user for user in User if user.password != "")[:]
+    pendingUsers = select(user.chatId for user in User if user.password != "")[:]
     for currentUser in pendingUsers:
         Thread(target=runUserDaily, args=[currentUser, crhour, crminute, dayString]).start()
 
@@ -183,7 +183,7 @@ def reply(msg):
                                     "Sei preoccupato per la sicurezza della password? /aboutprivacy")
 
         elif user.status == "login_1":
-            user.password = crypt_password(text, user)
+            user.password = crypt_password(text, chatId)
             user.status = "normal"
             commit()
             api = ClasseVivaAPI()
@@ -191,7 +191,7 @@ def reply(msg):
             lockAcquired = apiLock.acquire(timeout=userApiTimeout)
             if lockAcquired:
                 try:
-                    api.login(user.username, decrypt_password(user))
+                    api.login(user.username, decrypt_password(chatId))
                 except ApiServerError:
                     apiLock.release()
                     try:
@@ -202,7 +202,7 @@ def reply(msg):
                     return
                 except Exception:
                     apiLock.release()
-                    clearUserData(user)
+                    clearUserData(chatId)
                     try:
                         bot.sendMessage(user.chatId, "😯 Le tue credenziali di accesso sono errate.\n"
                                                         "Effettua nuovamente il /login per favore.")
@@ -213,8 +213,8 @@ def reply(msg):
                 bot.sendMessage(chatId, "Fatto 😊\n"
                                         "Premi /help per vedere la lista dei comandi disponibili.")
                 sent = bot.sendMessage(chatId, "🔍 Aggiorno il profilo...")
-                newDidattica, newNote, newVoti, newAgenda, newCircolari = fetchAndStore(user, api, apiLock, fetch_long=True)
-                updateUserdata(user, newDidattica, newNote, newVoti, newAgenda, newCircolari)
+                newDidattica, newNote, newVoti, newAgenda, newCircolari = fetchAndStore(chatId, api, apiLock, fetch_long=True)
+                updateUserdata(chatId, newDidattica, newNote, newVoti, newAgenda, newCircolari)
                 bot.editMessageText((chatId, sent['message_id']), "✅ Profilo aggiornato!")
             
             else:
@@ -234,39 +234,39 @@ def reply(msg):
 
 
     elif text == "/help":
-        message = "Ciao, sono il bot di <b>ClasseViva</b>! 👋🏻\n" \
-                    "Posso aiutarti a <b>navigare</b> nel registro e posso mandarti <b>notifiche</b> quando hai nuovi avvisi.\n\n" \
-                    "<b>Lista dei comandi</b>:\n" \
-                    "- /login - Effettua il login\n" \
-                    "- /logout - Disconnettiti\n" \
-                    "- /aggiorna - Aggiorna manualmente tutti i dati, per controllare se ci sono nuovi avvisi.\n" \
-                                "Oppure, puoi lasciarlo fare a me, ogni mezz'ora :)\n" \
-                    "- /promemoria - Vedi un promemoria con i compiti da fare per domani e le lezioni svolte oggi.\n" \
-                    "- /agenda - Visualizza agenda (compiti e verifiche)\n" \
-                    "- /domani - Vedi i compiti che hai per domani\n" \
-                    "- /assenze - Visualizza assenze, ritardi e uscite anticipate\n" \
-                    "- /didattica - Visualizza la lista dei file in didattica\n" \
-                    "- /lezioni - Visualizza la lista delle lezioni\n" \
-                    "- /voti - Visualizza la lista dei voti\n" \
-                    "- /note - Visualizza la lista delle note\n" \
-                    "- /circolari - Visualizza le circolari da leggere\n" \
-                    "- /info - Visualizza le tue info utente\n" \
-                    "- /prof - Visualizza la lista delle materie e dei prof\n" \
-                    "- /settings - Modifica le impostazioni personali del bot\n" \
-                    "- /about - Informazioni sul bot\n" \
-                    "- /aboutprivacy - Più informazioni sulla privacy\n" \
-                    "- /support - Contatta lo staff (emergenze)\n\n" \
-                    "<b>Notifiche</b>: ogni mezz'ora, se vuoi, ti invierò un messaggio se ti sono arrivati nuovi voti, note, compiti, materiali, avvisi o circolari.\n" \
-                    "<b>Impostazioni</b>: con /settings puoi cambiare varie impostazioni, tra cui l'orario delle notifiche, quali notifiche ricevere e se riceverle di notte."
-        bot.sendMessage(chatId, message, parse_mode="HTML")
+        bot.sendMessage(chatId, "Ciao, sono il bot di <b>ClasseViva</b>! 👋🏻\n"
+                                "Posso aiutarti a <b>navigare</b> nel registro e posso mandarti <b>notifiche</b> quando hai nuovi avvisi.\n\n"
+                                "<b>Lista dei comandi</b>:\n"
+                                "- /login - Effettua il login\n"
+                                "- /logout - Disconnettiti\n"
+                                "- /aggiorna - Aggiorna manualmente tutti i dati, per controllare se ci sono nuovi avvisi.\n"
+                                "Oppure, puoi lasciarlo fare a me, ogni mezz'ora :)\n"
+                                "- /promemoria - Vedi un promemoria con i compiti da fare per domani e le lezioni svolte oggi.\n"
+                                "- /agenda - Visualizza agenda (compiti e verifiche)\n"
+                                "- /domani - Vedi i compiti che hai per domani\n"
+                                "- /assenze - Visualizza assenze, ritardi e uscite anticipate\n"
+                                "- /didattica - Visualizza la lista dei file in didattica\n"
+                                "- /lezioni - Visualizza la lista delle lezioni\n"
+                                "- /voti - Visualizza la lista dei voti\n"
+                                "- /note - Visualizza la lista delle note\n"
+                                "- /circolari - Visualizza le circolari da leggere\n"
+                                "- /info - Visualizza le tue info utente\n"
+                                "- /prof - Visualizza la lista delle materie e dei prof\n"
+                                "- /settings - Modifica le impostazioni personali del bot\n"
+                                "- /about - Informazioni sul bot\n"
+                                "- /aboutprivacy - Più informazioni sulla privacy\n"
+                                "- /support - Contatta lo staff (emergenze)\n\n"
+                                "<b>Notifiche</b>: ogni mezz'ora, se vuoi, ti invierò un messaggio se ti sono arrivati nuovi voti, note, compiti, materiali, avvisi o circolari.\n"
+                                "<b>Impostazioni</b>: con /settings puoi cambiare varie impostazioni, tra cui l'orario delle notifiche, quali notifiche ricevere e se riceverle di notte."
+                                "", parse_mode="HTML")
 
     elif text.startswith("/broadcast ") and isAdmin(chatId):
         bdText = text.split(" ", 1)[1]
-        pendingUsers = select(user for user in User)[:]
+        pendingUsers = select(u.chatId for u in User)[:]
         userCount = len(pendingUsers)
-        for user in pendingUsers:
+        for u in pendingUsers:
             try:
-                bot.sendMessage(user.chatId, bdText, parse_mode="HTML", disable_web_page_preview=True)
+                bot.sendMessage(u, bdText, parse_mode="HTML", disable_web_page_preview=True)
             except (TelegramError, BotWasBlockedError):
                 userCount -= 1
         bot.sendMessage(chatId, "📢 Messaggio inviato correttamente a {0} utenti!".format(userCount))
@@ -302,7 +302,7 @@ def reply(msg):
     elif text == "/annulla":
         bot.sendMessage(chatId, "😴 Nessun comando da annullare!")
 
-    elif hasStoredCredentials(user):
+    elif hasStoredCredentials(chatId):
         if text == "/start":
             bot.sendMessage(chatId, "Bentornato, <b>{0}</b>!\n"
                                     "Cosa posso fare per te? 😊".format(name), parse_mode="HTML")
@@ -381,9 +381,9 @@ def reply(msg):
 
             
             if lockAcquired:
-                if userLogin(user, api, apiLock):
+                if userLogin(chatId, api, apiLock):
                     try:
-                        newDidattica, newNote, newVoti, newAgenda, newCircolari = fetchAndStore(user, api, apiLock, fetch_long=True)
+                        newDidattica, newNote, newVoti, newAgenda, newCircolari = fetchAndStore(chatId, api, apiLock, fetch_long=True)
                     except ApiServerError:
                         apiLock.release()
                         bot.sendMessage(chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
@@ -401,7 +401,7 @@ def reply(msg):
                     bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 70%")
                     dataCircolari = parser.parseNewCircolari(userdata.circolari, newCircolari)
                     bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 85%")
-                    updateUserdata(user, newDidattica, newNote, newVoti, newAgenda, newCircolari)
+                    updateUserdata(chatId, newDidattica, newNote, newVoti, newAgenda, newCircolari)
                     bot.editMessageText((chatId, sent['message_id']), "📗📗📗  Cerco aggiornamenti... 100%")
 
                     if dataDidattica is not None:
@@ -452,7 +452,6 @@ def reply(msg):
 @db_session
 def button_press(msg):
     chatId, query_data = glance(msg, flavor="callback_query")[1:3]
-    user = User.get(chatId=chatId)
     settings = Settings.get(chatId=chatId)
     query_split = query_data.split("#")
     message_id = int(query_split[1])
@@ -674,7 +673,7 @@ def button_press(msg):
                                                     parse_mode="HTML", reply_markup=keyboards.settings_dailynotif(message_id))
 
     elif button == "logout_yes":
-        clearUserData(user)
+        clearUserData(chatId)
         bot.editMessageText((chatId, message_id), "😯 Fatto, sei stato disconnesso!\n"
                                                   "Premi /login per entrare di nuovo.\n\n"
                                                   "Premi /help se serve aiuto.", reply_markup=None)
@@ -685,7 +684,7 @@ def button_press(msg):
     elif (button == "lezioni_prima") or (button == "lezioni_dopo"):
         api = ClasseVivaAPI()
         lockAcquired = apiLock.acquire(timeout=userApiTimeout)
-        if lockAcquired and userLogin(user, api, apiLock):
+        if lockAcquired and userLogin(chatId, api, apiLock):
             selectedDay = int(query_split[2]) - 1 if "prima" in button else int(query_split[2]) + 1
             dateformat = (datetime.now() + timedelta(days=selectedDay)).strftime("%d/%m/%Y")
             try:

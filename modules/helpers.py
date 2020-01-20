@@ -1,7 +1,7 @@
 from time import sleep
 from pony.orm import db_session
 from telepot import Bot
-from modules.database import Data, ParsedData
+from modules.database import User, Data, ParsedData
 from modules.crypter import decrypt_password
 from modules.api import AuthenticationFailedError, ApiServerError
 from telepot.exception import TelegramError, BotWasBlockedError
@@ -50,18 +50,20 @@ def isAdmin(chatId=None):
 
 
 @db_session
-def hasStoredCredentials(user):
+def hasStoredCredentials(chatId):
+    user = User.get(chatId=chatId)
     return (user.username != "") and (user.password != "")
 
 
 @db_session
-def clearUserData(user):
+def clearUserData(chatId):
+    user = User.get(chatId=chatId)
     user.username = ""
     user.password = ""
     user.status = "normal"
     user.lastPeriod = 1
 
-    userdata = Data.get(chatId=user.chatId)
+    userdata = Data.get(chatId=chatId)
     userdata.didattica = {}
     userdata.info = {}
     userdata.prof = {}
@@ -73,7 +75,7 @@ def clearUserData(user):
     userdata.lezioni = {}
     userdata.circolari = {}
 
-    stored = ParsedData.get(chatId=user.chatId)
+    stored = ParsedData.get(chatId=chatId)
     stored.didattica = ""
     stored.info = ""
     stored.prof = ""
@@ -87,20 +89,21 @@ def clearUserData(user):
 
 
 @db_session
-def userLogin(user, api_type, _apiLock=None):
-    if not hasStoredCredentials(user):
+def userLogin(chatId, api_type, _apiLock=None):
+    user = User.get(chatId=chatId)
+    if not hasStoredCredentials(chatId):
         if _apiLock:
             _apiLock.release()
         return False
     try:
-        api_type.login(user.username, decrypt_password(user))
+        api_type.login(user.username, decrypt_password(chatId))
         return True
     except AuthenticationFailedError:
         if _apiLock:
             _apiLock.release()
-        clearUserData(user)
+        clearUserData(chatId)
         try:
-            bot.sendMessage(user.chatId, "😯 Le tue credenziali di accesso sono errate.\n"
+            bot.sendMessage(chatId, "😯 Le tue credenziali di accesso sono errate.\n"
                                             "Effettua nuovamente il /login per favore.")
         except (TelegramError, BotWasBlockedError):
             pass
@@ -109,7 +112,7 @@ def userLogin(user, api_type, _apiLock=None):
         if _apiLock:
             _apiLock.release()
         try:
-            bot.sendMessage(user.chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
+            bot.sendMessage(chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
                                             "Riprova tra qualche minuto.")
         except (TelegramError, BotWasBlockedError):
             pass
@@ -121,7 +124,7 @@ def userLogout(api_type):
 
 
 @db_session
-def fetchAndStore(user, api_type, _apiLock, fetch_long=False):
+def fetchAndStore(chatId, api_type, _apiLock, fetch_long=False):
     newDidattica = api_type.didattica()
     newNote = api_type.note()
     newVoti = api_type.voti()
@@ -135,7 +138,7 @@ def fetchAndStore(user, api_type, _apiLock, fetch_long=False):
     userLogout(api_type)    
     _apiLock.release()
     
-    stored = ParsedData.get(chatId=user.chatId)
+    stored = ParsedData.get(chatId=chatId)
     stored.note = parser.parseNote(newNote)
     stored.voti = parser.parseVoti(newVoti, user.chatId)
     stored.assenze = parser.parseAssenze(newAssenze)
@@ -152,8 +155,8 @@ def fetchAndStore(user, api_type, _apiLock, fetch_long=False):
 
 
 @db_session
-def updateUserdata(user, newDidattica, newNote, newVoti, newAgenda, newCircolari):
-    userdata = Data.get(chatId=user.chatId)
+def updateUserdata(chatId, newDidattica, newNote, newVoti, newAgenda, newCircolari):
+    userdata = Data.get(chatId=chatId)
     userdata.didattica = newDidattica
     userdata.note = newNote
     userdata.voti = newVoti
