@@ -162,7 +162,7 @@ def reply(msg):
                                 "io ti posso assicurare che non leggerò mai nè proverò mai a decriptare le password, sia per un discorso di etica "
                                 "che per scelta personale, ma non sono tuo amico nè tuo conoscente: quindi se decidi di non fidarti di uno sconosciuto "
                                 "che ti scrive su Telegram (ti posso capire benissimo) sei libero di non usare il bot 🙂\n\n"
-                                "<a href=\"cut.pesaventofilippo.com/infocvvbot\">Altre info & Privacy Policy</a>\n"
+                                "<a href=\"https://kutt.it/botinfo\">Altre info & Privacy Policy</a>\n"
                                 "<a href=\"https://t.me/pesaventofilippo\">Contattami</a>\n\n"
                                 "<i>Se sei venuto qui prima di digitare la password per il login, scrivila adesso!</i>", parse_mode="HTML", disable_web_page_preview=True)
 
