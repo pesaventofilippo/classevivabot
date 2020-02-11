@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from json.decoder import JSONDecodeError
 from urllib.parse import quote_plus
 from urllib.request import Request, urlopen
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 
 
 class AuthenticationFailedError(Exception):
@@ -41,7 +41,7 @@ class ClasseVivaAPI:
         req = Request(url, data, headers)
         try:
             result = urlopen(req).read().decode('utf-8')
-        except HTTPError:
+        except (HTTPError, URLError):
             raise ApiServerError
         result = loads(result)
 
@@ -69,7 +69,7 @@ class ClasseVivaAPI:
         req = Request(url, headers=headers)
         try:
             result = urlopen(req)
-        except HTTPError:
+        except (HTTPError, URLError):
             raise ApiServerError
 
         if returnFile:

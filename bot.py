@@ -109,15 +109,22 @@ def runDailyUpdates(crminute):
     isSaturday = datetime.now().isoweekday() == 6
     dayString = "lunedì" if isSaturday else "domani"
     pendingUsers = select(user.chatId for user in User if user.password != "")[:]
+    t = None
     for currentUser in pendingUsers:
-        Thread(target=runUserDaily, args=[currentUser, crhour, crminute, dayString]).start()
+        t = Thread(target=runUserDaily, args=[currentUser, crhour, crminute, dayString])
+        t.start()
+    t.join() # End function only when updates end
 
 
 @db_session
 def reply(msg):
     chatId = msg['chat']['id']
-    text = msg['text']
     name = msg['from']['first_name']
+    if "text" in msg:
+        text = msg['text']
+    else:
+        bot.sendMessage(chatId, "🤨 Formato file non supportato. /help")
+        return
 
     if not User.exists(lambda u: u.chatId == chatId):
         User(chatId=chatId)
@@ -278,8 +285,9 @@ def reply(msg):
         bot.sendMessage(chatId, selText + "\n\n- Messaggio inviato!", parse_mode="HTML")
 
     elif text == "/globalupdate" and isAdmin(chatId):
+        bot.sendMessage(chatId, "🕙 Inizio aggiornamento globale...")
         runUpdates(long_fetch=True)
-        bot.sendMessage(chatId, "✅ Aggiornamento globale iniziato!")
+        bot.sendMessage(chatId, "✅ Aggiornamento globale completato!")
 
     elif text == "/users" and isAdmin(chatId):
         totalUsers = len(select(u for u in User)[:])
