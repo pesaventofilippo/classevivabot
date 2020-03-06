@@ -89,7 +89,7 @@ def clearUserData(chatId):
 
 
 @db_session
-def userLogin(chatId, api_type, _apiLock=None):
+def userLogin(chatId, api_type, _apiLock=None, _quiet=False):
     user = User.get(chatId=chatId)
     if not hasStoredCredentials(chatId):
         if _apiLock:
@@ -102,20 +102,22 @@ def userLogin(chatId, api_type, _apiLock=None):
         if _apiLock:
             _apiLock.release()
         clearUserData(chatId)
-        try:
-            bot.sendMessage(chatId, "😯 Le tue credenziali di accesso sono errate.\n"
-                                            "Effettua nuovamente il /login per favore.")
-        except (TelegramError, BotWasBlockedError):
-            pass
+        if not _quiet:
+            try:
+                bot.sendMessage(chatId, "😯 Le tue credenziali di accesso sono errate.\n"
+                                                "Effettua nuovamente il /login per favore.")
+            except (TelegramError, BotWasBlockedError):
+                pass
         return False
     except ApiServerError:
         if _apiLock:
             _apiLock.release()
-        try:
-            bot.sendMessage(chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
-                                            "Riprova tra qualche minuto.")
-        except (TelegramError, BotWasBlockedError):
-            pass
+        if not _quiet:
+            try:
+                bot.sendMessage(chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
+                                                "Riprova tra qualche minuto.")
+            except (TelegramError, BotWasBlockedError):
+                pass
         return False
 
 

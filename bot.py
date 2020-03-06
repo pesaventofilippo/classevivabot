@@ -36,7 +36,7 @@ apiLock = Lock()
 def runUserUpdate(chatId, long_fetch, crhour):
     api = ClasseVivaAPI()
     lockAcquired = apiLock.acquire(timeout=threadApiTimeout)
-    if lockAcquired and userLogin(chatId, api, apiLock):
+    if lockAcquired and userLogin(chatId, api, apiLock, _quiet=True):
         userdata = Data.get(chatId=chatId)
         settings = Settings.get(chatId=chatId)
         try:
