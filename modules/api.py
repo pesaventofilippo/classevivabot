@@ -5,6 +5,7 @@ from json.decoder import JSONDecodeError
 from urllib.parse import quote_plus
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
+from http.client import RemoteDisconnected
 
 
 class AuthenticationFailedError(Exception):
@@ -41,7 +42,7 @@ class ClasseVivaAPI:
         req = Request(url, data, headers)
         try:
             result = urlopen(req).read().decode('utf-8')
-        except (HTTPError, URLError):
+        except (HTTPError, URLError, RemoteDisconnected):
             raise ApiServerError
         result = loads(result)
 
@@ -69,7 +70,7 @@ class ClasseVivaAPI:
         req = Request(url, headers=headers)
         try:
             result = urlopen(req)
-        except (HTTPError, URLError):
+        except (HTTPError, URLError, RemoteDisconnected):
             raise ApiServerError
 
         if returnFile:
