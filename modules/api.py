@@ -48,6 +48,8 @@ class ClasseVivaAPI:
 
         if 'authentication failed' in result.get('error', ''):
             raise AuthenticationFailedError
+        if 'token' not in result:
+            raise ApiServerError
 
         self.token = result['token']
         self.id = sub(r"\D", "", result['ident'])
