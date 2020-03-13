@@ -25,9 +25,9 @@ except FileNotFoundError:
 
 bot = Bot(token)
 setBot(token)
-updatesEvery = 15 # minutes
+updatesEvery = 30 # minutes
 userApiTimeout = 20 # seconds
-threadApiTimeout = 300 # seconds
+threadApiTimeout = 600 # seconds
 
 apiLock = Lock()
 
