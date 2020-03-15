@@ -1,5 +1,4 @@
 from time import sleep
-from pony.orm import db_session
 from telepot import Bot
 from modules.database import User, Data, ParsedData
 from modules.crypter import decrypt_password
@@ -49,13 +48,11 @@ def isAdmin(chatId=None):
     return chatId in adminIds
 
 
-@db_session
 def hasStoredCredentials(chatId):
     user = User.get(chatId=chatId)
     return (user.username != "") and (user.password != "")
 
 
-@db_session
 def clearUserData(chatId):
     user = User.get(chatId=chatId)
     user.username = ""
@@ -88,34 +85,27 @@ def clearUserData(chatId):
     stored.circolari = ""
 
 
-@db_session
-def userLogin(chatId, api_type, _apiLock=None, _quiet=False):
+def userLogin(chatId, api_type, _quiet=False):
     user = User.get(chatId=chatId)
     if not hasStoredCredentials(chatId):
-        if _apiLock:
-            _apiLock.release()
         return False
     try:
         api_type.login(user.username, decrypt_password(chatId))
         return True
     except AuthenticationFailedError:
-        if _apiLock:
-            _apiLock.release()
         clearUserData(chatId)
         if not _quiet:
             try:
                 bot.sendMessage(chatId, "😯 Le tue credenziali di accesso sono errate.\n"
-                                                "Effettua nuovamente il /login per favore.")
+                                        "Effettua nuovamente il /login per favore.")
             except (TelegramError, BotWasBlockedError):
                 pass
         return False
     except ApiServerError:
-        if _apiLock:
-            _apiLock.release()
         if not _quiet:
             try:
                 bot.sendMessage(chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
-                                                "Riprova tra qualche minuto.")
+                                        "Riprova tra qualche minuto.")
             except (TelegramError, BotWasBlockedError):
                 pass
         return False
@@ -125,42 +115,44 @@ def userLogout(api_type):
     api_type.logout()
 
 
-@db_session
-def fetchAndStore(chatId, api_type, _apiLock, fetch_long=False):
-    newDidattica = api_type.didattica()
-    newNote = api_type.note()
-    newVoti = api_type.voti()
-    newAgenda = api_type.agenda(14)
+def fetchStrict(api_type):
+    data = {
+        'didattica': api_type.didattica(),
+        'note': api_type.note(),
+        'voti': api_type.voti(),
+        'agenda': api_type.agenda(14),
+        'circolari': api_type.circolari()
+    }
+    userLogout(api_type)
+    return data
+
+
+def fetchAndStore(chatId, api_type, data, fetch_long=False):
     newAssenze = api_type.assenze()
     newLezioni = api_type.lezioni()
-    newCircolari = api_type.circolari()
     if fetch_long:
         newInfo = api_type.info()
         newProf = api_type.materie()
-    userLogout(api_type)    
-    _apiLock.release()
+    userLogout(api_type)
     
     stored = ParsedData.get(chatId=chatId)
-    stored.note = parser.parseNote(newNote)
-    stored.voti = parser.parseVoti(newVoti, chatId)
+    stored.note = parser.parseNote(data['note'])
+    stored.voti = parser.parseVoti(data['voti'], chatId)
     stored.assenze = parser.parseAssenze(newAssenze)
-    stored.agenda = parser.parseAgenda(newAgenda)
-    stored.domani = parser.parseDomani(newAgenda)
+    stored.agenda = parser.parseAgenda(data['agenda'])
+    stored.domani = parser.parseDomani(data['agenda'])
     stored.lezioni = parser.parseLezioni(newLezioni)
-    stored.didattica = parser.parseDidattica(newDidattica)
-    stored.circolari = parser.parseCircolari(newCircolari)
+    stored.didattica = parser.parseDidattica(data['didattica'])
+    stored.circolari = parser.parseCircolari(data['circolari'])
     if fetch_long:
         stored.info = parser.parseInfo(newInfo)
         stored.prof = parser.parseMaterie(newProf)
 
-    return newDidattica, newNote, newVoti, newAgenda, newCircolari
 
-
-@db_session
-def updateUserdata(chatId, newDidattica, newNote, newVoti, newAgenda, newCircolari):
+def updateUserdata(chatId, data):
     userdata = Data.get(chatId=chatId)
-    userdata.didattica = newDidattica
-    userdata.note = newNote
-    userdata.voti = newVoti
-    userdata.agenda = newAgenda
-    userdata.circolari = newCircolari
+    userdata.didattica = data['didattica']
+    userdata.note = data['note']
+    userdata.voti = data['voti']
+    userdata.agenda = data['agenda']
+    userdata.circolari = data['circolari']

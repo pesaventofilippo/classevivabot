@@ -1,5 +1,4 @@
-﻿from pony.orm import db_session
-from modules.database import User
+﻿from modules.database import User
 
 def sanitize(dinput):
     if not dinput:
@@ -105,55 +104,52 @@ def parseNote(data):
     return result
 
 
-@db_session
 def parseVoti(data, chatId):
     if (data is None) or (not data.get('grades')):
         return "\n📕 Non hai ancora nessun voto!"
 
+    user = User.get(chatId=chatId)
     votiOrdinati = {}
     media = {}
-    periods = []
     for voto in data['grades']:
         period = voto['periodPos']
-        periods.append(period)
-        materia = voto['subjectDesc']
-        value = "Voto " + voto['displayValue']
-        tipo = voto['componentDesc']
-        time = voto['evtDate'].lower().split("-", 2)
-        desc = "\n<i>{0}</i>".format(sanitize(voto['notesForFamily'])) if voto['notesForFamily'] else ""
-        colore = "📗" if voto['color'] == "green" else "📕" if voto['color'] == "red" else "📘"
+        if period >= user.lastPeriod:
+            materia = voto['subjectDesc']
+            value = "Voto " + voto['displayValue']
+            tipo = voto['componentDesc']
+            time = voto['evtDate'].lower().split("-", 2)
+            desc = "\n<i>{0}</i>".format(sanitize(voto['notesForFamily'])) if voto['notesForFamily'] else ""
+            colore = "📗" if voto['color'] == "green" else "📕" if voto['color'] == "red" else "📘"
 
-        if tipo == "":
-            str_voto = "\n\n{0} <b>{1}</b> • {2} {3}".format(colore, value, "{0}/{1}/{2}".format(time[2], time[1], time[0]), desc)
-        else:
-            str_voto = "\n\n{0} <b>{1}</b> • {2} • {3} {4}".format(colore, value, tipo, "{0}/{1}/{2}".format(time[2], time[1], time[0]), desc)
-        if materia not in votiOrdinati:
-            votiOrdinati[materia] = []
-        if materia not in media:
-            media[materia] = []
-        votiOrdinati[materia].append(str_voto)
-
-        if "total" not in media:
-            media["total"] = []
-        
-        if colore != "📘":
-            if value[5:][-1] == "½":
-                    media[materia].append(float(value[5:][:-1]) + 0.5)
-                    media["total"].append(float(value[5:][:-1]) + 0.5)
-            elif value[5:][-1] == "+":
-                    media[materia].append(float(value[5:][:-1]) + 0.25)
-                    media["total"].append(float(value[5:][:-1]) + 0.25)
-            elif value[5:][-1] == "-":
-                    media[materia].append(float(value[5:][:-1]) - 0.25)
-                    media["total"].append(float(value[5:][:-1]) - 0.25)
+            if tipo == "":
+                str_voto = "\n\n{0} <b>{1}</b> • {2} {3}".format(colore, value, "{0}/{1}/{2}".format(time[2], time[1], time[0]), desc)
             else:
-                try:
-                    media[materia].append(float(value[5:]))
-                    media["total"].append(float(value[5:]))
-                except ValueError:
-                    pass
-    user = User.get(chatId=chatId)
-    user.lastPeriod = max(periods) if periods else 1
+                str_voto = "\n\n{0} <b>{1}</b> • {2} • {3} {4}".format(colore, value, tipo, "{0}/{1}/{2}".format(time[2], time[1], time[0]), desc)
+            if materia not in votiOrdinati:
+                votiOrdinati[materia] = []
+            if materia not in media:
+                media[materia] = []
+            votiOrdinati[materia].append(str_voto)
+
+            if "total" not in media:
+                media["total"] = []
+
+            if colore != "📘":
+                if value[5:][-1] == "½":
+                        media[materia].append(float(value[5:][:-1]) + 0.5)
+                        media["total"].append(float(value[5:][:-1]) + 0.5)
+                elif value[5:][-1] == "+":
+                        media[materia].append(float(value[5:][:-1]) + 0.25)
+                        media["total"].append(float(value[5:][:-1]) + 0.25)
+                elif value[5:][-1] == "-":
+                        media[materia].append(float(value[5:][:-1]) - 0.25)
+                        media["total"].append(float(value[5:][:-1]) - 0.25)
+                else:
+                    try:
+                        media[materia].append(float(value[5:]))
+                        media["total"].append(float(value[5:]))
+                    except ValueError:
+                        pass
 
     firstMateria = True
     materie = {}
@@ -187,6 +183,7 @@ def parseVoti(data, chatId):
     
     if media["total"]:
         result += "\n\n📚 <b>Media totale: {}</b>".format(media["total"])
+        result += "\n🕙 <i>Quadrimestre: {}</i>".format(user.lastPeriod)
 
     return result
 
@@ -399,7 +396,6 @@ def parseNewNote(oldData, newData):
     return result if result != "" else None
 
 
-@db_session
 def parseNewVoti(oldData, newData, chatId):
     if (newData is None) or (not newData.get('grades')):
         return None

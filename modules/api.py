@@ -96,20 +96,28 @@ class ClasseVivaAPI:
     def assenze(self):
         now = datetime.now()
         if (now.month < 9) or (now.month == 9 and now.day < 10):
-            return self._request('absences', 'details', str(now.year - 1)+"0910", datetime.today().strftime("%Y%m%d"))
-        return self._request('absences', 'details', str(now.year)+"0910", datetime.today().strftime("%Y%m%d"))
+            return self._request('absences', 'details', str(now.year - 1)+"0910")
+        return self._request('absences', 'details', str(now.year)+"0910")
 
 
     def agenda(self, days: int=14):
         return self._request('agenda', 'all', datetime.today().strftime("%Y%m%d"), (datetime.now() + timedelta(days=days)).strftime("%Y%m%d"))
 
 
-    def didattica(self):
+    def didattica(self, fileId: int=None):
+        if fileId:
+            return self._request('didactics', 'item', fileId)
         return self._request('didactics')
 
 
-    def circolari(self):
+    def circolari(self, eventId: int=None, pubId: int=None):
+        if eventId and pubId:
+            return self._request('noticeboard', 'attach', eventId, pubId, 101)
         return self._request('noticeboard')
+
+
+    def libri(self):
+        return self._request('schoolbooks')
 
 
     def info(self):
