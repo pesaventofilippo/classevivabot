@@ -111,10 +111,6 @@ def userLogin(chatId, api_type, _quiet=False):
         return False
 
 
-def userLogout(api_type):
-    api_type.logout()
-
-
 def fetchStrict(api_type):
     data = {
         'didattica': api_type.didattica(),
@@ -123,7 +119,6 @@ def fetchStrict(api_type):
         'agenda': api_type.agenda(14),
         'circolari': api_type.circolari()
     }
-    userLogout(api_type)
     return data
 
 
@@ -133,8 +128,7 @@ def fetchAndStore(chatId, api_type, data, fetch_long=False):
     if fetch_long:
         newInfo = api_type.info()
         newProf = api_type.materie()
-    userLogout(api_type)
-    
+
     stored = ParsedData.get(chatId=chatId)
     stored.note = parser.parseNote(data['note'])
     stored.voti = parser.parseVoti(data['voti'], chatId)

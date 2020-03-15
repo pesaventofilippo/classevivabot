@@ -372,7 +372,6 @@ def reply(msg):
                 except ApiServerError:
                     bot.sendMessage(chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
                                             "Riprova tra qualche minuto.")
-                    userLogout(api)
                     return
                 bot.editMessageText((chatId, sent['message_id']), "📗📙📙 Cerco aggiornamenti... 25%")
                 dataDidattica = parser.parseNewDidattica(userdata.didattica, data['didattica'])
@@ -677,7 +676,6 @@ def button_press(msg):
             except ApiServerError:
                 bot.editMessageText((chatId, message_id), "⚠️ I server di ClasseViva non sono raggiungibili.\n"
                                                           "Riprova tra qualche minuto.", reply_markup=None)
-            userLogout(api)
 
 
 def accept_message(msg):
