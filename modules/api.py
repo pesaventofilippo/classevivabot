@@ -60,7 +60,7 @@ class ClasseVivaAPI:
         self.token = None
 
 
-    def _request(self, *path, returnFile: bool=False):
+    def _request(self, *path, method="GET", returnFile=False):
         url = "{0}/students/{1}".format(self.baseApiUrl, self.id)
         for x in path:
             url += "/{0}".format(quote_plus(x))
@@ -69,7 +69,7 @@ class ClasseVivaAPI:
                  "Z-Dev-Apikey": "+zorro+",
                  "Z-Auth-Token": self.token,
                  "Content-Type": "application/json"}
-        req = Request(url, headers=headers)
+        req = Request(url, headers=headers, method=method)
         try:
             result = urlopen(req)
         except (HTTPError, URLError, RemoteDisconnected):
@@ -104,20 +104,12 @@ class ClasseVivaAPI:
         return self._request('agenda', 'all', datetime.today().strftime("%Y%m%d"), (datetime.now() + timedelta(days=days)).strftime("%Y%m%d"))
 
 
-    def didattica(self, fileId: int=None):
-        if fileId:
-            return self._request('didactics', 'item', fileId)
+    def didattica(self):
         return self._request('didactics')
 
 
-    def circolari(self, eventId: int=None, pubId: int=None):
-        if eventId and pubId:
-            return self._request('noticeboard', 'attach', eventId, pubId, 101)
+    def circolari(self):
         return self._request('noticeboard')
-
-
-    def libri(self):
-        return self._request('schoolbooks')
 
 
     def info(self):
@@ -138,3 +130,29 @@ class ClasseVivaAPI:
 
     def lezioni(self, days: int=0):
         return self._request('lessons', (datetime.now() + timedelta(days=days)).strftime("%Y%m%d"))
+
+
+    ### Nuovi Endpoint: Beta
+    def libri(self):
+        return self._request('schoolbooks')
+
+
+    def periodi(self):
+        return self._request('periods')
+
+
+    def documenti(self):
+        return self._request('documents')
+
+
+    def getFile(self, fileId: int):
+        return self._request('didactics', 'item', fileId, returnFile=True)
+
+
+    def getCirc(self, eventCode: int, pubId: int):
+        self._request('noticeboard', 'read', eventCode, pubId, '101', method="POST")
+        return self._request('noticeboard', 'attach', eventCode, pubId, '101', returnFile=True)
+
+
+    def getDocument(self, docHash: str):
+        return self._request('documents', 'read', docHash, method="POST", returnFile=True)
