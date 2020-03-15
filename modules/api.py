@@ -142,7 +142,7 @@ class ClasseVivaAPI:
 
 
     def documenti(self):
-        return self._request('documents')
+        return self._request('documents', method="POST")
 
 
     def getFile(self, fileId: int):
