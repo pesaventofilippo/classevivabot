@@ -349,21 +349,6 @@ def reply(msg):
                                             "{0}".format(stored.lezioni), parse_mode="HTML", reply_markup=None, disable_web_page_preview=True)
             bot.editMessageReplyMarkup((chatId, sent['message_id']), keyboards.lezioni(sent['message_id']))
 
-        elif text == "/libri":
-            api = ClasseVivaAPI()
-            userLogin(chatId, api)
-            sendLongMessage(chatId, api.libri())
-
-        elif text == "/periodi":
-            api = ClasseVivaAPI()
-            userLogin(chatId, api)
-            bot.sendMessage(chatId, api.periodi())
-
-        elif text == "/documenti":
-            api = ClasseVivaAPI()
-            userLogin(chatId, api)
-            sendLongMessage(chatId, api.documenti())
-
         elif text == "/settings":
             sent = bot.sendMessage(chatId, "🛠 <b>Impostazioni</b>\n"
                                             "Ecco le impostazioni del bot. Cosa vuoi modificare?", parse_mode="HTML", reply_markup=None)

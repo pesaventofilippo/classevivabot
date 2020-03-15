@@ -133,18 +133,6 @@ class ClasseVivaAPI:
 
 
     ### Nuovi Endpoint: Beta
-    def libri(self):
-        return self._request('schoolbooks')
-
-
-    def periodi(self):
-        return self._request('periods')
-
-
-    def documenti(self):
-        return self._request('documents', method="POST")
-
-
     def getFile(self, fileId: int):
         return self._request('didactics', 'item', fileId, returnFile=True)
 
@@ -152,7 +140,3 @@ class ClasseVivaAPI:
     def getCirc(self, eventCode: int, pubId: int):
         self._request('noticeboard', 'read', eventCode, pubId, '101', method="POST")
         return self._request('noticeboard', 'attach', eventCode, pubId, '101', returnFile=True)
-
-
-    def getDocument(self, docHash: str):
-        return self._request('documents', 'read', docHash, method="POST", returnFile=True)
