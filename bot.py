@@ -351,14 +351,17 @@ def reply(msg):
 
         elif text == "/libri":
             api = ClasseVivaAPI()
+            userLogin(chatId, api)
             bot.sendMessage(chatId, api.libri())
 
         elif text == "/periodi":
             api = ClasseVivaAPI()
+            userLogin(chatId, api)
             bot.sendMessage(chatId, api.periodi())
 
         elif text == "/documenti":
             api = ClasseVivaAPI()
+            userLogin(chatId, api)
             bot.sendMessage(chatId, api.documenti())
 
         elif text == "/settings":
