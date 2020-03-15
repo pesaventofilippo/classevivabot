@@ -64,7 +64,7 @@ def runUserUpdate(chatId, long_fetch, crhour):
                                                 "{0}".format(dataCircolari), parse_mode="HTML", disable_web_page_preview=True)
 
                     updateUserdata(chatId, data)
-                    fetchAndStore(chatId, api, long_fetch)
+                    fetchAndStore(chatId, api, data, long_fetch)
                 except BotWasBlockedError:
                     clearUserData(chatId)
                 except TelegramError:
@@ -408,7 +408,7 @@ def reply(msg):
                     bot.deleteMessage((chatId, sent['message_id']))
 
                 updateUserdata(chatId, data)
-                fetchAndStore(chatId, api, fetch_long=True)
+                fetchAndStore(chatId, api, data, fetch_long=True)
 
         elif text == "/support":
             user.status = "calling_support"
