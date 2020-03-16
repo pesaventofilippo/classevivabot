@@ -215,9 +215,8 @@ def reply(msg):
             user.status = "normal"
             for a in isAdmin():
                 bot.sendMessage(a, "🆘 <b>Richiesta di aiuto</b>\n"
-                                    "Da: <a href=\"tg://user?id={0}\">{1}</a>\n"
-                                    "{2}\n"
-                                    "<i>Rispondi al messaggio per parlare con l'utente.</i>".format(chatId, name, "♦️ Beta Tester\n" if user.isBetaTester else ""), parse_mode="HTML")
+                                    "Da: <a href=\"tg://user?id={0}\">{1}</a>\n\n"
+                                    "<i>Rispondi al messaggio per parlare con l'utente.</i>".format(chatId, name), parse_mode="HTML")
                 bot.forwardMessage(a, chatId, msg['message_id'])
             bot.sendMessage(chatId, "<i>Richiesta inviata.</i>\n"
                                     "Un admin ti risponderà il prima possibile.", parse_mode="HTML")
