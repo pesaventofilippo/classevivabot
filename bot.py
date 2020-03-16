@@ -365,6 +365,7 @@ def reply(msg):
         elif text == "/aggiorna":
             if user.remainingCalls > 0:
                 user.remainingCalls -= 1
+                commit()
                 sent = bot.sendMessage(chatId, "📙📙📙 Cerco aggiornamenti... 0%")
                 api = ClasseVivaAPI()
                 bot.editMessageText((chatId, sent['message_id']), "📗📙📙 Cerco aggiornamenti... 10%")
@@ -373,8 +374,8 @@ def reply(msg):
                     try:
                         data = fetchStrict(api)
                     except ApiServerError:
-                        bot.sendMessage(chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
-                                                "Riprova tra qualche minuto.")
+                        bot.editMessageText((chatId, sent['message_id']), "⚠️ I server di ClasseViva non sono raggiungibili.\n"
+                                                                          "Riprova tra qualche minuto.")
                         return
                     bot.editMessageText((chatId, sent['message_id']), "📗📙📙 Cerco aggiornamenti... 25%")
                     dataDidattica = parser.parseNewDidattica(userdata.didattica, data['didattica'])
