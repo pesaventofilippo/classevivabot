@@ -65,6 +65,8 @@ def runUserUpdate(chatId, long_fetch, crhour):
 
                     updateUserdata(chatId, data)
                     fetchAndStore(chatId, api, data, long_fetch)
+                    user = User.get(chatId=chatId)
+                    user.remainingCalls = 3
                 except BotWasBlockedError:
                     clearUserData(chatId)
                 except TelegramError:
@@ -361,52 +363,57 @@ def reply(msg):
                                     "{1}".format(stored.domani, stored.lezioni), parse_mode="HTML", disable_web_page_preview=True)
 
         elif text == "/aggiorna":
-            sent = bot.sendMessage(chatId, "📙📙📙 Cerco aggiornamenti... 0%")
-            api = ClasseVivaAPI()
-            bot.editMessageText((chatId, sent['message_id']), "📗📙📙 Cerco aggiornamenti... 10%")
+            if user.remainingCalls > 0:
+                user.remainingCalls -= 1
+                sent = bot.sendMessage(chatId, "📙📙📙 Cerco aggiornamenti... 0%")
+                api = ClasseVivaAPI()
+                bot.editMessageText((chatId, sent['message_id']), "📗📙📙 Cerco aggiornamenti... 10%")
 
-            if userLogin(chatId, api):
-                try:
-                    data = fetchStrict(api)
-                except ApiServerError:
-                    bot.sendMessage(chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
-                                            "Riprova tra qualche minuto.")
-                    return
-                bot.editMessageText((chatId, sent['message_id']), "📗📙📙 Cerco aggiornamenti... 25%")
-                dataDidattica = parser.parseNewDidattica(userdata.didattica, data['didattica'])
-                bot.editMessageText((chatId, sent['message_id']), "📗📙📙  Cerco aggiornamenti... 40%")
-                dataNote = parser.parseNewNote(userdata.note, data['note'])
-                bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 55%")
-                dataVoti = parser.parseNewVoti(userdata.voti, data['voti'], chatId)
-                bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 70%")
-                dataAgenda = parser.parseNewAgenda(userdata.agenda, data['agenda'])
-                bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 85%")
-                dataCircolari = parser.parseNewCircolari(userdata.circolari, data['circolari'])
-                bot.editMessageText((chatId, sent['message_id']), "📗📗📗  Cerco aggiornamenti... 100%")
+                if userLogin(chatId, api):
+                    try:
+                        data = fetchStrict(api)
+                    except ApiServerError:
+                        bot.sendMessage(chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
+                                                "Riprova tra qualche minuto.")
+                        return
+                    bot.editMessageText((chatId, sent['message_id']), "📗📙📙 Cerco aggiornamenti... 25%")
+                    dataDidattica = parser.parseNewDidattica(userdata.didattica, data['didattica'])
+                    bot.editMessageText((chatId, sent['message_id']), "📗📙📙  Cerco aggiornamenti... 40%")
+                    dataNote = parser.parseNewNote(userdata.note, data['note'])
+                    bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 55%")
+                    dataVoti = parser.parseNewVoti(userdata.voti, data['voti'], chatId)
+                    bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 70%")
+                    dataAgenda = parser.parseNewAgenda(userdata.agenda, data['agenda'])
+                    bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 85%")
+                    dataCircolari = parser.parseNewCircolari(userdata.circolari, data['circolari'])
+                    bot.editMessageText((chatId, sent['message_id']), "📗📗📗  Cerco aggiornamenti... 100%")
 
-                if dataDidattica is not None:
-                    bot.sendMessage(chatId, "🔔 <b>Nuovi file caricati!</b>{0}".format(dataDidattica), parse_mode="HTML", disable_web_page_preview=True)
+                    if dataDidattica is not None:
+                        bot.sendMessage(chatId, "🔔 <b>Nuovi file caricati!</b>{0}".format(dataDidattica), parse_mode="HTML", disable_web_page_preview=True)
 
-                if dataNote is not None:
-                    bot.sendMessage(chatId, "🔔 <b>Hai nuove note!</b>{0}".format(dataNote), parse_mode="HTML")
+                    if dataNote is not None:
+                        bot.sendMessage(chatId, "🔔 <b>Hai nuove note!</b>{0}".format(dataNote), parse_mode="HTML")
 
-                if dataVoti is not None:
-                    bot.sendMessage(chatId, "🔔 <b>Hai nuovi voti!</b>{0}".format(dataVoti), parse_mode="HTML")
+                    if dataVoti is not None:
+                        bot.sendMessage(chatId, "🔔 <b>Hai nuovi voti!</b>{0}".format(dataVoti), parse_mode="HTML")
 
-                if dataAgenda is not None:
-                    bot.sendMessage(chatId, "🔔 <b>Hai nuovi impegni!</b>\n{0}".format(dataAgenda), parse_mode="HTML", disable_web_page_preview=True)
+                    if dataAgenda is not None:
+                        bot.sendMessage(chatId, "🔔 <b>Hai nuovi impegni!</b>\n{0}".format(dataAgenda), parse_mode="HTML", disable_web_page_preview=True)
 
-                if dataCircolari is not None:
-                    bot.sendMessage(chatId, "🔔 <b>Hai nuove circolari!</b>{0}".format(dataCircolari), parse_mode="HTML", disable_web_page_preview=True)
+                    if dataCircolari is not None:
+                        bot.sendMessage(chatId, "🔔 <b>Hai nuove circolari!</b>{0}".format(dataCircolari), parse_mode="HTML", disable_web_page_preview=True)
 
-                if not any([dataDidattica, dataNote, dataVoti, dataAgenda, dataCircolari]):
-                    bot.editMessageText((chatId, sent['message_id']), "📗 Dati aggiornati!\n"
-                                                                      "📗 Nessuna novità!")
-                else:
-                    bot.deleteMessage((chatId, sent['message_id']))
+                    if not any([dataDidattica, dataNote, dataVoti, dataAgenda, dataCircolari]):
+                        bot.editMessageText((chatId, sent['message_id']), "📗 Dati aggiornati!\n"
+                                                                          "📗 Nessuna novità!")
+                    else:
+                        bot.deleteMessage((chatId, sent['message_id']))
 
-                updateUserdata(chatId, data)
-                fetchAndStore(chatId, api, data, fetch_long=True)
+                    updateUserdata(chatId, data)
+                    fetchAndStore(chatId, api, data, fetch_long=True)
+
+            else:
+                bot.sendMessage(chatId, "⛔️ Hai usato troppi /aggiorna recentemente. Aspetta un po'!")
 
         elif text == "/support":
             user.status = "calling_support"

@@ -9,6 +9,7 @@ class User(db.Entity):
     password = Optional(str)
     status = Required(str, default="normal")
     lastPeriod = Required(int, default=1)
+    remainingCalls = Required(int, default=3)
 
 
 class Data(db.Entity):
