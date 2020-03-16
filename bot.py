@@ -439,195 +439,121 @@ def button_press(msg):
     message_id = int(query_split[1])
     button = query_split[0]
 
+    def editNotif():
+        bot.editMessageText((chatId, message_id), "<b>Preferenze notifiche</b>\n"
+                                                  "- Stato attuale: {0}\n\n"
+                                                  "Vuoi che ti mandi notifiche se trovo novità?\n"
+                                                  "<b>Nota</b>: Se non vuoi riceverle di notte, puoi impostarlo a parte."
+                                                  "".format(
+                                                  "🔔 Attivo" if settings.wantsNotifications else "🔕 Disattivo"),
+                                                  parse_mode="HTML", reply_markup=keyboards.settings_notifications(message_id))
+
+    def editNotifDaily():
+        bot.editMessageText((chatId, message_id), "<b>Preferenze notifiche giornaliere</b>\n"
+                                                  "- Stato attuale: {0}\n"
+                                                  "- Orario notifiche: {1}\n\n"
+                                                  "Vuoi che ti dica ogni giorno i compiti per il giorno successivo e le lezioni svolte?"
+                                                  "".format("🔔 Attiva" if settings.wantsDailyUpdates else "🔕 Disattiva", settings.dailyUpdatesHour),
+                                                    parse_mode="HTML", reply_markup=keyboards.settings_dailynotif(message_id))
+
+    def editNotifNight():
+        bot.editMessageText((chatId, message_id), "<b>Preferenze modalità notturna</b>\n"
+                                                  "- Stato attuale: {0}\n\n"
+                                                  "Vuoi che silenzi le notifiche nella fascia oraria notturna (21:00 - 7:00)?"
+                                                  "".format("😴 Attivo" if settings.doNotDisturb else "🔔 Suona"),
+                                                  parse_mode="HTML", reply_markup=keyboards.settings_donotdisturb(message_id))
+
+    def editNotifSelection():
+        bot.editMessageText((chatId, message_id), "📲 <b>Selezione notifiche</b>\n\n"
+                                                  "📚 Didattica: {0}\n"
+                                                  "❗️ Note: {1}\n"
+                                                  "📝 Voti: {2}\n"
+                                                  "📆 Agenda: {3}\n"
+                                                  "📩 Circolari: {4}\n\n"
+                                                  "Quali notifiche vuoi ricevere? (Clicca per cambiare)"
+                                                  "".format(
+                                                  "🔔 Attivo" if "didattica" in settings.activeNews else "🔕 Disattivo",
+                                                  "🔔 Attivo" if "note" in settings.activeNews else "🔕 Disattivo",
+                                                  "🔔 Attivo" if "voti" in settings.activeNews else "🔕 Disattivo",
+                                                  "🔔 Attivo" if "agenda" in settings.activeNews else "🔕 Disattivo",
+                                                  "🔔 Attivo" if "circolari" in settings.activeNews else "🔕 Disattivo"),
+                            parse_mode="HTML", reply_markup=keyboards.settings_selectnews(message_id))
+
     if button == "settings_main":
         bot.editMessageText((chatId, message_id), "🛠 <b>Impostazioni</b>\n"
                                                     "Ecco le impostazioni del bot. Cosa vuoi modificare?",
                                                      parse_mode="HTML", reply_markup=keyboards.settings_menu(message_id))
 
     elif button == "settings_notifications":
-        bot.editMessageText((chatId, message_id), "<b>Preferenze notifiche</b>\n"
-                                                  "- Stato attuale: {0}\n\n"
-                                                  "Vuoi che ti mandi notifiche se trovo novità?\n"
-                                                  "<b>Nota</b>: Se non vuoi riceverle di notte, puoi impostarlo a parte."
-                                                  "".format("🔔 Attivo" if settings.wantsNotifications else "🔕 Disattivo"),
-                                                    parse_mode="HTML", reply_markup=keyboards.settings_notifications(message_id))
+        editNotif()
 
     elif button == "settings_donotdisturb":
-        bot.editMessageText((chatId, message_id), "<b>Preferenze modalità notturna</b>\n"
-                                                  "- Stato attuale: {0}\n\n"
-                                                  "Vuoi che silenzi le notifiche nella fascia oraria notturna (21:00 - 7:00)?"
-                                                  "".format("😴 Attivo" if settings.doNotDisturb else "🔔 Suona"),
-                                                    parse_mode="HTML", reply_markup=keyboards.settings_donotdisturb(message_id))
+        editNotifNight()
 
     elif button == "settings_dailynotif":
-        bot.editMessageText((chatId, message_id), "<b>Preferenze notifiche giornaliere</b>\n"
-                                                  "- Stato attuale: {0}\n"
-                                                  "- Orario notifiche: {1}\n\n"
-                                                  "Vuoi che ti dica ogni giorno i compiti per il giorno successivo e le lezioni svolte?"
-                                                  "".format("🔔 Attiva" if settings.wantsDailyUpdates else "🔕 Disattiva", settings.dailyUpdatesHour),
-                                                    parse_mode="HTML", reply_markup=keyboards.settings_dailynotif(message_id))
+        editNotifDaily()
 
     elif button == "settings_selectnews":
-        bot.editMessageText((chatId, message_id), "📲 <b>Selezione notifiche</b>\n\n"
-                                                  "📚 Didattica: {0}\n"
-                                                  "❗️ Note: {1}\n"
-                                                  "📝 Voti: {2}\n"
-                                                  "📆 Agenda: {3}\n"
-                                                  "📩 Circolari: {4}\n\n"
-                                                  "Quali notifiche vuoi ricevere? (Clicca per cambiare)"
-                                                  "".format("🔔 Attivo" if "didattica" in settings.activeNews else "🔕 Disattivo",
-                                                            "🔔 Attivo" if "note" in settings.activeNews else "🔕 Disattivo",
-                                                            "🔔 Attivo" if "voti" in settings.activeNews else "🔕 Disattivo",
-                                                            "🔔 Attivo" if "agenda" in settings.activeNews else "🔕 Disattivo",
-                                                            "🔔 Attivo" if "circolari" in settings.activeNews else "🔕 Disattivo"),
-                                                    parse_mode="HTML", reply_markup=keyboards.settings_selectnews(message_id))
+        editNotifSelection()
 
     elif button == "news_didattica":
         if "didattica" in settings.activeNews:
             settings.activeNews.remove("didattica")
         else:
             settings.activeNews.append("didattica")
-        bot.editMessageText((chatId, message_id), "📲 <b>Selezione notifiche</b>\n\n"
-                                                  "📚 Didattica: {0}\n"
-                                                  "❗️ Note: {1}\n"
-                                                  "📝 Voti: {2}\n"
-                                                  "📆 Agenda: {3}\n"
-                                                  "📩 Circolari: {4}\n\n"
-                                                  "Quali notifiche vuoi ricevere? (Clicca per cambiare)"
-                                                  "".format("🔔 Attivo" if "didattica" in settings.activeNews else "🔕 Disattivo",
-                                                            "🔔 Attivo" if "note" in settings.activeNews else "🔕 Disattivo",
-                                                            "🔔 Attivo" if "voti" in settings.activeNews else "🔕 Disattivo",
-                                                            "🔔 Attivo" if "agenda" in settings.activeNews else "🔕 Disattivo",
-                                                            "🔔 Attivo" if "circolari" in settings.activeNews else "🔕 Disattivo"),
-                                                    parse_mode="HTML", reply_markup=keyboards.settings_selectnews(message_id))
+        editNotifSelection()
 
     elif button == "news_note":
         if "note" in settings.activeNews:
             settings.activeNews.remove("note")
         else:
             settings.activeNews.append("note")
-        bot.editMessageText((chatId, message_id), "📲 <b>Selezione notifiche</b>\n\n"
-                                                  "📚 Didattica: {0}\n"
-                                                  "❗️ Note: {1}\n"
-                                                  "📝 Voti: {2}\n"
-                                                  "📆 Agenda: {3}\n"
-                                                  "📩 Circolari: {4}\n\n"
-                                                  "Quali notifiche vuoi ricevere? (Clicca per cambiare)"
-                                                  "".format("🔔 Attivo" if "didattica" in settings.activeNews else "🔕 Disattivo",
-                                                            "🔔 Attivo" if "note" in settings.activeNews else "🔕 Disattivo",
-                                                            "🔔 Attivo" if "voti" in settings.activeNews else "🔕 Disattivo",
-                                                            "🔔 Attivo" if "agenda" in settings.activeNews else "🔕 Disattivo",
-                                                            "🔔 Attivo" if "circolari" in settings.activeNews else "🔕 Disattivo"),
-                                                    parse_mode="HTML", reply_markup=keyboards.settings_selectnews(message_id))
+        editNotifSelection()
 
     elif button == "news_voti":
         if "voti" in settings.activeNews:
             settings.activeNews.remove("voti")
         else:
             settings.activeNews.append("voti")
-        bot.editMessageText((chatId, message_id), "📲 <b>Selezione notifiche</b>\n\n"
-                                                  "📚 Didattica: {0}\n"
-                                                  "❗️ Note: {1}\n"
-                                                  "📝 Voti: {2}\n"
-                                                  "📆 Agenda: {3}\n"
-                                                  "📩 Circolari: {4}\n\n"
-                                                  "Quali notifiche vuoi ricevere? (Clicca per cambiare)"
-                                                  "".format("🔔 Attivo" if "didattica" in settings.activeNews else "🔕 Disattivo",
-                                                            "🔔 Attivo" if "note" in settings.activeNews else "🔕 Disattivo",
-                                                            "🔔 Attivo" if "voti" in settings.activeNews else "🔕 Disattivo",
-                                                            "🔔 Attivo" if "agenda" in settings.activeNews else "🔕 Disattivo",
-                                                            "🔔 Attivo" if "circolari" in settings.activeNews else "🔕 Disattivo"),
-                                                    parse_mode="HTML", reply_markup=keyboards.settings_selectnews(message_id))
+        editNotifSelection()
 
     elif button == "news_agenda":
         if "agenda" in settings.activeNews:
             settings.activeNews.remove("agenda")
         else:
             settings.activeNews.append("agenda")
-        bot.editMessageText((chatId, message_id), "📲 <b>Selezione notifiche</b>\n\n"
-                                                  "📚 Didattica: {0}\n"
-                                                  "❗️ Note: {1}\n"
-                                                  "📝 Voti: {2}\n"
-                                                  "📆 Agenda: {3}\n"
-                                                  "📩 Circolari: {4}\n\n"
-                                                  "Quali notifiche vuoi ricevere? (Clicca per cambiare)"
-                                                  "".format("🔔 Attivo" if "didattica" in settings.activeNews else "🔕 Disattivo",
-                                                            "🔔 Attivo" if "note" in settings.activeNews else "🔕 Disattivo",
-                                                            "🔔 Attivo" if "voti" in settings.activeNews else "🔕 Disattivo",
-                                                            "🔔 Attivo" if "agenda" in settings.activeNews else "🔕 Disattivo",
-                                                            "🔔 Attivo" if "circolari" in settings.activeNews else "🔕 Disattivo"),
-                                                    parse_mode="HTML", reply_markup=keyboards.settings_selectnews(message_id))
+        editNotifSelection()
 
     elif button == "news_circolari":
         if "circolari" in settings.activeNews:
             settings.activeNews.remove("circolari")
         else:
             settings.activeNews.append("circolari")
-        bot.editMessageText((chatId, message_id), "📲 <b>Selezione notifiche</b>\n\n"
-                                                  "📚 Didattica: {0}\n"
-                                                  "❗️ Note: {1}\n"
-                                                  "📝 Voti: {2}\n"
-                                                  "📆 Agenda: {3}\n"
-                                                  "📩 Circolari: {4}\n\n"
-                                                  "Quali notifiche vuoi ricevere? (Clicca per cambiare)"
-                                                  "".format("🔔 Attivo" if "didattica" in settings.activeNews else "🔕 Disattivo",
-                                                            "🔔 Attivo" if "note" in settings.activeNews else "🔕 Disattivo",
-                                                            "🔔 Attivo" if "voti" in settings.activeNews else "🔕 Disattivo",
-                                                            "🔔 Attivo" if "agenda" in settings.activeNews else "🔕 Disattivo",
-                                                            "🔔 Attivo" if "circolari" in settings.activeNews else "🔕 Disattivo"),
-                                                    parse_mode="HTML", reply_markup=keyboards.settings_selectnews(message_id))
+        editNotifSelection()
 
     elif button == "settings_notif_yes":
         settings.wantsNotifications = True
-        bot.editMessageText((chatId, message_id), "<b>Preferenze notifiche</b>\n"
-                                                  "- Stato attuale: {0}\n\n"
-                                                  "Vuoi che ti mandi notifiche se trovo novità?\n"
-                                                  "<b>Nota</b>: Se non vuoi riceverle di notte, puoi impostarlo a parte."
-                                                  "".format("🔔 Attivo" if settings.wantsNotifications else "🔕 Disattivo"),
-                                                    parse_mode="HTML", reply_markup=keyboards.settings_notifications(message_id))
+        editNotif()
 
     elif button == "settings_notif_no":
         settings.wantsNotifications = False
-        bot.editMessageText((chatId, message_id), "<b>Preferenze notifiche</b>\n"
-                                                  "- Stato attuale: {0}\n\n"
-                                                  "Vuoi che ti mandi notifiche se trovo novità?\n"
-                                                  "<b>Nota</b>: Se non vuoi riceverle di notte, puoi impostarlo a parte."
-                                                  "".format("🔔 Attivo" if settings.wantsNotifications else "🔕 Disattivo"),
-                                                    parse_mode="HTML", reply_markup=keyboards.settings_notifications(message_id))
+        editNotif()
 
     elif button == "settings_night_yes":
         settings.doNotDisturb = True
-        bot.editMessageText((chatId, message_id), "<b>Preferenze modalità notturna</b>\n"
-                                                  "- Stato attuale: {0}\n\n"
-                                                  "Vuoi che silenzi le notifiche nella fascia oraria notturna (21:00 - 7:00)?"
-                                                  "".format("😴 Attivo" if settings.doNotDisturb else "🔔 Suona"),
-                                                    parse_mode="HTML", reply_markup=keyboards.settings_donotdisturb(message_id))
+        editNotifNight()
 
     elif button == "settings_night_no":
         settings.doNotDisturb = False
-        bot.editMessageText((chatId, message_id), "<b>Preferenze modalità notturna</b>\n"
-                                                  "- Stato attuale: {0}\n\n"
-                                                  "Vuoi che silenzi le notifiche nella fascia oraria notturna (21:00 - 7:00)?"
-                                                  "".format("😴 Attivo" if settings.doNotDisturb else "🔔 Suona"),
-                                                    parse_mode="HTML", reply_markup=keyboards.settings_donotdisturb(message_id))
+        editNotifNight()
 
     elif button == "settings_daily_yes":
         settings.wantsDailyUpdates = True
-        bot.editMessageText((chatId, message_id), "<b>Preferenze notifiche giornaliere</b>\n"
-                                                  "- Stato attuale: {0}\n"
-                                                  "- Orario notifiche: {1}\n\n"
-                                                  "Vuoi che ti dica ogni giorno i compiti per il giorno successivo e le lezioni svolte?"
-                                                  "".format("🔔 Attiva" if settings.wantsDailyUpdates else "🔕 Disattiva", settings.dailyUpdatesHour),
-                                                    parse_mode="HTML", reply_markup=keyboards.settings_dailynotif(message_id))
+        editNotifDaily()
 
     elif button == "settings_daily_no":
         settings.wantsDailyUpdates = False
-        bot.editMessageText((chatId, message_id), "<b>Preferenze notifiche giornaliere</b>\n"
-                                                  "- Stato attuale: {0}\n"
-                                                  "- Orario notifiche: {1}\n\n"
-                                                  "Vuoi che ti dica ogni giorno i compiti per il giorno successivo e le lezioni svolte?"
-                                                  "".format("🔔 Attiva" if settings.wantsDailyUpdates else "🔕 Disattiva", settings.dailyUpdatesHour),
-                                                    parse_mode="HTML", reply_markup=keyboards.settings_dailynotif(message_id))
+        editNotifDaily()
 
     elif (button == "settings_daily_plus") or (button == "settings_daily_minus"):
         hoursplit = settings.dailyUpdatesHour.split(":")
@@ -647,12 +573,7 @@ def button_press(msg):
                 m = "00"
 
         settings.dailyUpdatesHour = "{0}:{1}".format(h, m)
-        bot.editMessageText((chatId, message_id), "<b>Preferenze notifiche giornaliere</b>\n"
-                                                  "- Stato attuale: {0}\n"
-                                                  "- Orario notifiche: {1}\n\n"
-                                                  "Vuoi che ti dica ogni giorno i compiti per il giorno successivo e le lezioni svolte?"
-                                                  "".format("🔔 Attiva" if settings.wantsDailyUpdates else "🔕 Disattiva", settings.dailyUpdatesHour),
-                                                    parse_mode="HTML", reply_markup=keyboards.settings_dailynotif(message_id))
+        editNotifDaily()
 
     elif button == "logout_yes":
         clearUserData(chatId)
