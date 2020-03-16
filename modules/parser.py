@@ -111,8 +111,10 @@ def parseVoti(data, chatId):
     user = User.get(chatId=chatId)
     votiOrdinati = {}
     media = {}
+    periods = []
     for voto in data['grades']:
         period = voto['periodPos']
+        periods.append(period)
         if period >= user.lastPeriod:
             materia = voto['subjectDesc']
             value = "Voto " + voto['displayValue']
@@ -150,6 +152,9 @@ def parseVoti(data, chatId):
                         media["total"].append(float(value[5:]))
                     except ValueError:
                         pass
+
+    if periods:
+        user.lastPeriod = max(periods)
 
     firstMateria = True
     materie = {}
