@@ -427,15 +427,16 @@ def reply(msg):
         elif text.startswith("/start "):
             param = text.split(' ')[1]
             if param.startswith("circ"):
+                sent = bot.sendMessage(chatId, "⬇️ <i>Download file in corso...</i>", parse_mode="HTML")
                 intId = int(param.replace('circ', ''))
                 circ = Circolari.get(id=intId)
                 api = ClasseVivaAPI()
                 if userLogin(chatId, api):
                     try:
-                        bot.sendDocument(chatId, (circ.attachName, api.getCirc(circ.eventCode, circ.pubId)))
+                        bot.deleteMessage((chatId, sent['message_id']))
+                        bot.sendDocument(chatId, (circ.attachName, api.getCirc(circ.eventCode, circ.pubId)), circ.name)
                     except ApiServerError:
-                        bot.sendMessage(chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
-                                                "Riprova tra qualche minuto.")
+                        bot.sendMessage(chatId, "⚠️ Non sono riuscito a scaricare la circolare.")
                         return
 
         else:
