@@ -219,7 +219,9 @@ def reply(msg):
                 bot.sendMessage(a, "🆘 <b>Richiesta di aiuto</b>\n"
                                     "Da: <a href=\"tg://user?id={0}\">{1}</a>\n\n"
                                     "<i>Rispondi al messaggio per parlare con l'utente.</i>".format(chatId, name), parse_mode="HTML")
-                bot.forwardMessage(a, chatId, msg['message_id'])
+                if "reply_to_message" in msg:
+                    bot.forwardMessage(a, chatId, msg["reply_to_message"]["message_id"])
+                bot.forwardMessage(a, chatId, msg['message_id'], disable_notification=True)
             bot.sendMessage(chatId, "<i>Richiesta inviata.</i>\n"
                                     "Un admin ti risponderà il prima possibile.", parse_mode="HTML")
 
@@ -442,7 +444,7 @@ def reply(msg):
                         bot.sendMessage(chatId, "⚠️ Non sono riuscito a scaricare la circolare.")
                         return
 
-        elif text == "⬆️⬆️⬇️⬇️⬅️➡️⬅️➡️🅱️🅰️":
+        elif text == "⬆️⬆️⬇️⬇️⬅️➡️⬅️➡️🅱️🅰️" or text == "⬆⬆⬇⬇⬅️➡️⬅️➡️🅱🅰":
             bot.sendMessage(chatId, "🔔 <b>Hai nuovi voti!</b>\n\n"
                                     "📚 <b>MATEMATICA</b>\n\n"
                                     "📗 <b>Voto 10</b> • Scritto • 30/02/2020\n"
