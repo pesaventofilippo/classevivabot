@@ -437,9 +437,6 @@ def reply(msg):
                         bot.sendMessage(chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
                                                 "Riprova tra qualche minuto.")
                         return
-                    except Exception:
-                        bot.sendMessage(chatId, "⚠️ Non riesco ad ottenere il file dal registro, riprova fra qualche minuto.")
-                        return
 
         else:
             bot.sendMessage(chatId, "Non ho capito...\n"
