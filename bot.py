@@ -427,7 +427,7 @@ def reply(msg):
         elif text.startswith("/start "):
             param = text.split(' ')[1]
             if param.startswith("circ"):
-                intId = int(param.split('#')[1])
+                intId = int(param.replace('circ', ''))
                 circ = Circolari.get(id=intId)
                 api = ClasseVivaAPI()
                 if userLogin(user, api):
