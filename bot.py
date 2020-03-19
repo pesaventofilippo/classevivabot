@@ -287,9 +287,12 @@ def reply(msg):
                                         "{0}".format(text), parse_mode="HTML")
                 bot.sendMessage(chatId, "Risposta inviata!")
             except Exception:
-                pass
+                bot.sendMessage(chatId, "Errore nell'invio.")
         else:
-            bot.sendMessage(chatId, "Premi /support per parlare con lo staff.")
+            if text.lower() == "no":
+                bot.sendMessage(chatId, "<i>Ah ok, scusa.</i>", parse_mode="HTML")
+            else:
+                bot.sendMessage(chatId, "Scrivi /support per parlare con lo staff.")
 
     elif text == "/annulla":
         bot.sendMessage(chatId, "😴 Nessun comando da annullare!")
@@ -438,6 +441,12 @@ def reply(msg):
                     except ApiServerError:
                         bot.sendMessage(chatId, "⚠️ Non sono riuscito a scaricare la circolare.")
                         return
+
+        elif text == "⬆️⬆️⬇️⬇️⬅️➡️⬅️➡️🅱️🅰️":
+            bot.sendMessage(chatId, "🔔 <b>Hai nuovi voti!</b>\n\n"
+                                    "📚 <b>MATEMATICA</b>\n\n"
+                                    "📗 <b>Voto 10</b> • Scritto • 30/02/2020\n"
+                                    "<i>Start!</i>", parse_mode="HTML")
 
         else:
             bot.sendMessage(chatId, "Non ho capito...\n"
