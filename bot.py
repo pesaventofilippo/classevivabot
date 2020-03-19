@@ -444,7 +444,7 @@ def reply(msg):
                         bot.sendMessage(chatId, "⚠️ Non sono riuscito a scaricare la circolare.")
                         return
 
-        elif text == "⬆️⬆️⬇️⬇️⬅️➡️⬅️➡️🅱️🅰️" or text == "⬆⬆⬇⬇⬅️➡️⬅️➡️🅱🅰":
+        elif text == "⬆️⬆️⬇️⬇️⬅️➡️⬅️➡️🅱️🅰️" or text == "⬆️⬆️⬇️⬇️⬅️➡️⬅️➡️🅱🅰":
             bot.sendMessage(chatId, "🔔 <b>Hai nuovi voti!</b>\n\n"
                                     "📚 <b>MATEMATICA</b>\n\n"
                                     "📗 <b>Voto 10</b> • Scritto • 30/02/2020\n"
