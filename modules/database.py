@@ -49,4 +49,11 @@ class Settings(db.Entity):
     activeNews = Required(StrArray, default=["didattica", "note", "voti", "agenda", "circolari"])
 
 
+class Circolari(db.Entity):
+    name = Required(str)
+    pubId = Required(int)
+    eventCode = Required(str)
+    attachName = Required(str)
+
+
 db.generate_mapping(create_tables=True)

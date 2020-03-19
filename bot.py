@@ -10,7 +10,7 @@ from telepot.exception import TelegramError, BotWasBlockedError
 from modules import parser, keyboards
 from modules.crypter import crypt_password
 from modules.helpers import *
-from modules.database import User, Data, ParsedData, Settings
+from modules.database import User, Data, ParsedData, Settings, Circolari
 from modules.api import ClasseVivaAPI, ApiServerError
 
 try:
@@ -422,6 +422,24 @@ def reply(msg):
                                     "Se hai qualche problema che non riesci a risolvere, scrivi qui un messaggio, e un admin "
                                     "ti contatterà il prima possibile.\n\n"
                                     "<i>Per annullare, premi</i> /annulla.", parse_mode="HTML")
+
+        # Custom Start Parameters
+        elif text.startswith("/start "):
+            param = text.split(' ')[1]
+            if param.startswith("circ"):
+                intId = int(param.split('#')[1])
+                circ = Circolari.get(id=intId)
+                api = ClasseVivaAPI()
+                if userLogin(user, api):
+                    try:
+                        bot.sendDocument(chatId, (circ.attachName, api.getCirc(circ.eventCode, circ.pubId)))
+                    except ApiServerError:
+                        bot.sendMessage(chatId, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
+                                                "Riprova tra qualche minuto.")
+                        return
+                    except Exception:
+                        bot.sendMessage(chatId, "⚠️ Non riesco ad ottenere il file dal registro, riprova fra qualche minuto.")
+                        return
 
         else:
             bot.sendMessage(chatId, "Non ho capito...\n"

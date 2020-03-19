@@ -132,11 +132,10 @@ class ClasseVivaAPI:
         return self._request('lessons', (datetime.now() + timedelta(days=days)).strftime("%Y%m%d"))
 
 
-    ### Nuovi Endpoint: Beta
     def getFile(self, fileId: int):
-        return self._request('didactics', 'item', fileId, returnFile=True)
+        return self._request('didactics', 'item', str(fileId), returnFile=True)
 
 
     def getCirc(self, eventCode: int, pubId: int):
-        self._request('noticeboard', 'read', eventCode, pubId, '101', method="POST")
-        return self._request('noticeboard', 'attach', eventCode, pubId, '101', returnFile=True)
+        self._request('noticeboard', 'read', str(eventCode), str(pubId), '101', method="POST")
+        return self._request('noticeboard', 'attach', str(eventCode), str(pubId), '101', returnFile=True)

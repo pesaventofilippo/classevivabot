@@ -1,4 +1,5 @@
-﻿from modules.database import User
+﻿from modules.database import User, Circolari
+from pony.orm import commit
 
 def sanitize(dinput):
     if not dinput:
@@ -38,6 +39,7 @@ def parseDidattica(data):
 
             for upfile in folder['contents']:
                 fileName = "Senza nome" if upfile['contentName'] == "" else sanitize(upfile['contentName'])
+                fileId = upfile['contentId']
                 result += "\n        📝 {0}".format(fileName)
 
     return result
@@ -304,8 +306,15 @@ def parseCircolari(data):
         title = sanitize(item['cntTitle'])
         isRead = item['readStatus']
         circId = item['pubId']
+        evCode = item['evtCode']
+        attName = item['attachments'][0]['fileName']
+        if not Circolari.exists(lambda c: c.circId == circId):
+            Circolari(name=title, pubId=circId, eventCode=evCode, attachName=attName)
+            commit()
+        circ = Circolari.get(pubId=circId)
+
         if (status == 'active') and not isRead:
-            result += "\n\n✉️ {0}".format(title)
+            result += "\n\n✉️ <a href=\"https://t.me/classevivait_bot?start=circ#{}\">{}</a>".format(circ.id, circ.name)
 
     return result if result else "\n\n📩 Non ci sono circolari da leggere."
 
@@ -337,6 +346,7 @@ def parseNewDidattica(oldData, newData):
 
                 for upfile in folder['contents']:
                     fileName = "Senza nome" if upfile['contentName'] == "" else sanitize(upfile['contentName'])
+                    fileId = upfile['contentId']
                     result += "\n        📝 {0}".format(fileName)
 
         else:
@@ -356,6 +366,7 @@ def parseNewDidattica(oldData, newData):
 
                     for upfile in folder['contents']:
                         fileName = "Senza nome" if upfile['contentName'] == "" else sanitize(upfile['contentName'])
+                        fileId = upfile['contentId']
                         result += "\n        📝 {0}".format(fileName)
 
                 else:
@@ -370,6 +381,7 @@ def parseNewDidattica(oldData, newData):
                                 result += string if firstFolder else "\n" + string
                                 firstFolder = False
                             fileName = "Senza nome" if upfile['contentName'] == "" else sanitize(upfile['contentName'])
+                            fileId = upfile['contentId']
                             result += "\n        📝 {0}".format(fileName)
                             firstFile = False
 
@@ -476,8 +488,15 @@ def parseNewCircolari(oldData, newData):
             title = sanitize(item['cntTitle'])
             isRead = item['readStatus']
             circId = item['pubId']
+            evCode = item['evtCode']
+            attName = item['attachments'][0]['fileName']
+            if not Circolari.exists(lambda c: c.circId == circId):
+                Circolari(name=title, pubId=circId, eventCode=evCode, attachName=attName)
+                commit()
+            circ = Circolari.get(pubId=circId)
+
             if (status == 'active') and not isRead:
-                string = "\n✉️ {0}".format(title)
+                string = "\n✉️ <a href=\"https://t.me/classevivait_bot?start=circ#{}\">{}</a>".format(circ.id, circ.name)
                 result += string if isFirst else "\n" + string
                 isFirst = False
 
