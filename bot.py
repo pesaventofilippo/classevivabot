@@ -430,7 +430,7 @@ def reply(msg):
                 intId = int(param.replace('circ', ''))
                 circ = Circolari.get(id=intId)
                 api = ClasseVivaAPI()
-                if userLogin(user, api):
+                if userLogin(chatId, api):
                     try:
                         bot.sendDocument(chatId, (circ.attachName, api.getCirc(circ.eventCode, circ.pubId)))
                     except ApiServerError:
