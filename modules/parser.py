@@ -305,13 +305,13 @@ def parseCircolari(data):
         status = item['cntStatus']
         title = sanitize(item['cntTitle'])
         isRead = item['readStatus']
-        circId = item['pubId']
+        pubId = item['pubId']
         evCode = item['evtCode']
         attName = item['attachments'][0]['fileName']
-        if not Circolari.exists(lambda c: c.circId == circId):
-            Circolari(name=title, pubId=circId, eventCode=evCode, attachName=attName)
+        if not Circolari.exists(lambda c: c.pubId == pubId):
+            Circolari(name=title, pubId=pubId, eventCode=evCode, attachName=attName)
             commit()
-        circ = Circolari.get(pubId=circId)
+        circ = Circolari.get(pubId=pubId)
 
         if (status == 'active') and not isRead:
             result += "\n\n✉️ <a href=\"https://t.me/classevivait_bot?start=circ#{}\">{}</a>".format(circ.id, circ.name)
@@ -487,13 +487,13 @@ def parseNewCircolari(oldData, newData):
             status = item['cntStatus']
             title = sanitize(item['cntTitle'])
             isRead = item['readStatus']
-            circId = item['pubId']
+            pubId = item['pubId']
             evCode = item['evtCode']
             attName = item['attachments'][0]['fileName']
-            if not Circolari.exists(lambda c: c.circId == circId):
-                Circolari(name=title, pubId=circId, eventCode=evCode, attachName=attName)
+            if not Circolari.exists(lambda c: c.pubId == pubId):
+                Circolari(name=title, pubId=pubId, eventCode=evCode, attachName=attName)
                 commit()
-            circ = Circolari.get(pubId=circId)
+            circ = Circolari.get(pubId=pubId)
 
             if (status == 'active') and not isRead:
                 string = "\n✉️ <a href=\"https://t.me/classevivait_bot?start=circ#{}\">{}</a>".format(circ.id, circ.name)
