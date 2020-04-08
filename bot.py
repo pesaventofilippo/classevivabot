@@ -65,12 +65,13 @@ def runUserUpdate(chatId, long_fetch, crhour):
 
                     updateUserdata(chatId, data)
                     fetchAndStore(chatId, api, data, long_fetch)
-                    user = User.get(chatId=chatId)
-                    user.remainingCalls = 3
                 except BotWasBlockedError:
                     clearUserData(chatId)
                 except TelegramError:
                     pass
+        user = User.get(chatId=chatId)
+        user.remainingCalls = 3
+        commit()
 
 
 @db_session
@@ -438,9 +439,10 @@ def reply(msg):
                 api = ClasseVivaAPI()
                 if userLogin(chatId, api):
                     try:
-                        bot.deleteMessage((chatId, sent['message_id']))
                         bot.sendDocument(chatId, (circ.attachName, api.getCirc(circ.eventCode, circ.pubId)), circ.name)
+                        bot.deleteMessage((chatId, sent['message_id']))
                     except ApiServerError:
+                        bot.deleteMessage((chatId, sent['message_id']))
                         bot.sendMessage(chatId, "⚠️ Non sono riuscito a scaricare la circolare.")
                         return
 
