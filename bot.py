@@ -62,13 +62,13 @@ def runUserUpdate(chatId, long_fetch, crhour):
                     if dataCircolari and ("circolari" in settings.activeNews):
                         bot.sendMessage(chatId, "🔔 <b>Hai nuove circolari!</b>"
                                                 "{0}".format(dataCircolari), parse_mode="HTML", disable_web_page_preview=True)
-
-                    updateUserdata(chatId, data)
-                    fetchAndStore(chatId, api, data, long_fetch)
                 except BotWasBlockedError:
                     clearUserData(chatId)
+                    return
                 except TelegramError:
                     pass
+                updateUserdata(chatId, data)
+                fetchAndStore(chatId, api, data, long_fetch)
         user = User.get(chatId=chatId)
         user.remainingCalls = 3
 

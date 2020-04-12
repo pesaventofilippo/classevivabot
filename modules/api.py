@@ -4,7 +4,8 @@ from datetime import datetime, timedelta
 from http.client import RemoteDisconnected
 import requests
 from requests.exceptions import HTTPError, InvalidURL
-
+from random import uniform
+from time import sleep
 
 
 class AuthenticationFailedError(Exception):
@@ -72,31 +73,38 @@ class ClasseVivaAPI:
             "Z-Auth-Token": self.token,
             "Content-Type": "application/json"
         }
-        try:
-            if method == "POST":
-                req = requests.post(url, headers=headers)
-            else:
-                req = requests.get(url, headers=headers)
-        except (HTTPError, InvalidURL, RemoteDisconnected):
-            raise ApiServerError
 
-        if returnFile:
-            from io import BytesIO
-            return BytesIO(req.content)
+        tryCount = 0
+        while tryCount < 3:
+            tryCount += 1
+            try:
+                if method == "POST":
+                    req = requests.post(url, headers=headers)
+                else:
+                    req = requests.get(url, headers=headers)
+            except (HTTPError, InvalidURL, RemoteDisconnected):
+                raise ApiServerError
 
-        try:
-            jsonResult = req.json()
-            if jsonResult.get('error'):
-                if 'auth token expired' in jsonResult['error']:
-                    raise AuthenticationFailedError
-                elif 'content temporarily unavailable' in jsonResult['error']:
-                    raise ApiServerError
-                elif 'invalid date range' in jsonResult['error']:
-                    raise InvalidRequestError
-            return jsonResult
+            if returnFile:
+                from io import BytesIO
+                return BytesIO(req.content)
 
-        except ValueError:
-            return req.text if req.text != "" else {}
+            try:
+                jsonResult = req.json()
+                if jsonResult.get('error'):
+                    if 'auth token expired' in jsonResult['error']:
+                        raise AuthenticationFailedError
+                    elif 'content temporarily unavailable' in jsonResult['error']:
+                        raise ApiServerError
+                    elif 'invalid date range' in jsonResult['error']:
+                        raise InvalidRequestError
+                return jsonResult
+
+            except ValueError:
+                if req.text != "":
+                    return req.text
+                sleep(uniform(0.3, 2))
+        return {}
 
 
     def assenze(self):
