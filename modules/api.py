@@ -1,4 +1,4 @@
-from json import dumps, loads
+from json import dumps
 from re import sub
 from datetime import datetime, timedelta
 from http.client import RemoteDisconnected
@@ -83,6 +83,8 @@ class ClasseVivaAPI:
         if returnFile:
             from io import BytesIO
             return BytesIO(req.content)
+        if req.text == "":
+            return {}
 
         try:
             jsonResult = req.json()
