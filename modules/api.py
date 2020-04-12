@@ -83,8 +83,6 @@ class ClasseVivaAPI:
         if returnFile:
             from io import BytesIO
             return BytesIO(req.content)
-        if req.text == "":
-            return {}
 
         try:
             jsonResult = req.json()
@@ -98,7 +96,7 @@ class ClasseVivaAPI:
             return jsonResult
 
         except ValueError:
-            return req.text
+            return req.text if req.text != "" else {}
 
 
     def assenze(self):

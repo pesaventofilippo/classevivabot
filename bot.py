@@ -71,18 +71,14 @@ def runUserUpdate(chatId, long_fetch, crhour):
                     pass
         user = User.get(chatId=chatId)
         user.remainingCalls = 3
-        commit()
 
 
 @db_session
 def runUpdates(long_fetch=False):
     crhour = datetime.now().hour
     pendingUsers = select(user.chatId for user in User if user.password != "")[:]
-    t = None
     for currentUser in pendingUsers:
-        t = Thread(target=runUserUpdate, args=[currentUser, long_fetch, crhour])
-        t.start()
-    t.join() # Wait for last thread to be done before returning
+        Thread(target=runUserUpdate, args=[currentUser, long_fetch, crhour]).start()
 
 
 @db_session
