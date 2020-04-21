@@ -5,15 +5,41 @@ from modules.crypter import decrypt_password
 from modules.api import AuthenticationFailedError, ApiServerError
 from telepot.exception import TelegramError, BotWasBlockedError
 from modules import parser
+from requests import get
 
 maxMessageLength = 4096
 adminIds = [368894926] # Bot Creator
 bot = None
+selectedProxy = {
+    "http":  "",
+    "https": ""
+}
 
 
 def setBot(token):
     global bot
     bot = Bot(token)
+
+
+def renewProxy():
+    global selectedProxy
+    res = get("https://api.getproxylist.com/proxy"
+              "?lastTested=3600"
+              "&allowsUserAgentHeader=1"
+              "&allowsCustomHeaders=1"
+              "&allowsPost=1"
+              "&allowsHttps=1"
+              "&country[]=US&country[]=IT&country[]=DE&country[]=CH")
+    if res.status_code == 200:
+        proxy = res.json()
+        selectedProxy["http"] =  "{}:{}".format(proxy['ip'], proxy['port'])
+        selectedProxy["https"] = "{}:{}".format(proxy['ip'], proxy['port'])
+
+
+def getProxy():
+    if not selectedProxy.get("http"):
+        renewProxy()
+    return selectedProxy
 
 
 def sendLongMessage(chatId, text: str, **kwargs):
