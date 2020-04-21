@@ -28,6 +28,7 @@ class ClasseVivaAPI:
     def __init__(self):
         self.id = None
         self.token = None
+        self.proxy = getProxy()
 
 
     def login(self, username: str, password: str):
@@ -44,7 +45,7 @@ class ClasseVivaAPI:
         data = values.encode('ascii')
 
         try:
-            req = requests.post(url, data, headers=headers, proxies=getProxy())
+            req = requests.post(url, data, headers=headers, proxies=self.proxy)
             result = req.json()
         except (ValueError, HTTPError, InvalidURL, RemoteDisconnected):
             raise ApiServerError
@@ -75,9 +76,9 @@ class ClasseVivaAPI:
 
         try:
             if method == "POST":
-                req = requests.post(url, headers=headers, proxies=getProxy())
+                req = requests.post(url, headers=headers, proxies=self.proxy)
             else:
-                req = requests.get(url, headers=headers, proxies=getProxy())
+                req = requests.get(url, headers=headers, proxies=self.proxy)
         except (HTTPError, InvalidURL, RemoteDisconnected):
             raise ApiServerError
 

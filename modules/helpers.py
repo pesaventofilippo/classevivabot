@@ -2,7 +2,6 @@ from time import sleep
 from telepot import Bot
 from modules.database import User, Data, ParsedData
 from modules.crypter import decrypt_password
-from modules.api import AuthenticationFailedError, ApiServerError
 from telepot.exception import TelegramError, BotWasBlockedError
 from modules import parser
 from requests import get
@@ -112,6 +111,7 @@ def clearUserData(chatId):
 
 
 def userLogin(chatId, api_type, _quiet=False):
+    from modules.api import AuthenticationFailedError, ApiServerError
     user = User.get(chatId=chatId)
     if not hasStoredCredentials(chatId):
         return False
