@@ -7,9 +7,8 @@ from datetime import datetime, timedelta
 from telepot.exception import TelegramError, BotWasBlockedError
 
 # Custom Modules
-from modules import parser, keyboards
-from modules.crypter import crypt_password
-from modules.helpers import *
+from modules import parser, keyboards, helpers
+from modules.crypter import crypt_password, decrypt_password
 from modules.database import User, Data, ParsedData, Settings, Circolari
 from modules.api import ClasseVivaAPI, ApiServerError
 
@@ -24,18 +23,18 @@ except FileNotFoundError:
     f.close()
 
 bot = Bot(token)
-setBot(token)
+helpers.setBot(token)
 updatesEvery = 30 # minutes
 
 
 @db_session
 def runUserUpdate(chatId, long_fetch, crhour):
     api = ClasseVivaAPI()
-    if userLogin(chatId, api, _quiet=True):
+    if helpers.userLogin(chatId, api, _quiet=True):
         userdata = Data.get(chatId=chatId)
         settings = Settings.get(chatId=chatId)
         try:
-            data = fetchStrict(api)
+            data = helpers.fetchStrict(api)
         except ApiServerError:
             return
 
@@ -63,12 +62,12 @@ def runUserUpdate(chatId, long_fetch, crhour):
                         bot.sendMessage(chatId, "🔔 <b>Hai nuove circolari!</b>"
                                                 "{0}".format(dataCircolari), parse_mode="HTML", disable_web_page_preview=True)
                 except BotWasBlockedError:
-                    clearUserData(chatId)
+                    helpers.clearUserData(chatId)
                     return
                 except TelegramError:
                     pass
-                updateUserdata(chatId, data)
-                fetchAndStore(chatId, api, data, long_fetch)
+                helpers.updateUserdata(chatId, data)
+                helpers.fetchAndStore(chatId, api, data, long_fetch)
         user = User.get(chatId=chatId)
         user.remainingCalls = 3
 
@@ -96,7 +95,7 @@ def runUserDaily(chatId, crhour, crminute, dayString):
                                             "📚 <b>Le lezioni di oggi</b>:\n\n"
                                             "{2}".format(dayString, stored.domani, stored.lezioni), parse_mode="HTML")
                 except BotWasBlockedError:
-                    clearUserData(chatId)
+                    helpers.clearUserData(chatId)
                 except TelegramError:
                     pass
 
@@ -197,7 +196,7 @@ def reply(msg):
                     pass
                 return
             except Exception:
-                clearUserData(chatId)
+                helpers.clearUserData(chatId)
                 try:
                     bot.sendMessage(chatId, "😯 Le tue credenziali di accesso sono errate.\n"
                                             "Effettua nuovamente il /login per favore.")
@@ -208,14 +207,14 @@ def reply(msg):
             bot.sendMessage(chatId, "Fatto 😊\n"
                                     "Premi /help per vedere la lista dei comandi disponibili.")
             sent = bot.sendMessage(chatId, "🔍 Aggiorno il profilo...")
-            data = fetchStrict(api)
-            updateUserdata(chatId, data)
-            fetchAndStore(chatId, api, data, fetch_long=True)
+            data = helpers.fetchStrict(api)
+            helpers.updateUserdata(chatId, data)
+            helpers.fetchAndStore(chatId, api, data, fetch_long=True)
             bot.editMessageText((chatId, sent['message_id']), "✅ Profilo aggiornato!")
             
         elif user.status == "calling_support":
             user.status = "normal"
-            for a in isAdmin():
+            for a in helpers.isAdmin():
                 bot.sendMessage(a, "🆘 <b>Richiesta di aiuto</b>\n"
                                     "Da: <a href=\"tg://user?id={0}\">{1}</a>\n\n"
                                     "<i>Rispondi al messaggio per parlare con l'utente.</i>".format(chatId, name), parse_mode="HTML")
@@ -253,7 +252,7 @@ def reply(msg):
                                 "<b>Impostazioni</b>: con /settings puoi cambiare varie impostazioni, tra cui l'orario delle notifiche, quali notifiche ricevere e se riceverle di notte."
                                 "", parse_mode="HTML")
 
-    elif text.startswith("/broadcast ") and isAdmin(chatId):
+    elif text.startswith("/broadcast ") and helpers.isAdmin(chatId):
         bdText = text.split(" ", 1)[1]
         pendingUsers = select(u.chatId for u in User)[:]
         userCount = len(pendingUsers)
@@ -264,25 +263,25 @@ def reply(msg):
                 userCount -= 1
         bot.sendMessage(chatId, "📢 Messaggio inviato correttamente a {0} utenti!".format(userCount))
 
-    elif text.startswith("/sendmsg ") and isAdmin(chatId):
+    elif text.startswith("/sendmsg ") and helpers.isAdmin(chatId):
         selId = int(text.split(" ", 2)[1])
         selText = str(text.split(" ", 2)[2])
         bot.sendMessage(selId, selText, parse_mode="HTML")
         bot.sendMessage(chatId, selText + "\n\n- Messaggio inviato!", parse_mode="HTML")
 
-    elif text == "/globalupdate" and isAdmin(chatId):
+    elif text == "/globalupdate" and helpers.isAdmin(chatId):
         bot.sendMessage(chatId, "🕙 Inizio aggiornamento globale...")
         runUpdates(long_fetch=True)
         bot.sendMessage(chatId, "✅ Aggiornamento globale completato!")
 
-    elif text == "/users" and isAdmin(chatId):
+    elif text == "/users" and helpers.isAdmin(chatId):
         totalUsers = len(select(u for u in User)[:])
         loggedUsers = len(select(u for u in User if u.password != "")[:])
         bot.sendMessage(chatId, "👤 Utenti totali: <b>{}</b>\n"
                                 "👤 Utenti loggati: <b>{}</b>".format(totalUsers, loggedUsers), parse_mode="HTML")
 
     elif "reply_to_message" in msg:
-        if isAdmin(chatId):
+        if helpers.isAdmin(chatId):
             try:
                 userId = msg['reply_to_message']['forward_from']['id']
                 bot.sendMessage(userId, "💬 <b>Risposta dello staff</b>\n"
@@ -299,7 +298,7 @@ def reply(msg):
     elif text == "/annulla":
         bot.sendMessage(chatId, "😴 Nessun comando da annullare!")
 
-    elif hasStoredCredentials(chatId):
+    elif helpers.hasStoredCredentials(chatId):
         if text == "/start":
             bot.sendMessage(chatId, "Bentornato, <b>{0}</b>!\n"
                                     "Cosa posso fare per te? 😊".format(name), parse_mode="HTML")
@@ -314,7 +313,7 @@ def reply(msg):
             bot.editMessageReplyMarkup((chatId, sent['message_id']), keyboards.logout(sent['message_id']))
 
         elif text == "/didattica":
-            sendLongMessage(chatId, "📚 <b>Files caricati in didadttica</b>:\n\n"
+            helpers.sendLongMessage(chatId, "📚 <b>Files caricati in didadttica</b>:\n\n"
                                     "{0}".format(stored.didattica), parse_mode="HTML", disable_web_page_preview=True)
 
         elif text == "/info":
@@ -322,19 +321,19 @@ def reply(msg):
                                     "{0}".format(stored.info), parse_mode="HTML")
 
         elif text == "/prof":
-            sendLongMessage(chatId, "📚 <b>Lista materie e prof</b>:\n\n"
+            helpers.sendLongMessage(chatId, "📚 <b>Lista materie e prof</b>:\n\n"
                                     "{0}".format(stored.prof), parse_mode="HTML")
 
         elif text == "/note":
-            sendLongMessage(chatId, "❗️<b>Le tue note</b>:\n\n"
+            helpers.sendLongMessage(chatId, "❗️<b>Le tue note</b>:\n\n"
                                     "{0}".format(stored.note), parse_mode="HTML")
 
         elif text == "/voti":
-            sendLongMessage(chatId, "📝 <b>I tuoi voti</b>:\n\n"
+            helpers.sendLongMessage(chatId, "📝 <b>I tuoi voti</b>:\n\n"
                                     "{0}".format(stored.voti), parse_mode="HTML")
 
         elif text == "/assenze":
-            sendLongMessage(chatId, "{0}".format(stored.assenze), parse_mode="HTML")
+            helpers.sendLongMessage(chatId, "{0}".format(stored.assenze), parse_mode="HTML")
 
         elif text == "/agenda":
             bot.sendMessage(chatId, "📆 <b>Agenda compiti per le prossime 2 settimane</b>:\n\n"
@@ -375,9 +374,9 @@ def reply(msg):
                 api = ClasseVivaAPI()
                 bot.editMessageText((chatId, sent['message_id']), "📗📙📙 Cerco aggiornamenti... 10%")
 
-                if userLogin(chatId, api):
+                if helpers.userLogin(chatId, api):
                     try:
-                        data = fetchStrict(api)
+                        data = helpers.fetchStrict(api)
                     except ApiServerError:
                         bot.editMessageText((chatId, sent['message_id']), "⚠️ I server di ClasseViva non sono raggiungibili.\n"
                                                                           "Riprova tra qualche minuto.")
@@ -415,8 +414,8 @@ def reply(msg):
                     else:
                         bot.deleteMessage((chatId, sent['message_id']))
 
-                    updateUserdata(chatId, data)
-                    fetchAndStore(chatId, api, data, fetch_long=True)
+                    helpers.updateUserdata(chatId, data)
+                    helpers.fetchAndStore(chatId, api, data, fetch_long=True)
 
             else:
                 bot.sendMessage(chatId, "⛔️ Hai usato troppi /aggiorna recentemente. Aspetta un po'!")
@@ -436,7 +435,7 @@ def reply(msg):
                 intId = int(param.replace('circ', ''))
                 circ = Circolari.get(id=intId)
                 api = ClasseVivaAPI()
-                if userLogin(chatId, api):
+                if helpers.userLogin(chatId, api):
                     try:
                         bot.sendDocument(chatId, (circ.attachName, api.getCirc(circ.eventCode, circ.pubId)), circ.name)
                         bot.deleteMessage((chatId, sent['message_id']))
@@ -611,7 +610,7 @@ def button_press(msg):
         editNotifDaily()
 
     elif button == "logout_yes":
-        clearUserData(chatId)
+        helpers.clearUserData(chatId)
         bot.editMessageText((chatId, message_id), "😯 Fatto, sei stato disconnesso!\n"
                                                   "Premi /login per entrare di nuovo.\n\n"
                                                   "Premi /help se serve aiuto.", reply_markup=None)
@@ -621,7 +620,7 @@ def button_press(msg):
 
     elif (button == "lezioni_prima") or (button == "lezioni_dopo"):
         api = ClasseVivaAPI()
-        if userLogin(chatId, api):
+        if helpers.userLogin(chatId, api):
             selectedDay = int(query_split[2]) - 1 if "prima" in button else int(query_split[2]) + 1
             dateformat = (datetime.now() + timedelta(days=selectedDay)).strftime("%d/%m/%Y")
             try:
@@ -650,4 +649,4 @@ while True:
         runDailyUpdates(minute)
         runUpdates()
     if minute == 0:
-        renewProxy()
+        helpers.renewProxy()
