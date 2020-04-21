@@ -5,14 +5,12 @@ from modules.crypter import decrypt_password
 from telepot.exception import TelegramError, BotWasBlockedError
 from modules import parser
 from requests import get
+from random import choice
 
 maxMessageLength = 4096
 adminIds = [368894926] # Bot Creator
 bot = None
-selectedProxy = {
-    "http":  "",
-    "https": ""
-}
+proxyList = []
 
 
 def setBot(token):
@@ -21,24 +19,28 @@ def setBot(token):
 
 
 def renewProxy():
-    global selectedProxy
-    res = get("https://api.getproxylist.com/proxy"
-              "?lastTested=3600"
-              "&allowsUserAgentHeader=1"
-              "&allowsCustomHeaders=1"
-              "&allowsPost=1"
-              "&allowsHttps=1"
-              "&country[]=US&country[]=IT&country[]=DE&country[]=CH")
+    global proxyList
+    res = get("http://pubproxy.com/api/proxy"
+              "?last_check=60"
+              "&speed=3"
+              "&limit=5"
+              "&country[]=US&country[]=IT&country[]=DE&country[]=CH"
+              "&post=true"
+              "&user_agent=true")
     if res.status_code == 200:
-        proxy = res.json()
-        selectedProxy["http"] =  "{}:{}".format(proxy['ip'], proxy['port'])
-        selectedProxy["https"] = "{}:{}".format(proxy['ip'], proxy['port'])
+        res = res.json()
+        proxyList = res['data']
 
 
 def getProxy():
-    if not selectedProxy.get("http"):
+    if not proxyList:
         renewProxy()
-    return selectedProxy
+    selectedProxy = choice(proxyList)
+    selectedProxy = "http://" + selectedProxy['ipPort']
+    return {
+        "http":  selectedProxy,
+        "https": selectedProxy
+    }
 
 
 def sendLongMessage(chatId, text: str, **kwargs):
