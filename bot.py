@@ -640,13 +640,13 @@ def accept_button(msg):
     Thread(target=button_press, args=[msg]).start()
 
 bot.message_loop({'chat': accept_message, 'callback_query': accept_button})
-
+helpers.renewProxy()
 
 while True:
     sleep(60)
     minute = datetime.now().minute
+    if minute % 10 == 0:
+        helpers.renewProxy()
     if minute % updatesEvery == 0:
         runDailyUpdates(minute)
         runUpdates()
-    if minute == 0:
-        helpers.renewProxy()
