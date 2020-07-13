@@ -496,7 +496,7 @@ def reply(msg):
                                     "❔ <b>Posso contattarti?</b>\n"
                                     "Certo, puoi scrivermi per qualsiasi motivo <a href=\"https://t.me/pesaventofilippo\">qui</a> "
                                     "o mandarmi una <a href=\"mailto:cvvbot@pesaventofilippo.com\">mail</a>.\n"
-                                    "Non sono un bot, quindi magari non rispondo subito 🙂", parse_mode="HTML")
+                                    "Non sono un bot, quindi magari non rispondo subito 🙂", parse_mode="HTML", disable_web_page_preview=True)
 
         else:
             bot.sendMessage(chatId, "ℹ️ <b>Bot in manutenzione</b>\n"
