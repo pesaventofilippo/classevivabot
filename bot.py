@@ -122,6 +122,7 @@ def runDailyUpdates(crminute):
 def reply(msg):
     chatId = msg['chat']['id']
     name = msg['from']['first_name']
+    global restrictedMode
     if "text" in msg:
         text = msg['text']
     else:
@@ -290,13 +291,11 @@ def reply(msg):
                                     "👤 Utenti loggati: <b>{}</b>".format(totalUsers, loggedUsers), parse_mode="HTML")
 
         elif text == "/restrict" and helpers.isAdmin(chatId):
-            global restrictedMode
             restrictedMode = True
             bot.sendMessage(chatId, "<i>Modalità ristretta attiva.\n"
                                     "Solo gli admin possono usare il bot.</i>", parse_mode="HTML")
 
         elif text == "/unrestrict" and helpers.isAdmin(chatId):
-            global restrictedMode
             restrictedMode = False
             bot.sendMessage(chatId, "<i>Modalità ristretta disattivata.\n"
                                     "Tutti gli utenti potranno usare il bot.</i>", parse_mode="HTML")
