@@ -20,20 +20,24 @@ def setBot(token):
 
 def renewProxy():
     global proxyList
-    res = get('https://api.proxyscrape.com/?request=getproxies'
-              '&proxytype=http'
-              '&timeout=1000'
-              '&country=all'
-              '&ssl=yes'
-              '&anonymity=all')
-    if res.status_code == 200:
-        plist = res.text.split('\r\n')
-        proxyList = plist[:-1]
+    #res = get('https://api.proxyscrape.com/?request=getproxies'
+    #          '&proxytype=http'
+    #          '&timeout=1000'
+    #          '&country=all'
+    #          '&ssl=yes'
+    #          '&anonymity=all')
+    #if res.status_code == 200:
+    #    plist = res.text.split('\r\n')
+    #    proxyList = plist[:-1]
+    proxyList = []
 
 
 def getProxy():
     if not proxyList:
         renewProxy()
+    if not proxyList:
+        return None
+
     selectedProxy = "http://" + choice(proxyList)
     return {
         "http":  selectedProxy,
