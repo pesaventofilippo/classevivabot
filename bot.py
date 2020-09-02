@@ -699,3 +699,4 @@ while True:
     if minute % updatesEvery == 0:
         runDailyUpdates(minute)
         runUpdates()
+        helpers.renewProxy()

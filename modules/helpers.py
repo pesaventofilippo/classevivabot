@@ -17,13 +17,13 @@ adminIds = js_settings["admins"]
 bot = Bot(js_settings["token"])
 
 
-def getProxy():
-    # Renew TOR connection to get a new IP
+def renewProxy():
     with Controller.from_port(port=js_settings["torControlPort"]) as controller:
         controller.authenticate(password=js_settings["torControlPassword"])
         controller.signal(Signal.NEWNYM)
 
-    # Return proxies
+
+def getProxy():
     proxyIP = "socks5://{}:{}".format(js_settings["torProxyIP"], js_settings["torProxyPort"])
     return {
         "http": proxyIP,
