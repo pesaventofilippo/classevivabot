@@ -4,44 +4,30 @@ from modules.database import User, Data, ParsedData
 from modules.crypter import decrypt_password
 from telepot.exception import TelegramError, BotWasBlockedError
 from modules import parser
-from requests import get
-from random import choice
+from json import load as jsload
+from os.path import abspath, dirname, join
+from stem import Signal
+from stem.control import Controller
+
+with open(join(dirname(abspath(__file__)), "../settings.json")) as settings_file:
+    js_settings = jsload(settings_file)
 
 maxMessageLength = 4096
-adminIds = [368894926] # Bot Creator
-bot = None
-proxyList = []
-
-
-def setBot(token):
-    global bot
-    bot = Bot(token)
-
-
-def renewProxy():
-    global proxyList
-    #res = get('https://api.proxyscrape.com/?request=getproxies'
-    #          '&proxytype=http'
-    #          '&timeout=1000'
-    #          '&country=all'
-    #          '&ssl=yes'
-    #          '&anonymity=all')
-    #if res.status_code == 200:
-    #    plist = res.text.split('\r\n')
-    #    proxyList = plist[:-1]
-    proxyList = []
+adminIds = js_settings["admins"]
+bot = Bot(js_settings["token"])
 
 
 def getProxy():
-    if not proxyList:
-        renewProxy()
-    if not proxyList:
-        return None
+    # Renew TOR connection to get a new IP
+    with Controller.from_port(port=js_settings["torControlPort"]) as controller:
+        controller.authenticate(password=js_settings["torControlPassword"])
+        controller.signal(Signal.NEWNYM)
 
-    selectedProxy = "http://" + choice(proxyList)
+    # Return proxies
+    proxyIP = "socks5://{}:{}".format(js_settings["torProxyIP"], js_settings["torProxyPort"])
     return {
-        "http":  selectedProxy,
-        "https": selectedProxy
+        "http": proxyIP,
+        "https": proxyIP
     }
 
 

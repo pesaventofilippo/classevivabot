@@ -2,9 +2,12 @@
 from time import sleep
 from telepot import Bot, glance
 from threading import Thread
+from random import randint, choice
 from pony.orm import db_session, select, commit
 from datetime import datetime, timedelta
 from telepot.exception import TelegramError, BotWasBlockedError
+from json import load as jsload
+from os.path import abspath, dirname, join
 
 # Custom Modules
 from modules import parser, keyboards, helpers
@@ -12,21 +15,12 @@ from modules.crypter import crypt_password, decrypt_password
 from modules.database import User, Data, ParsedData, Settings, Circolari
 from modules.api import ClasseVivaAPI, ApiServerError
 
-try:
-    f = open('token.txt', 'r')
-    token = f.readline().strip()
-    f.close()
-except FileNotFoundError:
-    token = input(" * Incolla qui il token di BotFather: ")
-    f = open('token.txt', 'w')
-    f.write(token)
-    f.close()
+with open(join(dirname(abspath(__file__)), "../settings.json")) as settings_file:
+    js_settings = jsload(settings_file)
 
-bot = Bot(token)
-helpers.setBot(token)
-updatesEvery = 30 # minutes
-proxyEvery = 10 # minutes
-restrictedMode = True
+bot = Bot(js_settings["token"])
+updatesEvery = js_settings["updateEveryMin"]
+restrictedMode = js_settings["restrictedMode"]
 
 
 @db_session
@@ -120,9 +114,9 @@ def runDailyUpdates(crminute):
 
 @db_session
 def reply(msg):
+    global restrictedMode
     chatId = msg['chat']['id']
     name = msg['from']['first_name']
-    global restrictedMode
     if "text" in msg:
         text = msg['text']
     else:
@@ -148,7 +142,8 @@ def reply(msg):
                                     "ClasseVivaBot è un bot creato e sviluppato da Filippo Pesavento, che ti può aiutare "
                                     "durante l'anno scolastico mandando notifiche per le novità del registro e molto altro.\n"
                                     "Prova ad usarlo per scoprire quanto è comodo!\n\n"
-                                    "<b>Sviluppo:</b> Filippo Pesavento, Francesco De Benedittis e Gianluca Parri\n"
+                                    "<b>Sviluppo:</b> Filippo Pesavento\n"
+                                    "<b>Contributori:</b>Francesco De Benedittis, Gianluca Parri e PolpOnline\n"
                                     "<b>Hosting:</b> Filippo Pesavento\n\n"
                                     "<b>Info sicurezza:</b> /aboutprivacy", parse_mode="HTML")
 
@@ -465,15 +460,19 @@ def reply(msg):
                             return
 
             elif text == "⬆️⬆️⬇️⬇️⬅️➡️⬅️➡️🅱️🅰️" or text == "⬆️⬆️⬇️⬇️⬅️➡️⬅️➡️🅱🅰":
+                today = datetime.today().strftime("%d/%m/%Y")
+                subject = choice(["MATEMATICA", "ITALIANO", "INGLESE", "STORIA"])
                 bot.sendMessage(chatId, "🔔 <b>Hai nuovi voti!</b>\n\n"
-                                        "📚 <b>MATEMATICA</b>\n\n"
-                                        "📗 <b>Voto 10</b> • Scritto • 30/02/2020\n"
-                                        "<i>Start!</i>", parse_mode="HTML")
+                                        "📚 <b>{}</b>\n\n"
+                                        "📗 <b>Voto 10</b> • Scritto • {}\n"
+                                        "<i>Start!</i>".format(subject, today), parse_mode="HTML")
 
+            # Text is not a keyword
             else:
                 bot.sendMessage(chatId, "Non ho capito...\n"
                                         "Serve aiuto? Premi /help")
 
+        # User not logged in
         else:
             if text == "/login":
                 user.status = "login_0"
@@ -481,9 +480,10 @@ def reply(msg):
                                         "Usa /annulla se serve.", parse_mode="HTML")
             else:
                 bot.sendMessage(chatId, "Benvenuto, <b>{0}</b>!\n"
-                                        "Per favore, premi /login per utilizzarmi.\n\n"
+                                        "Per utilizzarmi devi eseguire il /login.\n\n"
                                         "Premi /help se serve aiuto.".format(name), parse_mode="HTML")
 
+    # Normal user with restricted mode
     else:
         if text == "/moreinfo":
             bot.sendMessage(chatId, "❓ <b>Che genere di problemi?</b>\n"
@@ -495,7 +495,7 @@ def reply(msg):
                                     "però è molto difficile da trovare senza pagare qualche servizio, che al momento non posso permettermi.\n\n"
                                     "❔ <b>Posso contattarti?</b>\n"
                                     "Certo, puoi scrivermi per qualsiasi motivo <a href=\"https://t.me/pesaventofilippo\">qui</a> "
-                                    "o mandarmi una <a href=\"mailto:cvvbot@pesaventofilippo.com\">mail</a>.\n"
+                                    "o mandarmi una mail a cvvbot@pesaventofilippo.com.\n"
                                     "Non sono un bot, quindi magari non rispondo subito 🙂", parse_mode="HTML", disable_web_page_preview=True)
 
         else:
@@ -692,13 +692,10 @@ def accept_button(msg):
     Thread(target=button_press, args=[msg]).start()
 
 bot.message_loop({'chat': accept_message, 'callback_query': accept_button})
-helpers.renewProxy()
 
 while True:
     sleep(60)
     minute = datetime.now().minute
-    if minute % proxyEvery == 0:
-        helpers.renewProxy()
     if minute % updatesEvery == 0:
         runDailyUpdates(minute)
         runUpdates()

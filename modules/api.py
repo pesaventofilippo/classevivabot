@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from http.client import RemoteDisconnected
 import requests
 from requests.exceptions import HTTPError, InvalidURL, ProxyError
-from modules.helpers import getProxy, renewProxy
+from modules.helpers import getProxy
 
 
 class AuthenticationFailedError(Exception):
@@ -47,10 +47,7 @@ class ClasseVivaAPI:
         try:
             req = requests.post(url, data, headers=headers, proxies=self.proxy)
             result = req.json()
-        except (ValueError, HTTPError, InvalidURL, RemoteDisconnected):
-            raise ApiServerError
-        except ProxyError:
-            renewProxy()
+        except (ValueError, HTTPError, InvalidURL, RemoteDisconnected, ProxyError):
             raise ApiServerError
 
         if 'authentication failed' in result.get('error', ''):
@@ -82,10 +79,7 @@ class ClasseVivaAPI:
                 req = requests.post(url, headers=headers, proxies=self.proxy)
             else:
                 req = requests.get(url, headers=headers, proxies=self.proxy)
-        except (HTTPError, InvalidURL, RemoteDisconnected):
-            raise ApiServerError
-        except ProxyError:
-            renewProxy()
+        except (HTTPError, InvalidURL, RemoteDisconnected, ProxyError):
             raise ApiServerError
 
         if returnFile:
