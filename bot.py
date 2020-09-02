@@ -2,7 +2,7 @@
 from time import sleep
 from telepot import Bot, glance
 from threading import Thread
-from random import randint, choice
+from random import choice
 from pony.orm import db_session, select, commit
 from datetime import datetime, timedelta
 from telepot.exception import TelegramError, BotWasBlockedError
@@ -15,7 +15,7 @@ from modules.crypter import crypt_password, decrypt_password
 from modules.database import User, Data, ParsedData, Settings, Circolari
 from modules.api import ClasseVivaAPI, ApiServerError
 
-with open(join(dirname(abspath(__file__)), "../settings.json")) as settings_file:
+with open(join(dirname(abspath(__file__)), "settings.json")) as settings_file:
     js_settings = jsload(settings_file)
 
 bot = Bot(js_settings["token"])
