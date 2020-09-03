@@ -40,7 +40,7 @@ def runUserUpdate(chatId, long_fetch, crhour):
                 dataNote = parser.parseNewNote(userdata.note, data['note'])
                 dataVoti = parser.parseNewVoti(userdata.voti, data['voti'], chatId)
                 dataAgenda = parser.parseNewAgenda(userdata.agenda, data['agenda'])
-                dataCircolari = parser.parseNewCircolari(userdata.circolari, data['circolari'])
+                #dataCircolari = parser.parseNewCircolari(userdata.circolari, data['circolari'])
                 try:
                     if dataDidattica and ("didattica" in settings.activeNews):
                         bot.sendMessage(chatId, "🔔 <b>Nuovi file caricati!</b>"
@@ -54,9 +54,9 @@ def runUserUpdate(chatId, long_fetch, crhour):
                     if dataAgenda and ("agenda" in settings.activeNews):
                         bot.sendMessage(chatId, "🔔 <b>Hai nuovi impegni!</b>\n"
                                                 "{0}".format(dataAgenda), parse_mode="HTML", disable_web_page_preview=True)
-                    if dataCircolari and ("circolari" in settings.activeNews):
-                        bot.sendMessage(chatId, "🔔 <b>Hai nuove circolari!</b>"
-                                                "{0}".format(dataCircolari), parse_mode="HTML", disable_web_page_preview=True)
+                    #if dataCircolari and ("circolari" in settings.activeNews):
+                    #    bot.sendMessage(chatId, "🔔 <b>Hai nuove circolari!</b>"
+                    #                            "{0}".format(dataCircolari), parse_mode="HTML", disable_web_page_preview=True)
                 except BotWasBlockedError:
                     helpers.clearUserData(chatId)
                     return
@@ -405,8 +405,8 @@ def reply(msg):
                         bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 70%")
                         dataAgenda = parser.parseNewAgenda(userdata.agenda, data['agenda'])
                         bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 85%")
-                        dataCircolari = parser.parseNewCircolari(userdata.circolari, data['circolari'])
-                        bot.editMessageText((chatId, sent['message_id']), "📗📗📗  Cerco aggiornamenti... 100%")
+                        #dataCircolari = parser.parseNewCircolari(userdata.circolari, data['circolari'])
+                        #bot.editMessageText((chatId, sent['message_id']), "📗📗📗  Cerco aggiornamenti... 100%")
 
                         if dataDidattica is not None:
                             bot.sendMessage(chatId, "🔔 <b>Nuovi file caricati!</b>{0}".format(dataDidattica), parse_mode="HTML", disable_web_page_preview=True)
@@ -420,10 +420,10 @@ def reply(msg):
                         if dataAgenda is not None:
                             bot.sendMessage(chatId, "🔔 <b>Hai nuovi impegni!</b>\n{0}".format(dataAgenda), parse_mode="HTML", disable_web_page_preview=True)
 
-                        if dataCircolari is not None:
-                            bot.sendMessage(chatId, "🔔 <b>Hai nuove circolari!</b>{0}".format(dataCircolari), parse_mode="HTML", disable_web_page_preview=True)
+                        #if dataCircolari is not None:
+                        #    bot.sendMessage(chatId, "🔔 <b>Hai nuove circolari!</b>{0}".format(dataCircolari), parse_mode="HTML", disable_web_page_preview=True)
 
-                        if not any([dataDidattica, dataNote, dataVoti, dataAgenda, dataCircolari]):
+                        if not any([dataDidattica, dataNote, dataVoti, dataAgenda]): #, dataCircolari
                             bot.editMessageText((chatId, sent['message_id']), "📗 Dati aggiornati!\n"
                                                                               "📗 Nessuna novità!")
                         else:
