@@ -435,7 +435,7 @@ def reply(msg):
                 else:
                     bot.sendMessage(chatId, "⛔️ Hai usato troppi /aggiorna recentemente. Aspetta un po'!")
 
-            elif text == "/support":
+            elif (text == "/support") or (text == "/start support"):
                 user.status = "calling_support"
                 bot.sendMessage(chatId, "🆘 <b>Richiesta di supporto</b>\n"
                                         "Se hai qualche problema che non riesci a risolvere, scrivi qui un messaggio, e un admin "
