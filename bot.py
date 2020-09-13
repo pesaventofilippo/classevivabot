@@ -1,11 +1,12 @@
 ﻿# Python Libraries
 from time import sleep
-from telepot import Bot, glance
+from telepot import Bot, glance, api as tpApi
+from urllib3 import PoolManager
+from telepot.exception import TelegramError, BotWasBlockedError
 from threading import Thread
 from random import choice
 from pony.orm import db_session, select, commit
 from datetime import datetime, timedelta
-from telepot.exception import TelegramError, BotWasBlockedError
 from json import load as jsload
 from os.path import abspath, dirname, join
 
@@ -21,6 +22,14 @@ with open(join(dirname(abspath(__file__)), "settings.json")) as settings_file:
 bot = Bot(js_settings["token"])
 updatesEvery = js_settings["updateEveryMin"]
 restrictedMode = js_settings["restrictedMode"]
+
+# Fix for telepot's timeout errors
+def _always_use_new(req, **user_kw):
+    return None
+tpApi._which_pool = _always_use_new
+tpApi._pools = {
+    "default": PoolManager(num_pools=3, maxsize=10, retries=3, timeout=10)
+}
 
 
 @db_session
@@ -691,7 +700,9 @@ def accept_message(msg):
 def accept_button(msg):
     Thread(target=button_press, args=[msg]).start()
 
-bot.message_loop({'chat': accept_message, 'callback_query': accept_button})
+bot.message_loop(
+    callback={'chat': accept_message, 'callback_query': accept_button}
+)
 
 while True:
     sleep(60)
