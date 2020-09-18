@@ -161,8 +161,8 @@ def fetchAndStore(chatId, api_type, data, fetch_long=False):
 
 def updateUserdata(chatId, data):
     userdata = Data.get(chatId=chatId)
-    userdata.didattica = data['didattica']
-    userdata.note = data['note']
-    userdata.voti = data['voti']
-    userdata.agenda = data['agenda']
-    userdata.circolari = data['circolari']
+    if data['didattica']: userdata.didattica = data['didattica']
+    if data['note']: userdata.note = data['note']
+    if data['voti']: userdata.voti = data['voti']
+    if data['agenda']: userdata.agenda = data['agenda']
+    if data['circolari']: userdata.circolari = data['circolari']
