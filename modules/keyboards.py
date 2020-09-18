@@ -1,4 +1,4 @@
-from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton
+from telepotpro.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton
 
 
 def back(msgid):

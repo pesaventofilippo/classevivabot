@@ -1,8 +1,8 @@
 from time import sleep
-from telepot import Bot
+from telepotpro import Bot
 from modules.database import User, Data, ParsedData
 from modules.crypter import decrypt_password
-from telepot.exception import TelegramError, BotWasBlockedError
+from telepotpro.exception import TelegramError, BotWasBlockedError
 from modules import parser
 from json import load as jsload
 from os.path import abspath, dirname, join
