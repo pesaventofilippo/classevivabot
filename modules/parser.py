@@ -1,4 +1,4 @@
-﻿from modules.database import User, Circolari
+﻿from modules.database import User, Circolari, File
 from pony.orm import commit
 
 def sanitize(dinput):
@@ -40,7 +40,11 @@ def parseDidattica(data):
             for upfile in folder['contents']:
                 fileName = "Senza nome" if upfile['contentName'] == "" else sanitize(upfile['contentName'])
                 fileId = upfile['contentId']
-                result += "\n        📝 <a href=\"https://t.me/ClasseVivaIT_Bot?start=file{}\">{}</a>".format(fileId, fileName)
+                if not File.exists(lambda f: f.fileId == fileId):
+                    File(name=fileName, fileId=fileId)
+                    commit()
+                file = File.get(fileId=fileId)
+                result += "\n        📝 <a href=\"https://t.me/ClasseVivaIT_Bot?start=file{}\">{}</a>".format(file.id, file.name)
 
     return result
 
@@ -351,7 +355,11 @@ def parseNewDidattica(oldData, newData):
                 for upfile in folder['contents']:
                     fileName = "Senza nome" if upfile['contentName'] == "" else sanitize(upfile['contentName'])
                     fileId = upfile['contentId']
-                    result += "\n        📝 <a href=\"https://t.me/ClasseVivaIT_Bot?start=file{}\">{}</a>".format(fileId, fileName)
+                    if not File.exists(lambda f: f.fileId == fileId):
+                        File(name=fileName, fileId=fileId)
+                        commit()
+                    file = File.get(fileId=fileId)
+                    result += "\n        📝 <a href=\"https://t.me/ClasseVivaIT_Bot?start=file{}\">{}</a>".format(file.id, file.name)
 
         else:
             firstFolder = True
@@ -371,7 +379,11 @@ def parseNewDidattica(oldData, newData):
                     for upfile in folder['contents']:
                         fileName = "Senza nome" if upfile['contentName'] == "" else sanitize(upfile['contentName'])
                         fileId = upfile['contentId']
-                        result += "\n        📝 <a href=\"https://t.me/ClasseVivaIT_Bot?start=file{}\">{}</a>".format(fileId, fileName)
+                        if not File.exists(lambda f: f.fileId == fileId):
+                            File(name=fileName, fileId=fileId)
+                            commit()
+                        file = File.get(fileId=fileId)
+                        result += "\n        📝 <a href=\"https://t.me/ClasseVivaIT_Bot?start=file{}\">{}</a>".format(file.id, file.name)
 
                 else:
                     firstFile = True
@@ -386,7 +398,11 @@ def parseNewDidattica(oldData, newData):
                                 firstFolder = False
                             fileName = "Senza nome" if upfile['contentName'] == "" else sanitize(upfile['contentName'])
                             fileId = upfile['contentId']
-                            result += "\n        📝 <a href=\"https://t.me/ClasseVivaIT_Bot?start=file{}\">{}</a>".format(fileId, fileName)
+                            if not File.exists(lambda f: f.fileId == fileId):
+                                File(name=fileName, fileId=fileId)
+                                commit()
+                            file = File.get(fileId=fileId)
+                            result += "\n        📝 <a href=\"https://t.me/ClasseVivaIT_Bot?start=file{}\">{}</a>".format(file.id, file.name)
                             firstFile = False
 
     return result if result != "" else None

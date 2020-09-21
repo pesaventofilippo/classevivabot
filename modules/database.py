@@ -56,4 +56,9 @@ class Circolari(db.Entity):
     attachName = Required(str)
 
 
+class File(db.Entity):
+    name = Required(str)
+    fileId = Required(int)
+
+
 db.generate_mapping(create_tables=True)

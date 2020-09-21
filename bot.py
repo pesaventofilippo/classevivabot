@@ -12,7 +12,7 @@ from os.path import abspath, dirname, join
 # Custom Modules
 from modules import parser, keyboards, helpers
 from modules.crypter import crypt_password, decrypt_password
-from modules.database import User, Data, ParsedData, Settings, Circolari
+from modules.database import User, Data, ParsedData, Settings, Circolari, File
 from modules.api import ClasseVivaAPI, ApiServerError
 
 with open(join(dirname(abspath(__file__)), "settings.json")) as settings_file:
@@ -446,7 +446,7 @@ def reply(msg):
             elif text.startswith("/start "):
                 param = text.split(' ')[1]
                 if param.startswith("circ"):
-                    sent = bot.sendMessage(chatId, "⬇️ <i>Download file in corso...</i>", parse_mode="HTML")
+                    sent = bot.sendMessage(chatId, "⬇️ <i>Download circolare in corso...</i>", parse_mode="HTML")
                     intId = int(param.replace('circ', ''))
                     circ = Circolari.get(id=intId)
                     api = ClasseVivaAPI()
@@ -457,6 +457,19 @@ def reply(msg):
                         except ApiServerError:
                             bot.deleteMessage((chatId, sent['message_id']))
                             bot.sendMessage(chatId, "⚠️ Non sono riuscito a scaricare la circolare.")
+                            return
+
+                elif param.startswith("file"):
+                    sent = bot.sendMessage(chatId, "⬇️ <i>Download file in corso...</i>", parse_mode="HTML")
+                    intId = int(param.replace('file', ''))
+                    file = File.get(id=intId)
+                    api = ClasseVivaAPI()
+                    if helpers.userLogin(chatId, api):
+                        try:
+                            bot.sendDocument(chatId, (file.name, api.getFile(file.fileId)), file.name)
+                            bot.deleteMessage((chatId, sent['message_id']))
+                        except ApiServerError:
+                            bot.editMessageText((chatId, sent['message_id']), "⚠️ Non sono riuscito a scaricare la circolare.")
                             return
 
             elif text == "⬆️⬆️⬇️⬇️⬅️➡️⬅️➡️🅱️🅰️" or text == "⬆️⬆️⬇️⬇️⬅️➡️⬅️➡️🅱🅰":
