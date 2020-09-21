@@ -40,7 +40,7 @@ def parseDidattica(data):
             for upfile in folder['contents']:
                 fileName = "Senza nome" if upfile['contentName'] == "" else sanitize(upfile['contentName'])
                 fileId = upfile['contentId']
-                result += "\n        📝 {0}".format(fileName)
+                result += "\n        📝 <a href=\"https://t.me/ClasseVivaIT_Bot?start=file{}\">{}</a>".format(fileId, fileName)
 
     return result
 
@@ -315,7 +315,7 @@ def parseCircolari(data):
             circ = Circolari.get(pubId=pubId)
 
             if (status == 'active') and not isRead:
-                result += "\n\n✉️ <a href=\"https://t.me/classevivait_bot?start=circ{}\">{}</a>".format(circ.id, circ.name)
+                result += "\n\n✉️ <a href=\"https://t.me/ClasseVivaIT_Bot?start=circ{}\">{}</a>".format(circ.id, circ.name)
         else:
             if (status == 'active') and not isRead:
                 result += "\n\n✉️ {}".format(title)
@@ -351,7 +351,7 @@ def parseNewDidattica(oldData, newData):
                 for upfile in folder['contents']:
                     fileName = "Senza nome" if upfile['contentName'] == "" else sanitize(upfile['contentName'])
                     fileId = upfile['contentId']
-                    result += "\n        📝 {0}".format(fileName)
+                    result += "\n        📝 <a href=\"https://t.me/ClasseVivaIT_Bot?start=file{}\">{}</a>".format(fileId, fileName)
 
         else:
             firstFolder = True
@@ -371,7 +371,7 @@ def parseNewDidattica(oldData, newData):
                     for upfile in folder['contents']:
                         fileName = "Senza nome" if upfile['contentName'] == "" else sanitize(upfile['contentName'])
                         fileId = upfile['contentId']
-                        result += "\n        📝 {0}".format(fileName)
+                        result += "\n        📝 <a href=\"https://t.me/ClasseVivaIT_Bot?start=file{}\">{}</a>".format(fileId, fileName)
 
                 else:
                     firstFile = True
@@ -386,7 +386,7 @@ def parseNewDidattica(oldData, newData):
                                 firstFolder = False
                             fileName = "Senza nome" if upfile['contentName'] == "" else sanitize(upfile['contentName'])
                             fileId = upfile['contentId']
-                            result += "\n        📝 {0}".format(fileName)
+                            result += "\n        📝 <a href=\"https://t.me/ClasseVivaIT_Bot?start=file{}\">{}</a>".format(fileId, fileName)
                             firstFile = False
 
     return result if result != "" else None
@@ -501,7 +501,7 @@ def parseNewCircolari(oldData, newData):
                 circ = Circolari.get(pubId=pubId)
 
                 if (status == 'active') and not isRead:
-                    string = "\n✉️ <a href=\"https://t.me/classevivait_bot?start=circ{}\">{}</a>".format(circ.id, circ.name)
+                    string = "\n✉️ <a href=\"https://t.me/ClasseVivaIT_Bot?start=circ{}\">{}</a>".format(circ.id, circ.name)
                     result += string if isFirst else "\n" + string
                     isFirst = False
             else:
