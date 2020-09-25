@@ -452,7 +452,8 @@ def reply(msg):
                     api = ClasseVivaAPI()
                     if helpers.userLogin(chatId, api):
                         try:
-                            bot.sendDocument(chatId, (circ.attachName, api.getCirc(circ.eventCode, circ.pubId)), circ.name)
+                            circSend, _ = api.getCirc(circ.eventCode, circ.pubId)
+                            bot.sendDocument(chatId, (circ.attachName, circSend), circ.name)
                             bot.deleteMessage((chatId, sent['message_id']))
                         except ApiServerError:
                             bot.deleteMessage((chatId, sent['message_id']))
@@ -466,7 +467,8 @@ def reply(msg):
                     api = ClasseVivaAPI()
                     if helpers.userLogin(chatId, api):
                         try:
-                            bot.sendDocument(chatId, (file.name, api.getFile(file.fileId)), file.name)
+                            fileSend, fileNameExt = api.getFile(file.fileId)
+                            bot.sendDocument(chatId, (f"{file.name}.{fileNameExt}", fileSend), file.name)
                             bot.deleteMessage((chatId, sent['message_id']))
                         except ApiServerError:
                             bot.editMessageText((chatId, sent['message_id']), "⚠️ Non sono riuscito a scaricare la circolare.")

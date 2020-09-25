@@ -84,7 +84,9 @@ class ClasseVivaAPI:
 
         if returnFile:
             from io import BytesIO
-            return BytesIO(req.content)
+            extHeader = req.headers['content-disposition']
+            ext = extHeader.split('.')[-1]
+            return BytesIO(req.content), ext
 
         try:
             jsonResult = req.json()
