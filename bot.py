@@ -142,8 +142,8 @@ def reply(msg):
                                     "ClasseVivaBot è un bot creato e sviluppato da Filippo Pesavento, che ti può aiutare "
                                     "durante l'anno scolastico mandando notifiche per le novità del registro e molto altro.\n"
                                     "Prova ad usarlo per scoprire quanto è comodo!\n\n"
-                                    "<b>Sviluppo:</b> Filippo Pesavento\n"
-                                    "<b>Contributori:</b>Francesco De Benedittis, Gianluca Parri e PolpOnline\n"
+                                    "<b>Sviluppo:</b> <a href=\"https://t.me/pesaventofilippo\">Filippo Pesavento</a> e Francesco De Benedittis\n"
+                                    "<b>Contributori:</b>Gianluca Parri e PolpOnline\n"
                                     "<b>Hosting:</b> Filippo Pesavento\n\n"
                                     "<b>Info sicurezza:</b> /aboutprivacy", parse_mode="HTML")
 
@@ -715,5 +715,5 @@ while True:
     minute = datetime.now().minute
     if minute % updatesEvery == 0:
         helpers.renewProxy()
-        runDailyUpdates(minute)
         runUpdates()
+        runDailyUpdates(minute)

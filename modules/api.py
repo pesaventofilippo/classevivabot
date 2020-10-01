@@ -6,6 +6,8 @@ import requests
 from requests.exceptions import HTTPError, InvalidURL, ProxyError
 from modules.helpers import getProxy
 
+logFile = open("reqlogs.txt", "a")
+
 
 class AuthenticationFailedError(Exception):
     def __init__(self):
@@ -81,6 +83,15 @@ class ClasseVivaAPI:
                 req = requests.get(url, headers=headers, proxies=self.proxy)
         except (HTTPError, InvalidURL, RemoteDisconnected, ProxyError):
             raise ApiServerError
+
+        # Requests log: HOUR:MIN / METHOD / URL / STD_ID / RES_TEXT
+        logString = f"{datetime.now().hour}:{datetime.now().minute}\t" \
+                    f"{method}\t" \
+                    f"{relUrl}\t" \
+                    f"{self.id}\t" \
+                    f"{req.text}\n"
+        logFile.write(logString)
+        logFile.flush()
 
         if returnFile:
             from io import BytesIO
