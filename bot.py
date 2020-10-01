@@ -715,5 +715,5 @@ while True:
     minute = datetime.now().minute
     if minute % updatesEvery == 0:
         helpers.renewProxy()
-        runDailyUpdates(minute)
         runUpdates()
+        runDailyUpdates(minute)
