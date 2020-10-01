@@ -82,6 +82,14 @@ class ClasseVivaAPI:
         except (HTTPError, InvalidURL, RemoteDisconnected, ProxyError):
             raise ApiServerError
 
+        # Requests log: HOUR:MIN / METHOD / URL / STD_ID / RES_TEXT
+        logString = f"{datetime.now().hour}:{datetime.now().minute}\t" \
+                    f"{method}\t" \
+                    f"{relUrl}\t" \
+                    f"{self.id}\t" \
+                    f"{req.text}\n"
+        logFile.write(logString)
+
         if returnFile:
             from io import BytesIO
             extHeader = req.headers['content-disposition']
@@ -151,3 +159,6 @@ class ClasseVivaAPI:
     def getCirc(self, eventCode: int, pubId: int):
         self._request("noticeboard/read/{0}/{1}/101".format(eventCode, pubId), method="POST")
         return self._request("noticeboard/attach/{0}/{1}/101".format(eventCode, pubId), returnFile=True)
+
+
+logFile = open("reqlogs.txt", "a")
