@@ -6,6 +6,8 @@ import requests
 from requests.exceptions import HTTPError, InvalidURL, ProxyError
 from modules.helpers import getProxy
 
+logFile = open("reqlogs.txt", "a")
+
 
 class AuthenticationFailedError(Exception):
     def __init__(self):
@@ -89,6 +91,7 @@ class ClasseVivaAPI:
                     f"{self.id}\t" \
                     f"{req.text}\n"
         logFile.write(logString)
+        logFile.flush()
 
         if returnFile:
             from io import BytesIO
@@ -159,6 +162,3 @@ class ClasseVivaAPI:
     def getCirc(self, eventCode: int, pubId: int):
         self._request("noticeboard/read/{0}/{1}/101".format(eventCode, pubId), method="POST")
         return self._request("noticeboard/attach/{0}/{1}/101".format(eventCode, pubId), returnFile=True)
-
-
-logFile = open("reqlogs.txt", "a")
