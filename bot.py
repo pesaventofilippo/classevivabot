@@ -10,7 +10,7 @@ from json import load as jsload
 from os.path import abspath, dirname, join
 
 # Custom Modules
-from modules import parser, keyboards, helpers
+from modules import parsers, keyboards, helpers
 from modules.crypter import crypt_password, decrypt_password
 from modules.database import User, Data, ParsedData, Settings, Circolari, File
 from modules.api import ClasseVivaAPI, ApiServerError
@@ -24,7 +24,7 @@ restrictedMode = js_settings["restrictedMode"]
 
 
 @db_session
-def runUserUpdate(chatId, long_fetch, crhour):
+def runUserUpdate(chatId, long_fetch, crhour, sendMessages=True):
     api = ClasseVivaAPI()
     if helpers.userLogin(chatId, api, _quiet=True):
         userdata = Data.get(chatId=chatId)
@@ -36,32 +36,33 @@ def runUserUpdate(chatId, long_fetch, crhour):
 
         if settings.wantsNotifications is True:
             if (settings.doNotDisturb is False) or (crhour in range(7, 21)):
-                dataDidattica = parser.parseNewDidattica(userdata.didattica, data['didattica'])
-                dataNote = parser.parseNewNote(userdata.note, data['note'])
-                dataVoti = parser.parseNewVoti(userdata.voti, data['voti'], chatId)
-                dataAgenda = parser.parseNewAgenda(userdata.agenda, data['agenda'])
-                dataCircolari = parser.parseNewCircolari(userdata.circolari, data['circolari'])
-                try:
-                    if dataDidattica and ("didattica" in settings.activeNews):
-                        bot.sendMessage(chatId, "🔔 <b>Nuovi file caricati!</b>"
-                                                "{0}".format(dataDidattica), parse_mode="HTML", disable_web_page_preview=True)
-                    if dataNote and ("note" in settings.activeNews):
-                        bot.sendMessage(chatId, "🔔 <b>Hai nuove note!</b>"
-                                                "{0}".format(dataNote), parse_mode="HTML", disable_web_page_preview=True)
-                    if dataVoti and ("voti" in settings.activeNews):
-                        bot.sendMessage(chatId, "🔔 <b>Hai nuovi voti!</b>"
-                                                "{0}".format(dataVoti), parse_mode="HTML", disable_web_page_preview=True)
-                    if dataAgenda and ("agenda" in settings.activeNews):
-                        bot.sendMessage(chatId, "🔔 <b>Hai nuovi impegni!</b>\n"
-                                                "{0}".format(dataAgenda), parse_mode="HTML", disable_web_page_preview=True)
-                    if dataCircolari and ("circolari" in settings.activeNews):
-                        bot.sendMessage(chatId, "🔔 <b>Hai nuove circolari!</b>"
-                                                "{0}".format(dataCircolari), parse_mode="HTML", disable_web_page_preview=True)
-                except BotWasBlockedError:
-                    helpers.clearUserData(chatId)
-                    return
-                except TelegramError:
-                    pass
+                dataDidattica = parsers.parseNewDidattica(userdata.didattica, data['didattica'])
+                dataNote = parsers.parseNewNote(userdata.note, data['note'])
+                dataVoti = parsers.parseNewVoti(userdata.voti, data['voti'], chatId)
+                dataAgenda = parsers.parseNewAgenda(userdata.agenda, data['agenda'])
+                dataCircolari = parsers.parseNewCircolari(userdata.circolari, data['circolari'])
+                if sendMessages:
+                    try:
+                        if dataDidattica and ("didattica" in settings.activeNews):
+                            bot.sendMessage(chatId, "🔔 <b>Nuovi file caricati!</b>"
+                                                    "{0}".format(dataDidattica), parse_mode="HTML", disable_web_page_preview=True)
+                        if dataNote and ("note" in settings.activeNews):
+                            bot.sendMessage(chatId, "🔔 <b>Hai nuove note!</b>"
+                                                    "{0}".format(dataNote), parse_mode="HTML", disable_web_page_preview=True)
+                        if dataVoti and ("voti" in settings.activeNews):
+                            bot.sendMessage(chatId, "🔔 <b>Hai nuovi voti!</b>"
+                                                    "{0}".format(dataVoti), parse_mode="HTML", disable_web_page_preview=True)
+                        if dataAgenda and ("agenda" in settings.activeNews):
+                            bot.sendMessage(chatId, "🔔 <b>Hai nuovi impegni!</b>\n"
+                                                    "{0}".format(dataAgenda), parse_mode="HTML", disable_web_page_preview=True)
+                        if dataCircolari and ("circolari" in settings.activeNews):
+                            bot.sendMessage(chatId, "🔔 <b>Hai nuove circolari!</b>"
+                                                    "{0}".format(dataCircolari), parse_mode="HTML", disable_web_page_preview=True)
+                    except BotWasBlockedError:
+                        helpers.clearUserData(chatId)
+                        return
+                    except TelegramError:
+                        pass
                 helpers.updateUserdata(chatId, data)
                 helpers.fetchAndStore(chatId, api, data, long_fetch)
         user = User.get(chatId=chatId)
@@ -69,14 +70,14 @@ def runUserUpdate(chatId, long_fetch, crhour):
 
 
 @db_session
-def runUpdates(long_fetch=False):
+def runUpdates(long_fetch=False, sendMessages=True):
     crhour = datetime.now().hour
     if not restrictedMode:
         pendingUsers = select(user.chatId for user in User if user.password != "")[:]
     else:
         pendingUsers = helpers.isAdmin()
     for currentUser in pendingUsers:
-        Thread(target=runUserUpdate, args=[currentUser, long_fetch, crhour]).start()
+        Thread(target=runUserUpdate, args=[currentUser, long_fetch, crhour, sendMessages]).start()
 
 
 @db_session
@@ -113,6 +114,11 @@ def runDailyUpdates(crminute):
 
 
 @db_session
+def reply_GroupsMode(msg):
+    pass
+
+
+@db_session
 def reply(msg):
     global restrictedMode
     chatId = msg['chat']['id']
@@ -121,6 +127,10 @@ def reply(msg):
         text = msg['text']
     else:
         bot.sendMessage(chatId, "🤨 Formato file non supportato. /help")
+        return
+
+    if chatId < 0:
+        reply_GroupsMode(msg)
         return
 
     if not User.exists(lambda u: u.chatId == chatId):
@@ -143,9 +153,9 @@ def reply(msg):
                                     "durante l'anno scolastico mandando notifiche per le novità del registro e molto altro.\n"
                                     "Prova ad usarlo per scoprire quanto è comodo!\n\n"
                                     "<b>Sviluppo:</b> <a href=\"https://t.me/pesaventofilippo\">Filippo Pesavento</a> e Francesco De Benedittis\n"
-                                    "<b>Contributori:</b>Gianluca Parri e PolpOnline\n"
+                                    "<b>Contributori:</b> Gianluca Parri e PolpOnline\n"
                                     "<b>Hosting:</b> Filippo Pesavento\n\n"
-                                    "<b>Info sicurezza:</b> /aboutprivacy", parse_mode="HTML")
+                                    "<b>Info sicurezza:</b> /aboutprivacy", parse_mode="HTML", disable_web_page_preview=True)
 
         elif text == "/aboutprivacy":
             bot.sendMessage(chatId, "ℹ️ <b>Informazioni sulla privacy</b>\n"
@@ -156,8 +166,8 @@ def reply(msg):
                                     "🔐 <b>Spiegazione dettagliata:</b>\n"
                                     "Tecnicamente potrei decriptare a mano le password e vederle, ma sostanzialmente è complicato, "
                                     "perchè il bot genera una chiave per l'algoritmo (visto che il cripting deve essere reversibile, "
-                                    "per poter mandare le notifiche automatiche) prendendo come dati una chiave comune (che salvo nella RAM "
-                                    "e inserisco ad ogni avvio, per evitare che qualcuno che non sia io possa leggere il database e i dati degli utenti) "
+                                    "per poter mandare le notifiche automatiche) prendendo come dati una chiave comune (che salvo nella RAM, "
+                                    "per evitare che qualcuno che non sia io possa leggere il database e i dati degli utenti) "
                                     "e anche l'username dell'utente. Quindi ogni utente ha la propria password criptata con una chiave diversa da tutti "
                                     "gli altri, e sarebbe difficile anche per me risalire alla password, dovendo sapere di chi è l'username collegato a "
                                     "quella password specifica.\n"
@@ -279,6 +289,11 @@ def reply(msg):
             runUpdates(long_fetch=True)
             bot.sendMessage(chatId, "✅ Aggiornamento globale completato!")
 
+        elif text == "/silentupdate" and helpers.isAdmin(chatId):
+            bot.sendMessage(chatId, "🕙 [BG] Inizio aggiornamento globale...")
+            runUpdates(long_fetch=True, sendMessages=False)
+            bot.sendMessage(chatId, "✅ [BG] Aggiornamento globale completato!")
+
         elif text == "/users" and helpers.isAdmin(chatId):
             totalUsers = len(select(u for u in User)[:])
             loggedUsers = len(select(u for u in User if u.password != "")[:])
@@ -382,7 +397,7 @@ def reply(msg):
                                         "{1}".format(stored.domani, stored.lezioni), parse_mode="HTML", disable_web_page_preview=True)
 
             elif text == "/aggiorna":
-                if user.remainingCalls > 0:
+                if (user.remainingCalls > 0) or (helpers.isAdmin(chatId)):
                     user.remainingCalls -= 1
                     commit()
                     sent = bot.sendMessage(chatId, "📙📙📙 Cerco aggiornamenti... 0%")
@@ -397,15 +412,15 @@ def reply(msg):
                                                                               "Riprova tra qualche minuto.")
                             return
                         bot.editMessageText((chatId, sent['message_id']), "📗📙📙 Cerco aggiornamenti... 25%")
-                        dataDidattica = parser.parseNewDidattica(userdata.didattica, data['didattica'])
+                        dataDidattica = parsers.parseNewDidattica(userdata.didattica, data['didattica'])
                         bot.editMessageText((chatId, sent['message_id']), "📗📙📙  Cerco aggiornamenti... 40%")
-                        dataNote = parser.parseNewNote(userdata.note, data['note'])
+                        dataNote = parsers.parseNewNote(userdata.note, data['note'])
                         bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 55%")
-                        dataVoti = parser.parseNewVoti(userdata.voti, data['voti'], chatId)
+                        dataVoti = parsers.parseNewVoti(userdata.voti, data['voti'], chatId)
                         bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 70%")
-                        dataAgenda = parser.parseNewAgenda(userdata.agenda, data['agenda'])
+                        dataAgenda = parsers.parseNewAgenda(userdata.agenda, data['agenda'])
                         bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 85%")
-                        dataCircolari = parser.parseNewCircolari(userdata.circolari, data['circolari'])
+                        dataCircolari = parsers.parseNewCircolari(userdata.circolari, data['circolari'])
                         bot.editMessageText((chatId, sent['message_id']), "📗📗📗  Cerco aggiornamenti... 100%")
 
                         if dataDidattica is not None:
@@ -684,7 +699,7 @@ def button_press(msg):
                 dateformat = (datetime.now() + timedelta(days=selectedDay)).strftime("%d/%m/%Y")
                 try:
                     apiRes = api.lezioni(selectedDay)
-                    data = parser.parseLezioni(apiRes)
+                    data = parsers.parseLezioni(apiRes)
                     bot.editMessageText((chatId, message_id), "📚 <b>Lezioni del {0}</b>:\n\n{1}".format(dateformat, data),
                                         parse_mode="HTML", reply_markup=keyboards.lezioni(message_id, selectedDay), disable_web_page_preview=True)
                 except ApiServerError:

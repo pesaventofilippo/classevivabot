@@ -3,7 +3,7 @@ from telepotpro import Bot
 from modules.database import User, Data, ParsedData
 from modules.crypter import decrypt_password
 from telepotpro.exception import TelegramError, BotWasBlockedError
-from modules import parser
+from modules import parsers
 from json import load as jsload
 from os.path import abspath, dirname, join
 from stem import Signal
@@ -18,13 +18,17 @@ bot = Bot(js_settings["token"])
 
 
 def renewProxy():
-    with Controller.from_port(port=js_settings["torControlPort"]) as controller:
-        controller.authenticate(password=js_settings["torControlPassword"])
-        controller.signal(Signal.NEWNYM)
+    if js_settings["useProxy"]:
+        with Controller.from_port(address=js_settings["torProxyIP"], port=js_settings["torControlPort"]) as controller:
+            controller.authenticate(password=js_settings["torControlPassword"])
+            controller.signal(Signal.NEWNYM)
 
 
 def getProxy():
-    proxyIP = "socks5://{}:{}".format(js_settings["torProxyIP"], js_settings["torProxyPort"])
+    if js_settings["useProxy"]:
+        proxyIP = "socks5://{}:{}".format(js_settings["torProxyIP"], js_settings["torProxyPort"])
+    else:
+        proxyIP = ""
     return {
         "http": proxyIP,
         "https": proxyIP
@@ -146,17 +150,17 @@ def fetchAndStore(chatId, api_type, data, fetch_long=False):
         newProf = api_type.materie()
 
     stored = ParsedData.get(chatId=chatId)
-    stored.note = parser.parseNote(data['note'])
-    stored.voti = parser.parseVoti(data['voti'], chatId)
-    stored.assenze = parser.parseAssenze(newAssenze)
-    stored.agenda = parser.parseAgenda(data['agenda'])
-    stored.domani = parser.parseDomani(data['agenda'])
-    stored.lezioni = parser.parseLezioni(newLezioni)
-    stored.didattica = parser.parseDidattica(data['didattica'])
-    stored.circolari = parser.parseCircolari(data['circolari'])
+    stored.note = parsers.parseNote(data['note'])
+    stored.voti = parsers.parseVoti(data['voti'], chatId)
+    stored.assenze = parsers.parseAssenze(newAssenze)
+    stored.agenda = parsers.parseAgenda(data['agenda'])
+    stored.domani = parsers.parseDomani(data['agenda'])
+    stored.lezioni = parsers.parseLezioni(newLezioni)
+    stored.didattica = parsers.parseDidattica(data['didattica'])
+    stored.circolari = parsers.parseCircolari(data['circolari'])
     if fetch_long:
-        stored.info = parser.parseInfo(newInfo)
-        stored.prof = parser.parseMaterie(newProf)
+        stored.info = parsers.parseInfo(newInfo)
+        stored.prof = parsers.parseMaterie(newProf)
 
 
 def updateUserdata(chatId, data):

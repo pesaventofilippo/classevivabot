@@ -62,3 +62,20 @@ class File(db.Entity):
 
 
 db.generate_mapping(create_tables=True)
+
+
+if __name__ == "__main__":
+    from sys import argv
+
+    if "--create-tables" in argv:
+        print("Creating orphan tables...")
+        from pony.orm import db_session, select
+        with db_session:
+            for chatId in select(u.chatId for u in User)[:]:
+                if not Data.exists(lambda d: d.chatId == chatId):
+                    Data(chatId=chatId)
+                if not ParsedData.exists(lambda p: p.chatId == chatId):
+                    ParsedData(chatId=chatId)
+                if not Settings.exists(lambda s: s.chatId == chatId):
+                    Settings(chatId=chatId)
+        print("Creating tables done.")

@@ -40,10 +40,11 @@ def parseDidattica(data):
             for upfile in folder['contents']:
                 fileName = "Senza nome" if upfile['contentName'] == "" else sanitize(upfile['contentName'])
                 fileId = upfile['contentId']
-                if not File.exists(lambda f: f.fileId == fileId):
-                    File(name=fileName, fileId=fileId)
+                if not File.exists(lambda f: (f.name == fileName) and (f.fileId == fileId)):
+                    file = File(name=fileName, fileId=fileId)
                     commit()
-                file = File.get(fileId=fileId)
+                else:
+                    file = list(File.select(lambda f: (f.name == fileName) and (f.fileId == fileId)))[0]
                 result += "\n        📝 <a href=\"https://t.me/ClasseVivaIT_Bot?start=file{}\">{}</a>".format(file.id, file.name)
 
     return result
@@ -183,7 +184,9 @@ def parseVoti(data, chatId):
             materie[materia] = string if firstMateria else "\n\n" + string
             firstMateria = False
 
-    if len(media["total"]) == 0:
+    if "total" not in media:
+        media["total"] = False
+    elif len(media["total"]) == 0:
         media["total"] = False
     else:
         media["total"] = round(sum(media["total"]) / len(media["total"]), 2)
@@ -313,10 +316,11 @@ def parseCircolari(data):
             pubId = item['pubId']
             evCode = item['evtCode']
             attName = item['attachments'][0]['fileName']
-            if not Circolari.exists(lambda c: c.pubId == pubId):
-                Circolari(name=title, pubId=pubId, eventCode=evCode, attachName=attName)
+            if not Circolari.exists(lambda c: (c.name == title) and (c.pubId == pubId)):
+                circ = Circolari(name=title, pubId=pubId, eventCode=evCode, attachName=attName)
                 commit()
-            circ = Circolari.get(pubId=pubId)
+            else:
+                circ = list(Circolari.select(lambda c: (c.name == title) and (c.pubId == pubId)))[0]
 
             if (status == 'active') and not isRead:
                 result += "\n\n✉️ <a href=\"https://t.me/ClasseVivaIT_Bot?start=circ{}\">{}</a>".format(circ.id, circ.name)
@@ -355,10 +359,11 @@ def parseNewDidattica(oldData, newData):
                 for upfile in folder['contents']:
                     fileName = "Senza nome" if upfile['contentName'] == "" else sanitize(upfile['contentName'])
                     fileId = upfile['contentId']
-                    if not File.exists(lambda f: f.fileId == fileId):
-                        File(name=fileName, fileId=fileId)
+                    if not File.exists(lambda f: (f.name == fileName) and (f.fileId == fileId)):
+                        file = File(name=fileName, fileId=fileId)
                         commit()
-                    file = File.get(fileId=fileId)
+                    else:
+                        file = list(File.select(lambda f: (f.name == fileName) and (f.fileId == fileId)))[0]
                     result += "\n        📝 <a href=\"https://t.me/ClasseVivaIT_Bot?start=file{}\">{}</a>".format(file.id, file.name)
 
         else:
@@ -379,10 +384,11 @@ def parseNewDidattica(oldData, newData):
                     for upfile in folder['contents']:
                         fileName = "Senza nome" if upfile['contentName'] == "" else sanitize(upfile['contentName'])
                         fileId = upfile['contentId']
-                        if not File.exists(lambda f: f.fileId == fileId):
-                            File(name=fileName, fileId=fileId)
+                        if not File.exists(lambda f: (f.name == fileName) and (f.fileId == fileId)):
+                            file = File(name=fileName, fileId=fileId)
                             commit()
-                        file = File.get(fileId=fileId)
+                        else:
+                            file = list(File.select(lambda f: (f.name == fileName) and (f.fileId == fileId)))[0]
                         result += "\n        📝 <a href=\"https://t.me/ClasseVivaIT_Bot?start=file{}\">{}</a>".format(file.id, file.name)
 
                 else:
@@ -398,10 +404,11 @@ def parseNewDidattica(oldData, newData):
                                 firstFolder = False
                             fileName = "Senza nome" if upfile['contentName'] == "" else sanitize(upfile['contentName'])
                             fileId = upfile['contentId']
-                            if not File.exists(lambda f: f.fileId == fileId):
-                                File(name=fileName, fileId=fileId)
+                            if not File.exists(lambda f: (f.name == fileName) and (f.fileId == fileId)):
+                                file = File(name=fileName, fileId=fileId)
                                 commit()
-                            file = File.get(fileId=fileId)
+                            else:
+                                file = list(File.select(lambda f: (f.name == fileName) and (f.fileId == fileId)))[0]
                             result += "\n        📝 <a href=\"https://t.me/ClasseVivaIT_Bot?start=file{}\">{}</a>".format(file.id, file.name)
                             firstFile = False
 
@@ -511,10 +518,11 @@ def parseNewCircolari(oldData, newData):
                 pubId = item['pubId']
                 evCode = item['evtCode']
                 attName = item['attachments'][0]['fileName']
-                if not Circolari.exists(lambda c: c.pubId == pubId):
-                    Circolari(name=title, pubId=pubId, eventCode=evCode, attachName=attName)
+                if not Circolari.exists(lambda c: (c.name == title) and (c.pubId == pubId)):
+                    circ = Circolari(name=title, pubId=pubId, eventCode=evCode, attachName=attName)
                     commit()
-                circ = Circolari.get(pubId=pubId)
+                else:
+                    circ = list(Circolari.select(lambda c: (c.name == title) and (c.pubId == pubId)))[0]
 
                 if (status == 'active') and not isRead:
                     string = "\n✉️ <a href=\"https://t.me/ClasseVivaIT_Bot?start=circ{}\">{}</a>".format(circ.id, circ.name)
