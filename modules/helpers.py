@@ -74,34 +74,13 @@ def hasStoredCredentials(chatId):
 
 def clearUserData(chatId):
     user = User.get(chatId=chatId)
-    user.username = ""
-    user.password = ""
-    user.status = "normal"
-    user.lastPeriod = 1
+    user.delete()
 
     userdata = Data.get(chatId=chatId)
-    userdata.didattica = {}
-    userdata.info = {}
-    userdata.prof = {}
-    userdata.note = {}
-    userdata.voti = {}
-    userdata.assenze = {}
-    userdata.agenda = {}
-    userdata.domani = {}
-    userdata.lezioni = {}
-    userdata.circolari = {}
+    userdata.delete()
 
     stored = ParsedData.get(chatId=chatId)
-    stored.didattica = ""
-    stored.info = ""
-    stored.prof = ""
-    stored.note = ""
-    stored.voti = ""
-    stored.assenze = ""
-    stored.agenda = ""
-    stored.domani = ""
-    stored.lezioni = ""
-    stored.circolari = ""
+    stored.delete()
 
 
 def userLogin(chatId, api_type, _quiet=False):
