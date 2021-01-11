@@ -92,8 +92,8 @@ def userLogin(chatId, api_type, _quiet=False):
         api_type.login(user.username, decrypt_password(chatId))
         return True
     except AuthenticationFailedError:
-        clearUserData(chatId)
         if not _quiet:
+            clearUserData(chatId)
             try:
                 bot.sendMessage(chatId, "😯 Le tue credenziali di accesso sono errate.\n"
                                         "Effettua nuovamente il /login per favore.")
