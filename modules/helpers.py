@@ -1,5 +1,6 @@
 from time import sleep
 from telepotpro import Bot
+from modules.api import AuthenticationFailedError, ApiServerError
 from modules.database import User, Data, ParsedData
 from modules.crypter import decrypt_password
 from telepotpro.exception import TelegramError, BotWasBlockedError
@@ -83,13 +84,12 @@ def clearUserData(chatId):
     stored.delete()
 
 
-def userLogin(chatId, api_type, _quiet=False):
-    from modules.api import AuthenticationFailedError, ApiServerError
+def userLogin(chatId, _api, _quiet=False):
     user = User.get(chatId=chatId)
     if not hasStoredCredentials(chatId):
         return False
     try:
-        api_type.login(user.username, decrypt_password(chatId))
+        _api.login(user.username, decrypt_password(chatId))
         return True
     except AuthenticationFailedError:
         if not _quiet:
@@ -110,25 +110,29 @@ def userLogin(chatId, api_type, _quiet=False):
         return False
 
 
-def fetchStrict(api_type):
+def fetchStrict(_api):
     data = {
-        'didattica': api_type.didattica(),
-        'note': api_type.note(),
-        'voti': api_type.voti(),
-        'agenda': api_type.agenda(14),
-        'circolari': api_type.circolari()
+        'didattica': _api.didattica(),
+        'note': _api.note(),
+        'voti': _api.voti(),
+        'agenda': _api.agenda(),
+        'circolari': _api.circolari()
     }
     return data
 
 
-def fetchAndStore(chatId, api_type, data, fetch_long=False):
-    newAssenze = api_type.assenze()
-    newLezioni = api_type.lezioni()
-    if fetch_long:
-        newInfo = api_type.info()
-        newProf = api_type.materie()
-
+def fetchAndStore(chatId, _api, data=None, fetch_long=False):
+    if not data: data = fetchStrict(_api)
     stored = ParsedData.get(chatId=chatId)
+
+    newAssenze = _api.assenze()
+    newLezioni = _api.lezioni()
+    if fetch_long:
+        newInfo = _api.info()
+        newProf = _api.materie()
+        stored.info = parsers.parseInfo(newInfo)
+        stored.prof = parsers.parseMaterie(newProf)
+
     stored.note = parsers.parseNote(data['note'])
     stored.voti = parsers.parseVoti(data['voti'], chatId)
     stored.assenze = parsers.parseAssenze(newAssenze)
@@ -137,9 +141,6 @@ def fetchAndStore(chatId, api_type, data, fetch_long=False):
     stored.lezioni = parsers.parseLezioni(newLezioni)
     stored.didattica = parsers.parseDidattica(data['didattica'])
     stored.circolari = parsers.parseCircolari(data['circolari'])
-    if fetch_long:
-        stored.info = parsers.parseInfo(newInfo)
-        stored.prof = parsers.parseMaterie(newProf)
 
 
 def updateUserdata(chatId, data):

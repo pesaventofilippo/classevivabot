@@ -14,7 +14,7 @@
 ## Reporting a Vulnerability
 
 If you think you found a vulnerability in my code, please use one of the following methods to let me know
-(and specify details - where is the vulnerability and what's about):
+(and specify details - where is the vulnerability and what it is about):
 
 - [Telegram @me](https://t.me/pesaventofilippo)
 - [Using /support on the Telegram bot](https://t.me/ClasseVivaIT_Bot?start=support)

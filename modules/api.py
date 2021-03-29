@@ -2,7 +2,7 @@ from json import dumps
 from re import sub
 from datetime import datetime, timedelta
 from http.client import RemoteDisconnected
-import requests
+from requests import get, post
 from requests.exceptions import HTTPError, InvalidURL, ProxyError
 from modules.helpers import getProxy
 
@@ -45,7 +45,7 @@ class ClasseVivaAPI:
         data = values.encode('ascii')
 
         try:
-            req = requests.post(url, data, headers=headers, proxies=self.proxy)
+            req = post(url, data, headers=headers, proxies=self.proxy)
             result = req.json()
         except (ValueError, HTTPError, InvalidURL, RemoteDisconnected, ProxyError):
             raise ApiServerError
@@ -74,11 +74,9 @@ class ClasseVivaAPI:
             "Content-Type": "application/json"
         }
 
+        req_func = post if method == "POST" else get
         try:
-            if method == "POST":
-                req = requests.post(url, headers=headers, proxies=self.proxy)
-            else:
-                req = requests.get(url, headers=headers, proxies=self.proxy)
+            req = req_func(url, headers=headers, proxies=self.proxy)
         except (HTTPError, InvalidURL, RemoteDisconnected, ProxyError):
             raise ApiServerError
 
@@ -102,7 +100,9 @@ class ClasseVivaAPI:
         except ValueError:
             if req.text != "":
                 return req.text
-        return {}
+
+        finally:
+            return {}
 
 
     def assenze(self):

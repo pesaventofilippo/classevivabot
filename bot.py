@@ -2,8 +2,7 @@
 from time import sleep
 from telepotpro import Bot, glance
 from telepotpro.exception import TelegramError, BotWasBlockedError
-from threading import Thread
-from random import choice
+from threading import Thread, Lock
 from pony.orm import db_session, select, commit
 from datetime import datetime, timedelta
 from json import load as jsload
@@ -21,9 +20,10 @@ with open(join(dirname(abspath(__file__)), "settings.json")) as settings_file:
 bot = Bot(js_settings["token"])
 updatesEvery = js_settings["updateEveryMin"]
 restrictedMode = js_settings["restrictedMode"]
+updateLock = Lock()
 
 
-@db_session
+@db_session(retry=3)
 def runUserUpdate(chatId, long_fetch, crhour, sendMessages=True):
     api = ClasseVivaAPI()
     if helpers.userLogin(chatId, api, _quiet=True):
@@ -34,8 +34,8 @@ def runUserUpdate(chatId, long_fetch, crhour, sendMessages=True):
         except ApiServerError:
             return
 
-        if settings.wantsNotifications is True:
-            if (settings.doNotDisturb is False) or (crhour in range(7, 21)):
+        if settings.wantsNotifications:
+            if (not settings.doNotDisturb) or (crhour in range(7, 21)):
                 dataDidattica = parsers.parseNewDidattica(userdata.didattica, data['didattica'])
                 dataNote = parsers.parseNewNote(userdata.note, data['note'])
                 dataVoti = parsers.parseNewVoti(userdata.voti, data['voti'], chatId)
@@ -69,18 +69,31 @@ def runUserUpdate(chatId, long_fetch, crhour, sendMessages=True):
         user.remainingCalls = 3
 
 
-@db_session
+@db_session(retry=3)
 def runUpdates(long_fetch=False, sendMessages=True):
+    childThreads = []
+    if not updateLock.acquire(blocking=True, timeout=60): return
+
     crhour = datetime.now().hour
     if not restrictedMode:
         pendingUsers = select(user.chatId for user in User if user.password != "")[:]
     else:
         pendingUsers = helpers.isAdmin()
     for currentUser in pendingUsers:
-        Thread(target=runUserUpdate, args=[currentUser, long_fetch, crhour, sendMessages]).start()
+        t = Thread(
+            target=runUserUpdate,
+            name=f"upd_{currentUser}",
+            args=[currentUser, long_fetch, crhour, sendMessages]
+        )
+        childThreads.append(t)
+        t.start()
+
+    while any(t.is_alive() for t in childThreads):
+        sleep(2)
+    updateLock.release()
 
 
-@db_session
+@db_session(retry=3)
 def runUserDaily(chatId, crhour, crminute, dayString):
     settings = Settings.get(chatId=chatId)
     if settings.wantsDailyUpdates:
@@ -100,8 +113,11 @@ def runUserDaily(chatId, crhour, crminute, dayString):
                     pass
 
 
-@db_session
+@db_session(retry=3)
 def runDailyUpdates(crminute):
+    childThreads = []
+    if not updateLock.acquire(blocking=True, timeout=60): return
+
     crhour = datetime.now().hour
     isSaturday = datetime.now().isoweekday() == 6
     dayString = "lunedì" if isSaturday else "domani"
@@ -110,15 +126,20 @@ def runDailyUpdates(crminute):
     else:
         pendingUsers = helpers.isAdmin()
     for currentUser in pendingUsers:
-        Thread(target=runUserDaily, args=[currentUser, crhour, crminute, dayString]).start()
+        t = Thread(
+            target=runUserDaily,
+            name=f"mem_{currentUser}",
+            args=[currentUser, crhour, crminute, dayString]
+        )
+        childThreads.append(t)
+        t.start()
+
+    while any(t.is_alive() for t in childThreads):
+        sleep(2)
+    updateLock.release()
 
 
-@db_session
-def reply_GroupsMode(msg):
-    pass
-
-
-@db_session
+@db_session(retry=3)
 def reply(msg):
     global restrictedMode
     chatId = msg['chat']['id']
@@ -130,7 +151,6 @@ def reply(msg):
         return
 
     if chatId < 0:
-        reply_GroupsMode(msg)
         return
 
     if not User.exists(lambda u: u.chatId == chatId):
@@ -398,28 +418,36 @@ def reply(msg):
 
             elif text == "/aggiorna":
                 if (user.remainingCalls > 0) or (helpers.isAdmin(chatId)):
+                    if not updateLock.acquire(blocking=False):
+                        bot.sendMessage(chatId, "ℹ️ <b>Aspetta!</b>\n"
+                                                "Il bot sta già eseguendo degli aggiornamenti globali per tutti gli utenti.\n",
+                                        parse_mode="HTML")
+                        return
+                    sent = bot.sendMessage(chatId, "📙📙📙 Cerco aggiornamenti... 0%")
                     user.remainingCalls -= 1
                     commit()
-                    sent = bot.sendMessage(chatId, "📙📙📙 Cerco aggiornamenti... 0%")
-                    api = ClasseVivaAPI()
+                    updateLock.release()
                     bot.editMessageText((chatId, sent['message_id']), "📗📙📙 Cerco aggiornamenti... 10%")
+                    api = ClasseVivaAPI()
+                    bot.editMessageText((chatId, sent['message_id']), "📗📙📙 Cerco aggiornamenti... 20%")
 
                     if helpers.userLogin(chatId, api):
+                        bot.editMessageText((chatId, sent['message_id']), "📗📙📙 Cerco aggiornamenti... 35%")
                         try:
                             data = helpers.fetchStrict(api)
                         except ApiServerError:
                             bot.editMessageText((chatId, sent['message_id']), "⚠️ I server di ClasseViva non sono raggiungibili.\n"
                                                                               "Riprova tra qualche minuto.")
                             return
-                        bot.editMessageText((chatId, sent['message_id']), "📗📙📙 Cerco aggiornamenti... 25%")
+                        bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 50%")
                         dataDidattica = parsers.parseNewDidattica(userdata.didattica, data['didattica'])
-                        bot.editMessageText((chatId, sent['message_id']), "📗📙📙  Cerco aggiornamenti... 40%")
+                        bot.editMessageText((chatId, sent['message_id']), "📗📗📙  Cerco aggiornamenti... 60%")
                         dataNote = parsers.parseNewNote(userdata.note, data['note'])
-                        bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 55%")
-                        dataVoti = parsers.parseNewVoti(userdata.voti, data['voti'], chatId)
                         bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 70%")
+                        dataVoti = parsers.parseNewVoti(userdata.voti, data['voti'], chatId)
+                        bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 80%")
                         dataAgenda = parsers.parseNewAgenda(userdata.agenda, data['agenda'])
-                        bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 85%")
+                        bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 90%")
                         dataCircolari = parsers.parseNewCircolari(userdata.circolari, data['circolari'])
                         bot.editMessageText((chatId, sent['message_id']), "📗📗📗  Cerco aggiornamenti... 100%")
 
@@ -446,6 +474,7 @@ def reply(msg):
 
                         helpers.updateUserdata(chatId, data)
                         helpers.fetchAndStore(chatId, api, data, fetch_long=True)
+                    updateLock.release()
 
                 else:
                     bot.sendMessage(chatId, "⛔️ Hai usato troppi /aggiorna recentemente. Aspetta un po'!")
@@ -471,9 +500,10 @@ def reply(msg):
                             bot.sendDocument(chatId, (circ.attachName, circSend), circ.name)
                             bot.deleteMessage((chatId, sent['message_id']))
                         except ApiServerError:
-                            bot.deleteMessage((chatId, sent['message_id']))
-                            bot.sendMessage(chatId, "⚠️ Non sono riuscito a scaricare la circolare.")
+                            bot.editMessageText((chatId, sent['message_id']), "⚠️ Non sono riuscito a scaricare la circolare.")
                             return
+                    else:
+                        bot.editMessageText((chatId, sent['message_id']), "⚠️ Errore nel login.")
 
                 elif param.startswith("file"):
                     sent = bot.sendMessage(chatId, "⬇️ <i>Download file in corso...</i>", parse_mode="HTML")
@@ -486,10 +516,13 @@ def reply(msg):
                             bot.sendDocument(chatId, (f"{file.name}.{fileNameExt}", fileSend), file.name)
                             bot.deleteMessage((chatId, sent['message_id']))
                         except ApiServerError:
-                            bot.editMessageText((chatId, sent['message_id']), "⚠️ Non sono riuscito a scaricare la circolare.")
+                            bot.editMessageText((chatId, sent['message_id']), "⚠️ Non sono riuscito a scaricare il file.")
                             return
+                    else:
+                        bot.editMessageText((chatId, sent['message_id']), "⚠️ Errore nel login.")
 
             elif text == "⬆️⬆️⬇️⬇️⬅️➡️⬅️➡️🅱️🅰️" or text == "⬆️⬆️⬇️⬇️⬅️➡️⬅️➡️🅱🅰":
+                from random import choice
                 today = datetime.today().strftime("%d/%m/%Y")
                 subject = choice(["MATEMATICA", "ITALIANO", "INGLESE", "STORIA"])
                 bot.sendMessage(chatId, "🔔 <b>Hai nuovi voti!</b>\n\n"
@@ -533,11 +566,11 @@ def reply(msg):
                                     "Il bot è attualmente in manutenzione per problemi con ClasseViva, e tutte le sue "
                                     "funzioni sono temporaneamente disabilitate.\n"
                                     "Non eliminare questa chat: se vuoi puoi archiviarla su Telegram, così appena "
-                                    "ci saranno notizie arriverà un messaggio qui.\n\n"
+                                    "ci saranno notizie ti manderò un messaggio.\n\n"
                                     "/moreinfo", parse_mode="HTML")
 
 
-@db_session
+@db_session(retry=3)
 def button_press(msg):
     chatId, query_data = glance(msg, flavor="callback_query")[1:3]
     settings = Settings.get(chatId=chatId)
@@ -716,10 +749,10 @@ def button_press(msg):
 
 
 def accept_message(msg):
-    Thread(target=reply, args=[msg]).start()
+    Thread(target=reply, name=f"msg_{msg['chat']['id']}", args=[msg]).start()
 
 def accept_button(msg):
-    Thread(target=button_press, args=[msg]).start()
+    Thread(target=button_press, name=f"btn_{msg['chat']['id']}", args=[msg]).start()
 
 bot.message_loop(
     callback={'chat': accept_message, 'callback_query': accept_button}
