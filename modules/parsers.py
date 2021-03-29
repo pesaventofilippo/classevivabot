@@ -1,5 +1,6 @@
-﻿from modules.database import User, Circolari, File
-from pony.orm import commit
+﻿from pony.orm import commit
+from modules.database import User, Circolari, File
+
 
 def sanitize(dinput):
     if not dinput:

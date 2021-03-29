@@ -4,7 +4,8 @@ from datetime import datetime, timedelta
 from http.client import RemoteDisconnected
 from requests import get, post
 from requests.exceptions import HTTPError, InvalidURL, ProxyError
-from modules.helpers import getProxy
+
+from modules import helpers
 
 
 class AuthenticationFailedError(Exception):
@@ -28,7 +29,7 @@ class ClasseVivaAPI:
     def __init__(self):
         self.id = None
         self.token = None
-        self.proxy = getProxy()
+        self.proxy = helpers.getProxy()
 
 
     def login(self, username: str, password: str):

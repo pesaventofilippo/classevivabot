@@ -1,14 +1,14 @@
 from time import sleep
 from telepotpro import Bot
-from modules.api import AuthenticationFailedError, ApiServerError
-from modules.database import User, Data, ParsedData
-from modules.crypter import decrypt_password
 from telepotpro.exception import TelegramError, BotWasBlockedError
-from modules import parsers
 from json import load as jsload
 from os.path import abspath, dirname, join
 from stem import Signal
 from stem.control import Controller
+
+from modules import parsers
+from modules.crypter import decrypt_password
+from modules.database import User, Data, ParsedData
 
 with open(join(dirname(abspath(__file__)), "../settings.json")) as settings_file:
     js_settings = jsload(settings_file)
@@ -85,6 +85,7 @@ def clearUserData(chatId):
 
 
 def userLogin(chatId, _api, _quiet=False):
+    from modules.api import AuthenticationFailedError, ApiServerError
     user = User.get(chatId=chatId)
     if not hasStoredCredentials(chatId):
         return False
