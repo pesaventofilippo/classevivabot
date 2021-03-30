@@ -490,13 +490,14 @@ def reply(msg):
                 param = text.split(' ')[1]
                 if param.startswith("circ"):
                     sent = bot.sendMessage(chatId, "⬇️ <i>Download circolare in corso...</i>", parse_mode="HTML")
-                    intId = int(param.replace('circ', ''))
-                    circ = Circolari.get(id=intId)
+                    evtCode = param.split("#")[0].replace("circ", "")
+                    pubId = int(param.split("#")[1])
+                    #circ = Circolari.get(id=intId)
                     api = ClasseVivaAPI()
                     if helpers.userLogin(chatId, api):
                         try:
-                            circSend, _ = api.getCirc(circ.eventCode, circ.pubId)
-                            bot.sendDocument(chatId, (circ.attachName, circSend), circ.name)
+                            circSend, ext = api.getCirc(evtCode, pubId)
+                            bot.sendDocument(chatId, (f"circolare.{ext}", circSend))
                             bot.deleteMessage((chatId, sent['message_id']))
                         except ApiServerError:
                             bot.editMessageText((chatId, sent['message_id']), "⚠️ Non sono riuscito a scaricare la circolare.")
@@ -507,12 +508,12 @@ def reply(msg):
                 elif param.startswith("file"):
                     sent = bot.sendMessage(chatId, "⬇️ <i>Download file in corso...</i>", parse_mode="HTML")
                     intId = int(param.replace('file', ''))
-                    file = File.get(id=intId)
+                    #file = File.get(id=intId)
                     api = ClasseVivaAPI()
                     if helpers.userLogin(chatId, api):
                         try:
-                            fileSend, fileNameExt = api.getFile(file.fileId)
-                            bot.sendDocument(chatId, (f"{file.name}.{fileNameExt}", fileSend), file.name)
+                            fileSend, fileNameExt = api.getFile(intId)
+                            bot.sendDocument(chatId, (f"download.{fileNameExt}", fileSend))
                             bot.deleteMessage((chatId, sent['message_id']))
                         except ApiServerError:
                             bot.editMessageText((chatId, sent['message_id']), "⚠️ Non sono riuscito a scaricare il file.")
