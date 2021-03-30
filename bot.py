@@ -474,7 +474,6 @@ def reply(msg):
 
                         helpers.updateUserdata(chatId, data)
                         helpers.fetchAndStore(chatId, api, data, fetch_long=True)
-                        helpers.fetchAndStore(chatId, api, data, fetch_long=True)
 
                 else:
                     bot.sendMessage(chatId, "⛔️ Hai usato troppi /aggiorna recentemente. Aspetta un po'!")

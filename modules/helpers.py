@@ -9,6 +9,7 @@ from stem.control import Controller
 from modules import parsers
 from modules.crypter import decrypt_password
 from modules.database import User, Data, ParsedData
+from modules.api import AuthenticationFailedError, ApiServerError
 
 with open(join(dirname(abspath(__file__)), "../settings.json")) as settings_file:
     js_settings = jsload(settings_file)
@@ -85,7 +86,6 @@ def clearUserData(chatId):
 
 
 def userLogin(chatId, _api, _quiet=False):
-    from modules.api import AuthenticationFailedError, ApiServerError
     user = User.get(chatId=chatId)
     if not hasStoredCredentials(chatId):
         return False
@@ -122,7 +122,7 @@ def fetchStrict(_api):
     return data
 
 
-def fetchAndStore(chatId, _api, data=None, fetch_long=False):
+def fetchAndStore(chatId, _api, data, fetch_long=False):
     if not data: data = fetchStrict(_api)
     stored = ParsedData.get(chatId=chatId)
 

@@ -102,8 +102,8 @@ class ClasseVivaAPI:
             if req.text != "":
                 return req.text
 
-        finally:
-            return {}
+        # Request was empty but no connection error
+        return {}
 
 
     def assenze(self):
