@@ -324,7 +324,7 @@ def parseCircolari(data):
             #    circ = list(Circolari.select(lambda c: (c.eventCode == evCode) and (c.pubId == pubId)))[0]
 
             if (status == 'active') and not isRead:
-                result += "\n\n✉️ <a href=\"https://t.me/ClasseVivaIT_Bot?start=circ{}#{}\">{}</a>".format(evCode, pubId, title)
+                result += "\n\n✉️ <a href=\"https://t.me/ClasseVivaIT_Bot?start=circ{}-{}\">{}</a>".format(evCode, pubId, title)
         else:
             if (status == 'active') and not isRead:
                 result += "\n\n✉️ {}".format(title)
@@ -526,7 +526,7 @@ def parseNewCircolari(oldData, newData):
                 #    circ = list(Circolari.select(lambda c: (c.eventCode == evCode) and (c.pubId == pubId)))[0]
 
                 if (status == 'active') and not isRead:
-                    string = "\n✉️ <a href=\"https://t.me/ClasseVivaIT_Bot?start=circ{}#{}\">{}</a>".format(evCode, pubId, title)
+                    string = "\n✉️ <a href=\"https://t.me/ClasseVivaIT_Bot?start=circ{}-{}\">{}</a>".format(evCode, pubId, title)
                     result += string if isFirst else "\n" + string
                     isFirst = False
             else:

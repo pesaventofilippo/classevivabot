@@ -490,8 +490,8 @@ def reply(msg):
                 param = text.split(' ')[1]
                 if param.startswith("circ"):
                     sent = bot.sendMessage(chatId, "⬇️ <i>Download circolare in corso...</i>", parse_mode="HTML")
-                    evtCode = param.split("#")[0].replace("circ", "")
-                    pubId = int(param.split("#")[1])
+                    evtCode = param.split("-")[0].replace("circ", "")
+                    pubId = int(param.split("-")[1])
                     #circ = Circolari.get(id=intId)
                     api = ClasseVivaAPI()
                     if helpers.userLogin(chatId, api):
@@ -507,7 +507,7 @@ def reply(msg):
 
                 elif param.startswith("file"):
                     sent = bot.sendMessage(chatId, "⬇️ <i>Download file in corso...</i>", parse_mode="HTML")
-                    intId = int(param.replace('file', ''))
+                    intId = int(param.replace("file", ""))
                     #file = File.get(id=intId)
                     api = ClasseVivaAPI()
                     if helpers.userLogin(chatId, api):
