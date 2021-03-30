@@ -1,5 +1,4 @@
-﻿from pony.orm import commit
-from modules.database import User, Circolari, File
+﻿from modules.database import User
 
 
 def sanitize(dinput):
@@ -41,11 +40,6 @@ def parseDidattica(data):
             for upfile in folder['contents']:
                 fileName = "Senza nome" if upfile['contentName'] == "" else sanitize(upfile['contentName'])
                 fileId = upfile['contentId']
-                #if not File.exists(lambda f: f.fileId == fileId):
-                #    file = File(name=fileName, fileId=fileId)
-                #    commit()
-                #else:
-                #    file = list(File.select(lambda f: f.fileId == fileId))[0]
                 result += "\n        📝 <a href=\"https://t.me/ClasseVivaIT_Bot?start=file{}\">{}</a>".format(fileId, fileName)
 
     return result
@@ -316,12 +310,7 @@ def parseCircolari(data):
         if len(item['attachments']) > 0:
             pubId = item['pubId']
             evCode = item['evtCode']
-            attName = item['attachments'][0]['fileName']
-            #if not Circolari.exists(lambda c: (c.eventCode == evCode) and (c.pubId == pubId)):
-            #    circ = Circolari(name=title, pubId=pubId, eventCode=evCode, attachName=attName)
-            #    commit()
-            #else:
-            #    circ = list(Circolari.select(lambda c: (c.eventCode == evCode) and (c.pubId == pubId)))[0]
+            # attName = item['attachments'][0]['fileName']
 
             if (status == 'active') and not isRead:
                 result += "\n\n✉️ <a href=\"https://t.me/ClasseVivaIT_Bot?start=circ{}-{}\">{}</a>".format(evCode, pubId, title)
@@ -360,11 +349,6 @@ def parseNewDidattica(oldData, newData):
                 for upfile in folder['contents']:
                     fileName = "Senza nome" if upfile['contentName'] == "" else sanitize(upfile['contentName'])
                     fileId = upfile['contentId']
-                    #if not File.exists(lambda f: f.fileId == fileId):
-                    #    file = File(name=fileName, fileId=fileId)
-                    #    commit()
-                    #else:
-                    #    file = list(File.select(lambda f: f.fileId == fileId))[0]
                     result += "\n        📝 <a href=\"https://t.me/ClasseVivaIT_Bot?start=file{}\">{}</a>".format(fileId, fileName)
 
         else:
@@ -385,11 +369,6 @@ def parseNewDidattica(oldData, newData):
                     for upfile in folder['contents']:
                         fileName = "Senza nome" if upfile['contentName'] == "" else sanitize(upfile['contentName'])
                         fileId = upfile['contentId']
-                        #if not File.exists(lambda f: f.fileId == fileId):
-                        #    file = File(name=fileName, fileId=fileId)
-                        #    commit()
-                        #else:
-                        #    file = list(File.select(lambda f: f.fileId == fileId))[0]
                         result += "\n        📝 <a href=\"https://t.me/ClasseVivaIT_Bot?start=file{}\">{}</a>".format(fileId, fileName)
 
                 else:
@@ -405,11 +384,6 @@ def parseNewDidattica(oldData, newData):
                                 firstFolder = False
                             fileName = "Senza nome" if upfile['contentName'] == "" else sanitize(upfile['contentName'])
                             fileId = upfile['contentId']
-                            #if not File.exists(lambda f: f.fileId == fileId):
-                            #    file = File(name=fileName, fileId=fileId)
-                            #    commit()
-                            #else:
-                            #    file = list(File.select(lambda f: f.fileId == fileId))[0]
                             result += "\n        📝 <a href=\"https://t.me/ClasseVivaIT_Bot?start=file{}\">{}</a>".format(fileId, fileName)
                             firstFile = False
 
@@ -518,12 +492,7 @@ def parseNewCircolari(oldData, newData):
             if len(item['attachments']) > 0:
                 pubId = item['pubId']
                 evCode = item['evtCode']
-                attName = item['attachments'][0]['fileName']
-                #if not Circolari.exists(lambda c: (c.eventCode == evCode) and (c.pubId == pubId)):
-                #    circ = Circolari(name=title, pubId=pubId, eventCode=evCode, attachName=attName)
-                #    commit()
-                #else:
-                #    circ = list(Circolari.select(lambda c: (c.eventCode == evCode) and (c.pubId == pubId)))[0]
+                # attName = item['attachments'][0]['fileName']
 
                 if (status == 'active') and not isRead:
                     string = "\n✉️ <a href=\"https://t.me/ClasseVivaIT_Bot?start=circ{}-{}\">{}</a>".format(evCode, pubId, title)

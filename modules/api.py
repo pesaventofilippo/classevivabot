@@ -23,6 +23,11 @@ class InvalidRequestError(Exception):
         self.message = "Request made is not valid"
 
 
+class FileNotOwnedError(Exception):
+    def __init__(self):
+        self.message = "The file you are trying to download isn't owned by you."
+
+
 class ClasseVivaAPI:
     baseApiUrl = "https://web.spaggiari.eu/rest/v1"
 
@@ -83,6 +88,8 @@ class ClasseVivaAPI:
 
         if returnFile:
             from io import BytesIO
+            if not req.headers.get("content-disposition"):
+                raise FileNotOwnedError
             extHeader = req.headers['content-disposition']
             ext = extHeader.split('.')[-1]
             return BytesIO(req.content), ext

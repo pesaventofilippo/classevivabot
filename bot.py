@@ -11,8 +11,8 @@ from os.path import abspath, dirname, join
 # Custom Modules
 from modules import parsers, keyboards, helpers
 from modules.crypter import crypt_password, decrypt_password
-from modules.database import User, Data, ParsedData, Settings, Circolari, File
-from modules.api import ClasseVivaAPI, ApiServerError
+from modules.database import User, Data, ParsedData, Settings
+from modules.api import ClasseVivaAPI, ApiServerError, FileNotOwnedError
 
 with open(join(dirname(abspath(__file__)), "settings.json")) as settings_file:
     js_settings = jsload(settings_file)
@@ -492,14 +492,14 @@ def reply(msg):
                     sent = bot.sendMessage(chatId, "⬇️ <i>Download circolare in corso...</i>", parse_mode="HTML")
                     evtCode = param.split("-")[0].replace("circ", "")
                     pubId = int(param.split("-")[1])
-                    #circ = Circolari.get(id=intId)
+
                     api = ClasseVivaAPI()
                     if helpers.userLogin(chatId, api):
                         try:
                             circSend, ext = api.getCirc(evtCode, pubId)
                             bot.sendDocument(chatId, (f"circolare.{ext}", circSend))
                             bot.deleteMessage((chatId, sent['message_id']))
-                        except ApiServerError:
+                        except (ApiServerError, FileNotOwnedError):
                             bot.editMessageText((chatId, sent['message_id']), "⚠️ Non sono riuscito a scaricare la circolare.")
                             return
                     else:
@@ -508,14 +508,14 @@ def reply(msg):
                 elif param.startswith("file"):
                     sent = bot.sendMessage(chatId, "⬇️ <i>Download file in corso...</i>", parse_mode="HTML")
                     intId = int(param.replace("file", ""))
-                    #file = File.get(id=intId)
+
                     api = ClasseVivaAPI()
                     if helpers.userLogin(chatId, api):
                         try:
-                            fileSend, fileNameExt = api.getFile(intId)
-                            bot.sendDocument(chatId, (f"download.{fileNameExt}", fileSend))
+                            fileSend, ext = api.getFile(intId)
+                            bot.sendDocument(chatId, (f"download.{ext}", fileSend))
                             bot.deleteMessage((chatId, sent['message_id']))
-                        except ApiServerError:
+                        except (ApiServerError, FileNotOwnedError):
                             bot.editMessageText((chatId, sent['message_id']), "⚠️ Non sono riuscito a scaricare il file.")
                             return
                     else:

@@ -49,18 +49,6 @@ class Settings(db.Entity):
     activeNews = Required(StrArray, default=["didattica", "note", "voti", "agenda", "circolari"])
 
 
-class Circolari(db.Entity):
-    name = Required(str)
-    pubId = Required(int)
-    eventCode = Required(str)
-    attachName = Required(str)
-
-
-class File(db.Entity):
-    name = Required(str)
-    fileId = Required(int)
-
-
 db.generate_mapping(create_tables=True)
 
 
@@ -78,4 +66,19 @@ if __name__ == "__main__":
                     ParsedData(chatId=chatId)
                 if not Settings.exists(lambda s: s.chatId == chatId):
                     Settings(chatId=chatId)
+        print("Creating tables done.")
+
+    if "--clean-users" in argv:
+        print("Cleaning trash users...")
+        from pony.orm import db_session, select
+        with db_session:
+            for user in select(u for u in User)[:]:
+                if user.password == "":
+                    data = Data.get(chatId=user.chatId)
+                    pdata = ParsedData.get(chatId=user.chatId)
+                    settings = Settings.get(chatId=user.chatId)
+                    data.delete()
+                    pdata.delete()
+                    settings.delete()
+                    user.delete()
         print("Creating tables done.")
