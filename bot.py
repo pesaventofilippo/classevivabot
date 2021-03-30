@@ -474,6 +474,7 @@ def reply(msg):
 
                         helpers.updateUserdata(chatId, data)
                         helpers.fetchAndStore(chatId, api, data, fetch_long=True)
+                        helpers.fetchAndStore(chatId, api, data, fetch_long=True)
 
                 else:
                     bot.sendMessage(chatId, "⛔️ Hai usato troppi /aggiorna recentemente. Aspetta un po'!")
@@ -751,7 +752,7 @@ def accept_message(msg):
     Thread(target=reply, name=f"msg_{msg['chat']['id']}", args=[msg]).start()
 
 def accept_button(msg):
-    Thread(target=button_press, name=f"btn_{msg['chat']['id']}", args=[msg]).start()
+    Thread(target=button_press, name=f"btn_{msg['from']['id']}", args=[msg]).start()
 
 bot.message_loop(
     callback={'chat': accept_message, 'callback_query': accept_button}
