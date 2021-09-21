@@ -271,10 +271,10 @@ def reply(msg):
             elif user.status == "sending_orario":
                 if msg.get("photo"):
                     fileId = msg.get("photo")[0]["file_id"]
-                    ext = "Photo"
+                    ext = "photo"
                 elif msg.get("document"):
                     fileId = msg.get("document")["file_id"]
-                    ext = "Document"
+                    ext = "document"
                 else:
                     bot.sendMessage(chatId, "🤔 Documento non valido. Invia una foto o un file.\n"
                                             "Premi /annulla per annullare.")
