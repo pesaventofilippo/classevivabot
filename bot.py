@@ -283,7 +283,8 @@ def reply(msg):
                 else:
                     doc = Document.get(chatId=chatId, type="orario")
                     doc.data["fileId"] = fileId
-                bot.sendMessage(chatId, "✅ Orario impostato! Richiamalo con /orario.")
+                bot.sendMessage(chatId, "✅ Orario impostato!\n"
+                                        "Richiamalo con /orario.")
                 user.status = "normal"
 
 
@@ -714,9 +715,9 @@ def button_press(msg):
             elif text.endswith("mod"):
                 user.status = "sending_orario"
                 bot.editMessageReplyMarkup(msgIdent, None)
-                bot.sendMessage(msgIdent, "🕑 <b>Impostazione orario</b>\n"
-                                          "Inviami un documento (PDF oppure foto) da impostare come nuovo orario.\n\n"
-                                          "Usa /annulla per annullare la modifica.", parse_mode="HTML", reply_markup=None)
+                bot.sendMessage(chatId, "🕑 <b>Impostazione orario</b>\n"
+                                        "Inviami un documento (PDF oppure foto) da impostare come nuovo orario.\n\n"
+                                        "Usa /annulla per annullare la modifica.", parse_mode="HTML", reply_markup=None)
 
     else:
         bot.sendMessage(chatId, "ℹ️ <b>Bot in manutenzione</b>\n"
