@@ -709,14 +709,14 @@ def button_press(msg):
             if text.endswith("del"):
                 doc = Document.get(chatId=chatId, type="orario")
                 doc.delete()
-                bot.editMessageText(msgIdent, "🗑 Orario eliminato.", reply_markup=None)
+                bot.editMessageCaption(msgIdent, "🗑 Orario eliminato.", reply_markup=None)
 
             elif text.endswith("mod"):
                 user.status = "sending_orario"
-                bot.editMessageText(msgIdent, "🕑 <b>Impostazione orario</b>\n"
-                                              "Inviami un documento (PDF oppure foto) da impostare come nuovo orario.\n\n"
-                                              "Usa /annulla per annullare la modifica.",
-                                    parse_mode="HTML", reply_markup=None)
+                bot.editMessageReplyMarkup(msgIdent, None)
+                bot.sendMessage(msgIdent, "🕑 <b>Impostazione orario</b>\n"
+                                          "Inviami un documento (PDF oppure foto) da impostare come nuovo orario.\n\n"
+                                          "Usa /annulla per annullare la modifica.", parse_mode="HTML", reply_markup=None)
 
     else:
         bot.sendMessage(chatId, "ℹ️ <b>Bot in manutenzione</b>\n"
