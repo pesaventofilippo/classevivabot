@@ -655,6 +655,7 @@ def button_press(msg):
                 settings.activeNews.remove(cat)
             else:
                 settings.activeNews.append(cat)
+            editNotifSelection()
 
         elif text.startswith("settings_notif_"):
             ans = text.endswith("yes")
