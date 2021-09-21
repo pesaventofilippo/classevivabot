@@ -388,7 +388,7 @@ def parseNewDidattica(oldData, newData):
                             fileName = "Senza nome" if upfile['contentName'] == "" else sanitize(upfile['contentName'])
                             fileId = upfile['contentId']
                             fileType = upfile['objectType']
-                            result += "\n        📝 <a href=\"https://t.me/ClasseVivaIT_Bot?start=file{}\">{}</a>".format(fileType, fileId, fileName)
+                            result += "\n        📝 <a href=\"https://t.me/ClasseVivaIT_Bot?start={}{}\">{}</a>".format(fileType, fileId, fileName)
                             firstFile = False
 
     return result if result != "" else None
