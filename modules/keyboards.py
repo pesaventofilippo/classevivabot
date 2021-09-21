@@ -1,76 +1,93 @@
 from telepotpro.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton
 
 
-def back(msgid):
+def back():
     return InlineKeyboardMarkup(inline_keyboard=[[
-                InlineKeyboardButton(text="◀️ Indietro", callback_data="settings_main#{0}".format(msgid))
+                InlineKeyboardButton(text="◀️ Indietro", callback_data="settings_main")
             ]])
 
 
-def lezioni(msgid, day=0):
+def lezioni(day=0):
     return InlineKeyboardMarkup(inline_keyboard=[[
-                InlineKeyboardButton(text="⬅️ Prima", callback_data="lezioni_prima#{0}#{1}".format(msgid, day)),
-                InlineKeyboardButton(text="Dopo ➡️", callback_data="lezioni_dopo#{0}#{1}".format(msgid, day))
+                InlineKeyboardButton(text="⬅️ Prima", callback_data=f"lezioni#{day-1}"),
+                InlineKeyboardButton(text="Dopo ➡️", callback_data=f"lezioni#{day+1}")
             ]])
 
 
-def settings_menu(msgid):
+def settings_menu():
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="🔔 Ricevi notifiche", callback_data="settings_notifications"),
+            InlineKeyboardButton(text="📲 Scegli notifiche", callback_data="settings_selectnews")
+        ],
+        [
+            InlineKeyboardButton(text="😴 Mod. Non Disturbare", callback_data="settings_donotdisturb"),
+            InlineKeyboardButton(text="🕑 Notifiche giornaliere", callback_data="settings_dailynotif")
+        ],
+        [
+            InlineKeyboardButton(text="✔️ Chiudi", callback_data="settings_close")
+        ]
+    ])
+
+
+def settings_notifications(active: bool=True):
+    choices = {
+        True: ["🔕 Disattiva", "no"],
+        False: ["🔔 Attiva", "yes"]
+    }
     return InlineKeyboardMarkup(inline_keyboard=[[
-                InlineKeyboardButton(text="🔔 Ricevi notifiche", callback_data="settings_notifications#{0}".format(msgid))
-            ], [
-                InlineKeyboardButton(text="📲 Scegli notifiche", callback_data="settings_selectnews#{0}".format(msgid))
-            ], [
-                InlineKeyboardButton(text="😴 Mod. Non Disturbare", callback_data="settings_donotdisturb#{0}".format(msgid))
-            ], [
-                InlineKeyboardButton(text="🕑 Notifiche giornaliere", callback_data="settings_dailynotif#{0}".format(msgid))
+                InlineKeyboardButton(text=choices[active][0], callback_data=f"settings_notif_{choices[active][1]}"),
+                InlineKeyboardButton(text="◀️ Indietro", callback_data="settings_main")
             ]])
 
 
-def settings_notifications(msgid):
+def settings_selectnews():
     return InlineKeyboardMarkup(inline_keyboard=[[
-                InlineKeyboardButton(text="🔔 Attiva", callback_data="settings_notif_yes#{0}".format(msgid)),
-                InlineKeyboardButton(text="🔕 Disattiva", callback_data="settings_notif_no#{0}".format(msgid))
+                InlineKeyboardButton(text="📚 Didattica", callback_data="news_didattica"),
+                InlineKeyboardButton(text="❗️ Note", callback_data="news_note")
             ], [
-                InlineKeyboardButton(text="◀️ Torna al menù", callback_data="settings_main#{0}".format(msgid))
+                InlineKeyboardButton(text="📝 Voti", callback_data="news_voti"),
+                InlineKeyboardButton(text="📆 Agenda", callback_data="news_agenda")
+            ], [
+                InlineKeyboardButton(text="📩 Circolari", callback_data="news_circolari"),
+                InlineKeyboardButton(text="◀️ Torna al menù", callback_data="settings_main")
             ]])
 
 
-def settings_selectnews(msgid):
+def settings_donotdisturb(active: bool=True):
+    choices = {
+        True: ["🔔 Suona", "no"],
+        False: ["😴 Attiva", "yes"]
+    }
     return InlineKeyboardMarkup(inline_keyboard=[[
-                InlineKeyboardButton(text="📚 Didattica", callback_data="news_didattica#{0}".format(msgid)),
-                InlineKeyboardButton(text="❗️ Note", callback_data="news_note#{0}".format(msgid))
-            ], [
-                InlineKeyboardButton(text="📝 Voti", callback_data="news_voti#{0}".format(msgid)),
-                InlineKeyboardButton(text="📆 Agenda", callback_data="news_agenda#{0}".format(msgid))
-            ], [
-                InlineKeyboardButton(text="📩 Circolari", callback_data="news_circolari#{0}".format(msgid)),
-                InlineKeyboardButton(text="◀️ Torna al menù", callback_data="settings_main#{0}".format(msgid))
+                InlineKeyboardButton(text=choices[active][0], callback_data=f"settings_night_{choices[active][1]}"),
+                InlineKeyboardButton(text="◀️ Indietro", callback_data="settings_main")
             ]])
 
 
-def settings_donotdisturb(msgid):
+def settings_dailynotif(active: bool=True):
+    choices = {
+        True: ["🔕 Disattiva", "no"],
+        False: ["🔔 Attiva", "yes"]
+    }
     return InlineKeyboardMarkup(inline_keyboard=[[
-                InlineKeyboardButton(text="😴 Attiva", callback_data="settings_night_yes#{0}".format(msgid)),
-                InlineKeyboardButton(text="🔔 Suona", callback_data="settings_night_no#{0}".format(msgid))
+                InlineKeyboardButton(text="🕙 -30 min.", callback_data="settings_daily_minus"),
+                InlineKeyboardButton(text="🕙 +30 min.", callback_data="settings_daily_plus")
             ], [
-                InlineKeyboardButton(text="◀️ Torna al menù", callback_data="settings_main#{0}".format(msgid))
+                InlineKeyboardButton(text=choices[active][0], callback_data=f"settings_daily_{choices[active][1]}"),
+                InlineKeyboardButton(text="◀️ Indietro", callback_data="settings_main")
             ]])
 
 
-def settings_dailynotif(msgid):
+def logout():
     return InlineKeyboardMarkup(inline_keyboard=[[
-                InlineKeyboardButton(text="🔔 Attiva", callback_data="settings_daily_yes#{0}".format(msgid)),
-                InlineKeyboardButton(text="🔕 Disattiva", callback_data="settings_daily_no#{0}".format(msgid))
-            ], [
-                InlineKeyboardButton(text="🕙 -30 min.", callback_data="settings_daily_minus#{0}".format(msgid)),
-                InlineKeyboardButton(text="🕙 +30 min.", callback_data="settings_daily_plus#{0}".format(msgid))
-            ], [
-                InlineKeyboardButton(text="◀️ Torna al menù", callback_data="settings_main#{0}".format(msgid))
-            ]])
-
-
-def logout(msgid):
-    return InlineKeyboardMarkup(inline_keyboard=[[
-        InlineKeyboardButton(text="✖️ Logout", callback_data="logout_yes#{0}".format(msgid)),
-        InlineKeyboardButton(text="❌ Annulla", callback_data="logout_no#{0}".format(msgid))
+        InlineKeyboardButton(text="✖️ Logout", callback_data="logout_yes"),
+        InlineKeyboardButton(text="❌ Annulla", callback_data="logout_no")
     ]])
+
+
+def mod_orario():
+    return InlineKeyboardMarkup(inline_keyboard=[[
+                InlineKeyboardButton(text="♻️ Modifica", callback_data="orario_mod"),
+                InlineKeyboardButton(text="🗑 Elimina", callback_data="orario_del")
+            ]])

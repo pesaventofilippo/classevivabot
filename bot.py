@@ -1,6 +1,6 @@
 ﻿# Python Libraries
 from time import sleep
-from telepotpro import Bot, glance
+from telepotpro import Bot
 from telepotpro.exception import TelegramError, BotWasBlockedError
 from threading import Thread, Lock
 from pony.orm import db_session, select, commit
@@ -11,7 +11,7 @@ from os.path import abspath, dirname, join
 # Custom Modules
 from modules import parsers, keyboards, helpers
 from modules.crypter import crypt_password, decrypt_password
-from modules.database import User, Data, ParsedData, Settings
+from modules.database import User, Data, ParsedData, Settings, Document
 from modules.api import ClasseVivaAPI, ApiServerError, FileNotOwnedError
 
 with open(join(dirname(abspath(__file__)), "settings.json")) as settings_file:
@@ -75,10 +75,7 @@ def runUpdates(long_fetch=False, sendMessages=True):
     if not updateLock.acquire(blocking=True, timeout=60): return
 
     crhour = datetime.now().hour
-    if not restrictedMode:
-        pendingUsers = select(user.chatId for user in User if user.password != "")[:]
-    else:
-        pendingUsers = helpers.isAdmin()
+    pendingUsers = helpers.isAdmin() if restrictedMode else select(user.chatId for user in User if user.password != "")[:]
     for currentUser in pendingUsers:
         t = Thread(
             target=runUserUpdate,
@@ -121,10 +118,7 @@ def runDailyUpdates(crminute):
     crhour = datetime.now().hour
     isSaturday = datetime.now().isoweekday() == 6
     dayString = "lunedì" if isSaturday else "domani"
-    if not restrictedMode:
-        pendingUsers = select(user.chatId for user in User if user.password != "")[:]
-    else:
-        pendingUsers = helpers.isAdmin()
+    pendingUsers = helpers.isAdmin() if restrictedMode else select(user.chatId for user in User if user.password != "")[:]
     for currentUser in pendingUsers:
         t = Thread(
             target=runUserDaily,
@@ -139,16 +133,30 @@ def runDailyUpdates(crminute):
     updateLock.release()
 
 
+@db_session
+def sendFile(chatId: int, desc: str, *args):
+    sent = bot.sendMessage(chatId, f"⬇️ <i>Download {desc} in corso...</i>", parse_mode="HTML")
+    api = ClasseVivaAPI()
+    getFunc = api.getCirc if desc == "circolare" else api.getFile
+    if helpers.userLogin(chatId, api):
+        try:
+            toSend, fileName = getFunc(*args)
+            bot.sendDocument(chatId, (fileName, toSend))
+            bot.deleteMessage((chatId, sent['message_id']))
+        except FileNotOwnedError:
+            bot.editMessageText((chatId, sent['message_id']), "⚠️ Questo file non è tuo, oppure c'è un problema con il server.")
+        except (ApiServerError, Exception):
+            bot.editMessageText((chatId, sent['message_id']), "⚠️ Non sono riuscito a scaricare il file.")
+    else:
+        bot.editMessageText((chatId, sent['message_id']), "⚠️ Errore nel login.")
+
+
 @db_session(retry=3)
 def reply(msg):
     global restrictedMode
     chatId = msg['chat']['id']
     name = msg['from']['first_name']
-    if "text" in msg:
-        text = msg['text']
-    else:
-        bot.sendMessage(chatId, "🤨 Formato file non supportato. /help")
-        return
+    text = msg.get("text", "")
 
     if chatId < 0:
         return
@@ -251,13 +259,32 @@ def reply(msg):
                 user.status = "normal"
                 for a in helpers.isAdmin():
                     bot.sendMessage(a, "🆘 <b>Richiesta di aiuto</b>\n"
-                                        "Da: <a href=\"tg://user?id={0}\">{1}</a>\n\n"
-                                        "<i>Rispondi al messaggio per parlare con l'utente.</i>".format(chatId, name), parse_mode="HTML")
+                                       "Da: <a href=\"tg://user?id={0}\">{1}</a>\n\n"
+                                       "<i>Rispondi al messaggio per parlare con l'utente.</i>".format(chatId, name),
+                                    parse_mode="HTML")
                     if "reply_to_message" in msg:
                         bot.forwardMessage(a, chatId, msg["reply_to_message"]["message_id"])
                     bot.forwardMessage(a, chatId, msg['message_id'], disable_notification=True)
                 bot.sendMessage(chatId, "<i>Richiesta inviata.</i>\n"
                                         "Un admin ti risponderà il prima possibile.", parse_mode="HTML")
+
+            elif user.status == "sending_orario":
+                if msg.get("photo"):
+                    fileId = msg.get("photo")[0]["file_id"]
+                elif msg.get("document"):
+                    fileId = msg.get("document")["file_id"]
+                else:
+                    bot.sendMessage(chatId, "🤔 Documento non valido. Invia una foto o un file.\n"
+                                            "Premi /annulla per annullare.")
+                    return
+
+                if not Document.exists(lambda d: (d.chatId == chatId and d.type == "orario")):
+                    Document(chatId=chatId, type="orario", data={"fileId": fileId})
+                else:
+                    doc = Document.get(chatId=chatId, type="orario")
+                    doc.data["fileId"] = fileId
+                bot.sendMessage(chatId, "✅ Orario impostato! Richiamalo con /orario.")
+                user.status = "normal"
 
 
         elif text == "/help":
@@ -265,23 +292,24 @@ def reply(msg):
                                     "Posso aiutarti a <b>navigare</b> nel registro e posso mandarti <b>notifiche</b> quando hai nuovi avvisi.\n\n"
                                     "<b>Lista dei comandi</b>:\n"
                                     "- /login - Effettua il login\n"
-                                    "- /logout - Disconnettiti\n"
                                     "- /aggiorna - Aggiorna manualmente tutti i dati, per controllare se ci sono nuovi avvisi.\n"
                                     "Oppure, puoi lasciarlo fare a me ogni mezz'ora :)\n"
-                                    "- /promemoria - Vedi un promemoria con i compiti da fare per domani e le lezioni svolte oggi.\n"
                                     "- /agenda - Visualizza agenda (compiti e verifiche)\n"
                                     "- /domani - Vedi i compiti che hai per domani\n"
-                                    "- /assenze - Visualizza assenze, ritardi e uscite anticipate\n"
-                                    "- /didattica - Visualizza la lista dei file in didattica\n"
-                                    "- /lezioni - Visualizza la lista delle lezioni\n"
+                                    "- /promemoria - Vedi un promemoria con i compiti da fare per domani e le lezioni svolte oggi.\n"
                                     "- /voti - Visualizza la lista dei voti\n"
-                                    "- /note - Visualizza la lista delle note\n"
+                                    "- /lezioni - Visualizza la lista delle lezioni\n"
+                                    "- /didattica - Visualizza la lista dei file in didattica\n"
                                     "- /circolari - Visualizza le circolari da leggere\n"
+                                    "- /orario - Imposta o visualizza l'orario delle lezioni\n"
+                                    "- /settings - Modifica le impostazioni personali del bot\n"
+                                    "- /assenze - Visualizza assenze, ritardi e uscite anticipate\n"
+                                    "- /note - Visualizza la lista delle note\n"
                                     "- /info - Visualizza le tue info utente\n"
                                     "- /prof - Visualizza la lista delle materie e dei prof\n"
-                                    "- /settings - Modifica le impostazioni personali del bot\n"
                                     "- /about - Informazioni sul bot\n"
                                     "- /aboutprivacy - Più informazioni sulla privacy\n"
+                                    "- /logout - Disconnettiti\n"
                                     "- /support - Contatta lo staff (emergenze)\n\n"
                                     "<b>Notifiche</b>: ogni mezz'ora, se vuoi, ti invierò un messaggio se ti sono arrivati nuovi voti, note, compiti, materiali, avvisi o circolari.\n"
                                     "<b>Impostazioni</b>: con /settings puoi cambiare varie impostazioni, tra cui l'orario delle notifiche, quali notifiche ricevere e se riceverle di notte."
@@ -358,12 +386,12 @@ def reply(msg):
                                         "Premi /logout per uscire.")
 
             elif text == "/logout":
-                sent = bot.sendMessage(chatId, "Tutti i tuoi dati scolastici e le credenziali verranno eliminate dal bot.\n"
-                                                "Sei <b>veramente sicuro</b> di voler uscire?", parse_mode="HTML")
-                bot.editMessageReplyMarkup((chatId, sent['message_id']), keyboards.logout(sent['message_id']))
+                bot.sendMessage(chatId, "Tutti i tuoi dati scolastici e le credenziali verranno eliminate dal bot.\n"
+                                        "Sei <b>veramente sicuro</b> di voler uscire?",
+                                parse_mode="HTML", reply_markup=keyboards.logout())
 
             elif text == "/didattica":
-                helpers.sendLongMessage(chatId, "📚 <b>Files caricati in didadttica</b>:\n\n"
+                helpers.sendLongMessage(chatId, "📚 <b>Files caricati in didattica</b>:\n\n"
                                         "{0}".format(stored.didattica), parse_mode="HTML", disable_web_page_preview=True)
 
             elif text == "/info":
@@ -400,29 +428,31 @@ def reply(msg):
                                         "{0}".format(stored.circolari), parse_mode="HTML", disable_web_page_preview=True)
 
             elif text == "/lezioni":
-                sent = bot.sendMessage(chatId, "📚 <b>Lezioni di oggi</b>:\n\n"
-                                                "{0}".format(stored.lezioni), parse_mode="HTML", reply_markup=None, disable_web_page_preview=True)
-                bot.editMessageReplyMarkup((chatId, sent['message_id']), keyboards.lezioni(sent['message_id']))
+                bot.sendMessage(chatId, "📚 <b>Lezioni di oggi</b>:\n\n"
+                                        "{0}".format(stored.lezioni),
+                                parse_mode="HTML", disable_web_page_preview=True, reply_markup=keyboards.lezioni())
 
             elif text == "/settings":
-                sent = bot.sendMessage(chatId, "🛠 <b>Impostazioni</b>\n"
-                                                "Ecco le impostazioni del bot. Cosa vuoi modificare?", parse_mode="HTML", reply_markup=None)
-                bot.editMessageReplyMarkup((chatId, sent['message_id']), keyboards.settings_menu(sent['message_id']))
+                bot.sendMessage(chatId, "🛠 <b>Impostazioni</b>\n"
+                                        "Ecco le impostazioni del bot. Cosa vuoi modificare?",
+                                parse_mode="HTML", reply_markup=keyboards.settings_menu())
 
             elif text == "/promemoria":
                 bot.sendMessage(chatId, "🕙 <b>Promemoria!</b>\n\n"
                                         "📆 <b>Cosa devi fare per domani</b>:\n\n"
                                         "{0}\n\n\n"
                                         "📚 <b>Le lezioni di oggi</b>:\n\n"
-                                        "{1}".format(stored.domani, stored.lezioni), parse_mode="HTML", disable_web_page_preview=True)
+                                        "{1}".format(stored.domani, stored.lezioni),
+                                parse_mode="HTML", disable_web_page_preview=True)
 
             elif text == "/aggiorna":
                 if (user.remainingCalls > 0) or (helpers.isAdmin(chatId)):
                     if not updateLock.acquire(blocking=False):
                         bot.sendMessage(chatId, "ℹ️ <b>Aspetta!</b>\n"
-                                                "Il bot sta già eseguendo degli aggiornamenti globali per tutti gli utenti.\n",
+                                                "Il bot sta già eseguendo degli aggiornamenti globali per tutti gli utenti.",
                                         parse_mode="HTML")
                         return
+
                     sent = bot.sendMessage(chatId, "📙📙📙 Cerco aggiornamenti... 0%")
                     user.remainingCalls -= 1
                     commit()
@@ -453,16 +483,12 @@ def reply(msg):
 
                         if dataDidattica is not None:
                             bot.sendMessage(chatId, "🔔 <b>Nuovi file caricati!</b>{0}".format(dataDidattica), parse_mode="HTML", disable_web_page_preview=True)
-
                         if dataNote is not None:
                             bot.sendMessage(chatId, "🔔 <b>Hai nuove note!</b>{0}".format(dataNote), parse_mode="HTML")
-
                         if dataVoti is not None:
                             bot.sendMessage(chatId, "🔔 <b>Hai nuovi voti!</b>{0}".format(dataVoti), parse_mode="HTML")
-
                         if dataAgenda is not None:
                             bot.sendMessage(chatId, "🔔 <b>Hai nuovi impegni!</b>\n{0}".format(dataAgenda), parse_mode="HTML", disable_web_page_preview=True)
-
                         if dataCircolari is not None:
                             bot.sendMessage(chatId, "🔔 <b>Hai nuove circolari!</b>{0}".format(dataCircolari), parse_mode="HTML", disable_web_page_preview=True)
 
@@ -485,41 +511,28 @@ def reply(msg):
                                         "ti contatterà il prima possibile.\n\n"
                                         "<i>Per annullare, premi</i> /annulla.", parse_mode="HTML")
 
+            elif text == "/orario":
+                if not Document.exists(lambda d: (d.chatId == chatId and d.type == "orario")):
+                    user.status = "sending_orario"
+                    bot.sendMessage(chatId, "🕑 <b>Impostazione orario</b>\n"
+                                            "Inviami un documento (PDF oppure foto) per salvarlo e richiamarlo "
+                                            "quando serve con /orario!", parse_mode="HTML")
+                else:
+                    doc = Document.get(chatId=chatId, type="orario")
+                    bot.sendDocument(chatId, doc.data["fileId"], reply_markup=keyboards.mod_orario())
+
+
             # Custom Start Parameters
             elif text.startswith("/start "):
                 param = text.split(' ')[1]
                 if param.startswith("circ"):
-                    sent = bot.sendMessage(chatId, "⬇️ <i>Download circolare in corso...</i>", parse_mode="HTML")
                     evtCode = param.split("-")[0].replace("circ", "")
                     pubId = int(param.split("-")[1])
-
-                    api = ClasseVivaAPI()
-                    if helpers.userLogin(chatId, api):
-                        try:
-                            circSend, ext = api.getCirc(evtCode, pubId)
-                            bot.sendDocument(chatId, (f"circolare.{ext}", circSend))
-                            bot.deleteMessage((chatId, sent['message_id']))
-                        except (ApiServerError, FileNotOwnedError):
-                            bot.editMessageText((chatId, sent['message_id']), "⚠️ Non sono riuscito a scaricare la circolare.")
-                            return
-                    else:
-                        bot.editMessageText((chatId, sent['message_id']), "⚠️ Errore nel login.")
+                    sendFile(chatId, "circolare", evtCode, pubId)
 
                 elif param.startswith("file"):
-                    sent = bot.sendMessage(chatId, "⬇️ <i>Download file in corso...</i>", parse_mode="HTML")
                     intId = int(param.replace("file", ""))
-
-                    api = ClasseVivaAPI()
-                    if helpers.userLogin(chatId, api):
-                        try:
-                            fileSend, ext = api.getFile(intId)
-                            bot.sendDocument(chatId, (f"download.{ext}", fileSend))
-                            bot.deleteMessage((chatId, sent['message_id']))
-                        except (ApiServerError, FileNotOwnedError):
-                            bot.editMessageText((chatId, sent['message_id']), "⚠️ Non sono riuscito a scaricare il file.")
-                            return
-                    else:
-                        bot.editMessageText((chatId, sent['message_id']), "⚠️ Errore nel login.")
+                    sendFile(chatId, "file", intId)
 
             elif text == "⬆️⬆️⬇️⬇️⬅️➡️⬅️➡️🅱️🅰️" or text == "⬆️⬆️⬇️⬇️⬅️➡️⬅️➡️🅱🅰":
                 from random import choice
@@ -572,180 +585,145 @@ def reply(msg):
 
 @db_session(retry=3)
 def button_press(msg):
-    chatId, query_data = glance(msg, flavor="callback_query")[1:3]
+    chatId = msg['message']['chat']['id']
+    msgId = msg['message']['message_id']
+    text = msg['data']
+    msgIdent = (chatId, msgId)
+
+    user = User.get(chatId=chatId)
     settings = Settings.get(chatId=chatId)
-    query_split = query_data.split("#")
-    message_id = int(query_split[1])
-    button = query_split[0]
 
     def editNotif():
-        bot.editMessageText((chatId, message_id), "<b>Preferenze notifiche</b>\n"
-                                                  "- Stato attuale: {0}\n\n"
-                                                  "Vuoi che ti mandi notifiche se trovo novità?\n"
-                                                  "<b>Nota</b>: Se non vuoi riceverle di notte, puoi impostarlo a parte."
-                                                  "".format(
-                                                  "🔔 Attivo" if settings.wantsNotifications else "🔕 Disattivo"),
-                                                  parse_mode="HTML", reply_markup=keyboards.settings_notifications(message_id))
+        bot.editMessageText(msgIdent, "<b>Preferenze notifiche</b>\n"
+                                      "- Stato attuale: {0}\n\n"
+                                      "Vuoi che ti mandi notifiche se trovo novità?\n"
+                                      "<b>Nota</b>: Se non vuoi riceverle di notte, puoi impostarlo a parte."
+                                      "".format("🔔 Attivo" if settings.wantsNotifications else "🔕 Spento"),
+                            parse_mode="HTML", reply_markup=keyboards.settings_notifications(settings.wantsNotifications))
 
     def editNotifDaily():
-        bot.editMessageText((chatId, message_id), "<b>Preferenze notifiche giornaliere</b>\n"
-                                                  "- Stato attuale: {0}\n"
-                                                  "- Orario notifiche: {1}\n\n"
-                                                  "Vuoi che ti dica ogni giorno i compiti per il giorno successivo e le lezioni svolte?"
-                                                  "".format("🔔 Attiva" if settings.wantsDailyUpdates else "🔕 Disattiva", settings.dailyUpdatesHour),
-                                                    parse_mode="HTML", reply_markup=keyboards.settings_dailynotif(message_id))
+        bot.editMessageText(msgIdent, "<b>Preferenze notifiche giornaliere</b>\n"
+                                      "- Stato attuale: {0}\n"
+                                      "- Orario notifiche: {1}\n\n"
+                                      "Vuoi che ti dica ogni giorno i compiti per il giorno successivo e le lezioni svolte?"
+                                      "".format("🔔 Attiva" if settings.wantsDailyUpdates else "🔕 Spenta", settings.dailyUpdatesHour),
+                            parse_mode="HTML", reply_markup=keyboards.settings_dailynotif(settings.wantsDailyUpdates))
 
     def editNotifNight():
-        bot.editMessageText((chatId, message_id), "<b>Preferenze modalità notturna</b>\n"
-                                                  "- Stato attuale: {0}\n\n"
-                                                  "Vuoi che silenzi le notifiche nella fascia oraria notturna (21:00 - 7:00)?"
-                                                  "".format("😴 Attivo" if settings.doNotDisturb else "🔔 Suona"),
-                                                  parse_mode="HTML", reply_markup=keyboards.settings_donotdisturb(message_id))
+        bot.editMessageText(msgIdent, "<b>Preferenze modalità notturna</b>\n"
+                                      "- Stato attuale: {0}\n\n"
+                                      "Vuoi che silenzi le notifiche nella fascia oraria notturna (21:00 - 7:00)?"
+                                      "".format("😴 Attivo" if settings.doNotDisturb else "🔔 Suona"),
+                            parse_mode="HTML", reply_markup=keyboards.settings_donotdisturb(settings.doNotDisturb))
 
     def editNotifSelection():
-        bot.editMessageText((chatId, message_id), "📲 <b>Selezione notifiche</b>\n\n"
-                                                  "📚 Didattica: {0}\n"
-                                                  "❗️ Note: {1}\n"
-                                                  "📝 Voti: {2}\n"
-                                                  "📆 Agenda: {3}\n"
-                                                  "📩 Circolari: {4}\n\n"
-                                                  "Quali notifiche vuoi ricevere? (Clicca per cambiare)"
-                                                  "".format(
-                                                  "🔔 Attivo" if "didattica" in settings.activeNews else "🔕 Disattivo",
-                                                  "🔔 Attivo" if "note" in settings.activeNews else "🔕 Disattivo",
-                                                  "🔔 Attivo" if "voti" in settings.activeNews else "🔕 Disattivo",
-                                                  "🔔 Attivo" if "agenda" in settings.activeNews else "🔕 Disattivo",
-                                                  "🔔 Attivo" if "circolari" in settings.activeNews else "🔕 Disattivo"),
-                            parse_mode="HTML", reply_markup=keyboards.settings_selectnews(message_id))
+        stats = ["🔔 Attivo" if type in settings.activeNews else "🔕 Spento"
+                 for type in ["didattica", "note", "voti", "agenda", "circolari"]]
+        bot.editMessageText(msgIdent, f"📲 <b>Selezione notifiche</b>\n\n"
+                                      f"📚 Didattica: {stats[0]}\n"
+                                      f"❗️ Note: {stats[1]}\n"
+                                      f"📝 Voti: {stats[2]}\n"
+                                      f"📆 Agenda: {stats[3]}\n"
+                                      f"📩 Circolari: {stats[4]}\n\n"
+                                      "Quali notifiche vuoi ricevere? (Clicca per cambiare)",
+                            parse_mode="HTML", reply_markup=keyboards.settings_selectnews())
 
     if (not restrictedMode) or helpers.isAdmin(chatId):
+        if text == "settings_main":
+            bot.editMessageText(msgIdent, "🛠 <b>Impostazioni</b>\n"
+                                          "Ecco le impostazioni del bot. Cosa vuoi modificare?",
+                                parse_mode="HTML", reply_markup=keyboards.settings_menu())
 
-        if button == "settings_main":
-            bot.editMessageText((chatId, message_id), "🛠 <b>Impostazioni</b>\n"
-                                                        "Ecco le impostazioni del bot. Cosa vuoi modificare?",
-                                                         parse_mode="HTML", reply_markup=keyboards.settings_menu(message_id))
+        elif text == "settings_close":
+            bot.editMessageText(msgIdent, "✅ Impostazioni salvate.", reply_markup=None)
 
-        elif button == "settings_notifications":
+        elif text == "settings_notifications":
             editNotif()
 
-        elif button == "settings_donotdisturb":
+        elif text == "settings_donotdisturb":
             editNotifNight()
 
-        elif button == "settings_dailynotif":
+        elif text == "settings_dailynotif":
             editNotifDaily()
 
-        elif button == "settings_selectnews":
+        elif text == "settings_selectnews":
             editNotifSelection()
 
-        elif button == "news_didattica":
-            if "didattica" in settings.activeNews:
-                settings.activeNews.remove("didattica")
+        elif text.startswith("news_"):
+            cat = text.split("_", 1)[1]
+            if cat in settings.activeNews:
+                settings.activeNews.remove(cat)
             else:
-                settings.activeNews.append("didattica")
-            editNotifSelection()
+                settings.activeNews.append(cat)
 
-        elif button == "news_note":
-            if "note" in settings.activeNews:
-                settings.activeNews.remove("note")
-            else:
-                settings.activeNews.append("note")
-            editNotifSelection()
-
-        elif button == "news_voti":
-            if "voti" in settings.activeNews:
-                settings.activeNews.remove("voti")
-            else:
-                settings.activeNews.append("voti")
-            editNotifSelection()
-
-        elif button == "news_agenda":
-            if "agenda" in settings.activeNews:
-                settings.activeNews.remove("agenda")
-            else:
-                settings.activeNews.append("agenda")
-            editNotifSelection()
-
-        elif button == "news_circolari":
-            if "circolari" in settings.activeNews:
-                settings.activeNews.remove("circolari")
-            else:
-                settings.activeNews.append("circolari")
-            editNotifSelection()
-
-        elif button == "settings_notif_yes":
-            settings.wantsNotifications = True
+        elif text.startswith("settings_notif_"):
+            ans = text.endswith("yes")
+            settings.wantsNotifications = ans
             editNotif()
 
-        elif button == "settings_notif_no":
-            settings.wantsNotifications = False
-            editNotif()
-
-        elif button == "settings_night_yes":
-            settings.doNotDisturb = True
+        elif text.startswith("settings_night_"):
+            ans = text.endswith("yes")
+            settings.doNotDisturb = ans
             editNotifNight()
 
-        elif button == "settings_night_no":
-            settings.doNotDisturb = False
-            editNotifNight()
-
-        elif button == "settings_daily_yes":
-            settings.wantsDailyUpdates = True
-            editNotifDaily()
-
-        elif button == "settings_daily_no":
-            settings.wantsDailyUpdates = False
-            editNotifDaily()
-
-        elif (button == "settings_daily_plus") or (button == "settings_daily_minus"):
-            hoursplit = settings.dailyUpdatesHour.split(":")
-            h = hoursplit[0]
-            m = hoursplit[1]
-            if "plus" in button:
-                if m == "00":
-                    m = "30"
-                elif m == "30":
-                    m = "00"
-                    h = "0" if h == "23" else str(int(h) + 1)
+        elif text.startswith("settings_daily_"):
+            if text.endswith("yes") or text.endswith("no"):
+                ans = text.endswith("yes")
+                settings.wantsDailyUpdates = ans
             else:
-                if m == "00":
-                    m = "30"
-                    h = "23" if h == "0" else str(int(h) - 1)
-                elif m == "30":
-                    m = "00"
-
-            settings.dailyUpdatesHour = "{0}:{1}".format(h, m)
+                seltime = datetime.strptime(settings.dailyUpdatesHour, "%H:%M")
+                if text.endswith("plus"):
+                    seltime += timedelta(minutes=30)
+                else:
+                    seltime -= timedelta(minutes=30)
+                settings.dailyUpdatesHour = seltime.strftime("%H:%M")
             editNotifDaily()
 
-        elif button == "logout_yes":
-            helpers.clearUserData(chatId)
-            bot.editMessageText((chatId, message_id), "😯 Fatto, sei stato disconnesso!\n"
-                                                      "Premi /login per entrare di nuovo.\n\n"
-                                                      "Premi /help se serve aiuto.", reply_markup=None)
+        elif text.startswith("logout"):
+            if text.endswith("yes"):
+                helpers.clearUserData(chatId)
+                bot.editMessageText(msgIdent, "😯 Fatto, sei stato disconnesso!\n"
+                                              "Premi /login per entrare di nuovo.\n\n"
+                                              "Premi /help se serve aiuto.", reply_markup=None)
+            else:
+                bot.editMessageText(msgIdent, "<i>Logout annullato.</i>", parse_mode="HTML", reply_markup=None)
 
-        elif button == "logout_no":
-            bot.editMessageText((chatId, message_id), "<i>Logout annullato.</i>", parse_mode="HTML", reply_markup=None)
-
-        elif (button == "lezioni_prima") or (button == "lezioni_dopo"):
+        elif text.startswith("lezioni"):
             api = ClasseVivaAPI()
             if helpers.userLogin(chatId, api):
-                selectedDay = int(query_split[2]) - 1 if "prima" in button else int(query_split[2]) + 1
-                dateformat = (datetime.now() + timedelta(days=selectedDay)).strftime("%d/%m/%Y")
+                newDay = int(text.split("#")[1])
+                dateformat = "del" + (datetime.now() + timedelta(days=newDay)).strftime("%d/%m/%Y") \
+                             if newDay != 0 else "di oggi"
                 try:
-                    apiRes = api.lezioni(selectedDay)
+                    apiRes = api.lezioni(newDay)
                     data = parsers.parseLezioni(apiRes)
-                    bot.editMessageText((chatId, message_id), "📚 <b>Lezioni del {0}</b>:\n\n{1}".format(dateformat, data),
-                                        parse_mode="HTML", reply_markup=keyboards.lezioni(message_id, selectedDay), disable_web_page_preview=True)
+                    bot.editMessageText(msgIdent, f"📚 <b>Lezioni {dateformat}</b>:\n\n"
+                                                  f"{data}", parse_mode="HTML", reply_markup=keyboards.lezioni(newDay),
+                                        disable_web_page_preview=True)
                 except ApiServerError:
-                    bot.editMessageText((chatId, message_id), "⚠️ I server di ClasseViva non sono raggiungibili.\n"
-                                                              "Riprova tra qualche minuto.", reply_markup=None)
+                    bot.editMessageText(msgIdent, "⚠️ I server di ClasseViva non sono raggiungibili.\n"
+                                                  "Riprova tra qualche minuto.", reply_markup=None)
+
+        elif text.startswith("orario"):
+            if text.endswith("del"):
+                doc = Document.get(chatId=chatId, type="orario")
+                doc.delete()
+                bot.editMessageText(msgIdent, "🗑 Orario eliminato.", reply_markup=None)
+
+            elif text.endswith("mod"):
+                user.status = "sending_orario"
+                bot.editMessageText(msgIdent, "🕑 <b>Impostazione orario</b>\n"
+                                              "Inviami un documento (PDF oppure foto) da impostare come nuovo orario.\n\n"
+                                              "Usa /annulla per annullare la modifica.",
+                                    parse_mode="HTML", reply_markup=None)
 
     else:
         bot.sendMessage(chatId, "ℹ️ <b>Bot in manutenzione</b>\n"
-                                    "Il bot è attualmente in manutenzione per problemi con ClasseViva, e tutte le sue "
-                                    "funzioni sono temporaneamente disabilitate.\n"
-                                    "Non eliminare questa chat: se vuoi puoi archiviarla su Telegram, così appena "
-                                    "ci saranno notizie arriverà un messaggio qui.\n\n"
-                                    "/moreinfo", parse_mode="HTML")
+                                "Il bot è attualmente in manutenzione per problemi con ClasseViva, e tutte le sue "
+                                "funzioni sono temporaneamente disabilitate.\n"
+                                "Non eliminare questa chat: se vuoi puoi archiviarla su Telegram, così appena "
+                                "ci saranno notizie arriverà un messaggio qui.\n\n"
+                                "/moreinfo", parse_mode="HTML")
 
 
 def accept_message(msg):

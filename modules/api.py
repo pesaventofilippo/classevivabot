@@ -1,11 +1,10 @@
-from json import dumps
-from re import sub
+import re
+import json
 from datetime import datetime, timedelta
 from http.client import RemoteDisconnected
 from requests import get, post
 from requests.exceptions import HTTPError, InvalidURL, ProxyError
-
-from modules import helpers
+from modules.helpers import getProxy
 
 
 class AuthenticationFailedError(Exception):
@@ -31,11 +30,10 @@ class FileNotOwnedError(Exception):
 class ClasseVivaAPI:
     baseApiUrl = "https://web.spaggiari.eu/rest/v1"
 
-    def __init__(self):
+    def __init__(self, _useProxy: bool=True):
         self.id = None
         self.token = None
-        self.proxy = helpers.getProxy()
-
+        self.proxy = getProxy() if _useProxy else None
 
     def login(self, username: str, password: str):
         url = self.baseApiUrl + "/auth/login"
@@ -44,7 +42,7 @@ class ClasseVivaAPI:
             "Z-Dev-Apikey": "+zorro+",
             "Content-Type": "application/json"
         }
-        values = dumps({
+        values = json.dumps({
             "uid": username,
             "pass": password
         })
@@ -62,13 +60,11 @@ class ClasseVivaAPI:
             raise ApiServerError
 
         self.token = result['token']
-        self.id = sub(r"\D", "", result['ident'])
+        self.id = re.sub(r"\D", "", result['ident'])
         return {"id": self.id}
-
 
     def logout(self):
         self.token = None
-
 
     def _request(self, relUrl, method="GET", returnFile=False):
         url = "{0}/students/{1}/{2}".format(self.baseApiUrl, self.id, relUrl)
@@ -90,9 +86,9 @@ class ClasseVivaAPI:
             from io import BytesIO
             if not req.headers.get("content-disposition"):
                 raise FileNotOwnedError
-            extHeader = req.headers['content-disposition']
-            ext = extHeader.split('.')[-1]
-            return BytesIO(req.content), ext
+            cd = req.headers['content-disposition']
+            filename = re.findall("filename=(.+)", cd)[0].strip("\"'")
+            return BytesIO(req.content), filename
 
         try:
             jsonResult = req.json()
@@ -112,49 +108,38 @@ class ClasseVivaAPI:
         # Request was empty but no connection error
         return {}
 
-
     def assenze(self):
         now = datetime.now()
         if (now.month < 9) or (now.month == 9 and now.day < 10):
             return self._request("absences/details/{0}0910".format(now.year - 1))
         return self._request("absences/details/{0}0910".format(now.year))
 
-
     def agenda(self, days: int=14):
         return self._request("agenda/all/{0}/{1}".format(datetime.today().strftime("%Y%m%d"), (datetime.now() + timedelta(days=days)).strftime("%Y%m%d")))
-
 
     def didattica(self):
         return self._request("didactics")
 
-
     def circolari(self):
         return self._request("noticeboard")
-
 
     def info(self):
         return self._request("cards")
 
-
     def voti(self):
         return self._request("grades")
-
 
     def note(self):
         return self._request("notes/all")
 
-
     def materie(self):
         return self._request("subjects")
-
 
     def lezioni(self, days: int=0):
         return self._request("lessons/{0}".format((datetime.now() + timedelta(days=days)).strftime("%Y%m%d")))
 
-
     def getFile(self, fileId: int):
         return self._request("didactics/item/{0}".format(fileId), returnFile=True)
-
 
     def getCirc(self, eventCode: int, pubId: int):
         self._request("noticeboard/read/{0}/{1}/101".format(eventCode, pubId), method="POST")

@@ -49,6 +49,13 @@ class Settings(db.Entity):
     activeNews = Required(StrArray, default=["didattica", "note", "voti", "agenda", "circolari"])
 
 
+class Document(db.Entity):
+    chatId = Required(int)
+    type = Required(str)
+    data = Required(Json)
+
+
+
 db.generate_mapping(create_tables=True)
 
 
