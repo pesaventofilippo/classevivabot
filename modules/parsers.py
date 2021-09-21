@@ -40,7 +40,8 @@ def parseDidattica(data):
             for upfile in folder['contents']:
                 fileName = "Senza nome" if upfile['contentName'] == "" else sanitize(upfile['contentName'])
                 fileId = upfile['contentId']
-                result += "\n        📝 <a href=\"https://t.me/ClasseVivaIT_Bot?start=file{}\">{}</a>".format(fileId, fileName)
+                fileType = upfile['objectType']
+                result += "\n        📝 <a href=\"https://t.me/ClasseVivaIT_Bot?start={}{}\">{}</a>".format(fileType, fileId, fileName)
 
     return result
 
@@ -349,7 +350,8 @@ def parseNewDidattica(oldData, newData):
                 for upfile in folder['contents']:
                     fileName = "Senza nome" if upfile['contentName'] == "" else sanitize(upfile['contentName'])
                     fileId = upfile['contentId']
-                    result += "\n        📝 <a href=\"https://t.me/ClasseVivaIT_Bot?start=file{}\">{}</a>".format(fileId, fileName)
+                    fileType = upfile['objectType']
+                    result += "\n        📝 <a href=\"https://t.me/ClasseVivaIT_Bot?start={}{}\">{}</a>".format(fileType, fileId, fileName)
 
         else:
             firstFolder = True
@@ -369,7 +371,8 @@ def parseNewDidattica(oldData, newData):
                     for upfile in folder['contents']:
                         fileName = "Senza nome" if upfile['contentName'] == "" else sanitize(upfile['contentName'])
                         fileId = upfile['contentId']
-                        result += "\n        📝 <a href=\"https://t.me/ClasseVivaIT_Bot?start=file{}\">{}</a>".format(fileId, fileName)
+                        fileType = upfile['objectType']
+                        result += "\n        📝 <a href=\"https://t.me/ClasseVivaIT_Bot?start={}{}\">{}</a>".format(fileType, fileId, fileName)
 
                 else:
                     firstFile = True
@@ -384,7 +387,8 @@ def parseNewDidattica(oldData, newData):
                                 firstFolder = False
                             fileName = "Senza nome" if upfile['contentName'] == "" else sanitize(upfile['contentName'])
                             fileId = upfile['contentId']
-                            result += "\n        📝 <a href=\"https://t.me/ClasseVivaIT_Bot?start=file{}\">{}</a>".format(fileId, fileName)
+                            fileType = upfile['objectType']
+                            result += "\n        📝 <a href=\"https://t.me/ClasseVivaIT_Bot?start=file{}\">{}</a>".format(fileType, fileId, fileName)
                             firstFile = False
 
     return result if result != "" else None

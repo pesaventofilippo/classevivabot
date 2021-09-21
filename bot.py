@@ -136,19 +136,25 @@ def runDailyUpdates(crminute):
 @db_session
 def sendFile(chatId: int, desc: str, *args):
     sent = bot.sendMessage(chatId, f"⬇️ <i>Download {desc} in corso...</i>", parse_mode="HTML")
+    msgIdent = (chatId, sent['message_id'])
     api = ClasseVivaAPI()
     getFunc = api.getCirc if desc == "circolare" else api.getFile
+
     if helpers.userLogin(chatId, api):
         try:
-            toSend, fileName = getFunc(*args)
-            bot.sendDocument(chatId, (fileName, toSend))
-            bot.deleteMessage((chatId, sent['message_id']))
+            if desc != "link":
+                toSend, fileName = getFunc(*args)
+                bot.sendDocument(chatId, (fileName, toSend))
+                bot.deleteMessage(msgIdent)
+            else:
+                link = api.getLink(*args)["item"]["link"]
+                bot.editMessageText(msgIdent, f"📎 Link: {link}")
         except FileNotOwnedError:
-            bot.editMessageText((chatId, sent['message_id']), "⚠️ Questo file non è tuo, oppure c'è un problema con il server.")
+            bot.editMessageText(msgIdent, "⚠️ Questo file non è tuo, oppure c'è un problema con il server.")
         except (ApiServerError, Exception):
-            bot.editMessageText((chatId, sent['message_id']), "⚠️ Non sono riuscito a scaricare il file.")
+            bot.editMessageText(msgIdent, "⚠️ Non sono riuscito a scaricare il file.")
     else:
-        bot.editMessageText((chatId, sent['message_id']), "⚠️ Errore nel login.")
+        bot.editMessageText(msgIdent, "⚠️ Errore nel login.")
 
 
 @db_session(retry=3)
@@ -535,8 +541,12 @@ def reply(msg):
                     sendFile(chatId, "circolare", evtCode, pubId)
 
                 elif param.startswith("file"):
-                    intId = int(param.replace("file", ""))
+                    intId = int(param[4:])
                     sendFile(chatId, "file", intId)
+
+                elif param.startswith("link"):
+                    intId = int(param[4:])
+                    sendFile(chatId, "link", intId)
 
             elif text == "⬆️⬆️⬇️⬇️⬅️➡️⬅️➡️🅱️🅰️" or text == "⬆️⬆️⬇️⬇️⬅️➡️⬅️➡️🅱🅰":
                 from random import choice

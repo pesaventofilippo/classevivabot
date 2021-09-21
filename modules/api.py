@@ -144,3 +144,6 @@ class ClasseVivaAPI:
     def getCirc(self, eventCode: int, pubId: int):
         self._request("noticeboard/read/{0}/{1}/101".format(eventCode, pubId), method="POST")
         return self._request("noticeboard/attach/{0}/{1}/101".format(eventCode, pubId), returnFile=True)
+
+    def getLink(self, fileId: int):
+        return self._request("didactics/item/{0}".format(fileId), returnFile=False)
