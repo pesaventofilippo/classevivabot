@@ -271,18 +271,20 @@ def reply(msg):
             elif user.status == "sending_orario":
                 if msg.get("photo"):
                     fileId = msg.get("photo")[0]["file_id"]
+                    ext = "Photo"
                 elif msg.get("document"):
                     fileId = msg.get("document")["file_id"]
+                    ext = "Document"
                 else:
                     bot.sendMessage(chatId, "🤔 Documento non valido. Invia una foto o un file.\n"
                                             "Premi /annulla per annullare.")
                     return
 
                 if not Document.exists(lambda d: (d.chatId == chatId and d.type == "orario")):
-                    Document(chatId=chatId, type="orario", data={"fileId": fileId})
+                    Document(chatId=chatId, type="orario", data={"fileId": fileId, "ext": ext})
                 else:
                     doc = Document.get(chatId=chatId, type="orario")
-                    doc.data["fileId"] = fileId
+                    doc.data = {"fileId": fileId, "ext": ext}
                 bot.sendMessage(chatId, "✅ Orario impostato!\n"
                                         "Richiamalo con /orario.")
                 user.status = "normal"
@@ -520,7 +522,8 @@ def reply(msg):
                                             "quando serve con /orario!", parse_mode="HTML")
                 else:
                     doc = Document.get(chatId=chatId, type="orario")
-                    bot.sendDocument(chatId, doc.data["fileId"], reply_markup=keyboards.mod_orario())
+                    sendFunc = bot.sendPhoto if doc.data["ext"] == "photo" else bot.sendDocument
+                    sendFunc(chatId, doc.data["fileId"], reply_markup=keyboards.mod_orario())
 
 
             # Custom Start Parameters
