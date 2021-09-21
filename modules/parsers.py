@@ -50,25 +50,26 @@ def parseInfo(data):
         return "📌 Nessuna info disponibile."
 
     info = data['cards'][0]
-    time = info['birthDate'].lower().split("-", 2)
-    return "👤 Nome: <b>{0}</b>\n" \
-           "👤 Cognome: <b>{1}</b>\n" \
-           "📅 Nascita: <b>{2}/{3}/{4}</b>\n" \
-           "💳 Codice Fiscale: <b>{5}</b>\n" \
-           "👤 Username: <b>{6}</b>\n" \
-           "\n" \
-           "🏫 Nome Scuola: <b>{7}</b>\n" \
-           "🏫 Tipo Scuola: <b>{8}</b>\n" \
-           "🏫 ID Scuola: <b>{9}</b>\n" \
-           "🏫 ID MIUR Scuola: <b>{10}</b>\n" \
-           "🏛 Città: <b>{11}</b>\n" \
-           "📍 Provincia: <b>{12}</b>\n" \
-           "\n" \
-           "👤 UserID: <b>{13}</b>\n" \
-           "👤 Tipo Utente: <b>{14}</b>" \
-           "".format(info['firstName'], info['lastName'], time[2], time[1], time[0], info['fiscalCode'], info['ident'],
-                     info['schDedication'], info['schName'], info['schCode'], info['miurSchoolCode'], info['schCity'], info['schProv'],
-                     info['usrId'], info['usrType'])
+    bday = info['birthDate'].lower().split("-", 2)
+    userType = "Studente" if info['usrType'] == "S" \
+        else "Genitore" if info['usrType'] == "G" \
+        else info['usrType']
+
+    return f"👤 Nome: <b>{info['firstName']}</b>\n" \
+           f"👤 Cognome: <b>{info['lastName']}</b>\n" \
+           f"📅 Nascita: <b>{bday[2]}/{bday[1]}/{bday[0]}</b>\n" \
+           f"💳 Codice Fiscale: <b>{info['fiscalCode']}</b>\n" \
+           f"👤 Username: <b>{info['ident']}</b>\n" \
+           f"\n" \
+           f"🏫 Nome Scuola: <b>{info['schDedication']}</b>\n" \
+           f"🏫 Tipo Scuola: <b>{info['schName']}</b>\n" \
+           f"🏫 ID Scuola: <b>{info['schCode']}</b>\n" \
+           f"🏫 ID MIUR Scuola: <b>{info['miurSchoolCode']}</b>\n" \
+           f"🏛 Città: <b>{info['schCity']}</b>\n" \
+           f"📍 Provincia: <b>{info['schProv']}</b>\n" \
+           f"\n" \
+           f"👤 UserID: <b>{info['usrId']}</b>\n" \
+           f"👤 Tipo Utente: <b>{userType}</b>"
 
 
 def parseMaterie(data):
@@ -310,7 +311,6 @@ def parseCircolari(data):
         if len(item['attachments']) > 0:
             pubId = item['pubId']
             evCode = item['evtCode']
-            # attName = item['attachments'][0]['fileName']
 
             if (status == 'active') and not isRead:
                 result += "\n\n✉️ <a href=\"https://t.me/ClasseVivaIT_Bot?start=circ{}-{}\">{}</a>".format(evCode, pubId, title)
@@ -492,7 +492,6 @@ def parseNewCircolari(oldData, newData):
             if len(item['attachments']) > 0:
                 pubId = item['pubId']
                 evCode = item['evtCode']
-                # attName = item['attachments'][0]['fileName']
 
                 if (status == 'active') and not isRead:
                     string = "\n✉️ <a href=\"https://t.me/ClasseVivaIT_Bot?start=circ{}-{}\">{}</a>".format(evCode, pubId, title)
