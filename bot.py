@@ -24,7 +24,7 @@ updateLock = Lock()
 
 
 @db_session(retry=3)
-def runUserUpdate(chatId, long_fetch, crhour, sendMessages=True):
+def runUserUpdate(chatId, long_fetch, runDatetime, sendMessages=True):
     api = ClasseVivaAPI()
     if helpers.userLogin(chatId, api, _quiet=True):
         userdata = Data.get(chatId=chatId)
@@ -35,7 +35,7 @@ def runUserUpdate(chatId, long_fetch, crhour, sendMessages=True):
             return
 
         if settings.wantsNotifications:
-            if (not settings.doNotDisturb) or (crhour in range(7, 21)):
+            if (not settings.doNotDisturb) or (runDatetime.hour in range(7, 21)):
                 dataDidattica = parsers.parseNewDidattica(userdata.didattica, data['didattica'])
                 dataNote = parsers.parseNewNote(userdata.note, data['note'])
                 dataVoti = parsers.parseNewVoti(userdata.voti, data['voti'], chatId)
@@ -74,13 +74,13 @@ def runUpdates(long_fetch=False, sendMessages=True):
     childThreads = []
     if not updateLock.acquire(blocking=True, timeout=60): return
 
-    crhour = datetime.now().hour
+    runDatetime = datetime.now()
     pendingUsers = helpers.isAdmin() if restrictedMode else select(user.chatId for user in User if user.password != "")[:]
     for currentUser in pendingUsers:
         t = Thread(
             target=runUserUpdate,
             name=f"upd_{currentUser}",
-            args=[currentUser, long_fetch, crhour, sendMessages]
+            args=[currentUser, long_fetch, runDatetime, sendMessages]
         )
         childThreads.append(t)
         t.start()
@@ -91,11 +91,11 @@ def runUpdates(long_fetch=False, sendMessages=True):
 
 
 @db_session(retry=3)
-def runUserDaily(chatId, crhour, crminute, dayString):
+def runUserDaily(chatId, runDatetime, dayString):
     settings = Settings.get(chatId=chatId)
     if settings.wantsDailyUpdates:
-        hoursplit = settings.dailyUpdatesHour.split(":")
-        if (int(hoursplit[0]) == crhour) and (int(hoursplit[1]) == crminute):
+        seltime = datetime.strptime(settings.dailyUpdatesHour, "%H:%M")
+        if (seltime.hour == runDatetime.hour) and (seltime.minute == runDatetime.minute):
             stored = ParsedData.get(chatId=chatId)
             if (stored.domani != "🗓 Non hai compiti per domani.") or (stored.lezioni != "🎈 Nessuna lezione, per oggi."):
                 try:
@@ -111,19 +111,18 @@ def runUserDaily(chatId, crhour, crminute, dayString):
 
 
 @db_session(retry=3)
-def runDailyUpdates(crminute):
+def runDailyUpdates(runDatetime):
     childThreads = []
     if not updateLock.acquire(blocking=True, timeout=60): return
 
-    crhour = datetime.now().hour
-    isSaturday = datetime.now().isoweekday() == 6
+    isSaturday = runDatetime.isoweekday() == 6
     dayString = "lunedì" if isSaturday else "domani"
     pendingUsers = helpers.isAdmin() if restrictedMode else select(user.chatId for user in User if user.password != "")[:]
     for currentUser in pendingUsers:
         t = Thread(
             target=runUserDaily,
             name=f"mem_{currentUser}",
-            args=[currentUser, crhour, crminute, dayString]
+            args=[currentUser, runDatetime, dayString]
         )
         childThreads.append(t)
         t.start()
@@ -753,8 +752,10 @@ bot.message_loop(
 
 while True:
     sleep(60)
-    minute = datetime.now().minute
-    if minute % updatesEvery == 0:
+    now = datetime.now()
+    doLongFetch = now.strftime("%H:%M") == js_settings["fullUpdatesTime"]
+    if now.minute % updatesEvery == 0:
+        print(" *** RUNNING UPDATES ***")
         helpers.renewProxy()
-        runUpdates()
-        runDailyUpdates(minute)
+        runDailyUpdates(now)
+        runUpdates(long_fetch=doLongFetch)
