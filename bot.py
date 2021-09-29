@@ -590,6 +590,12 @@ def reply(msg):
                                         "Premi /annulla per annullare.",
                                 parse_mode="HTML", reply_markup=keyboards.create_memo(today))
 
+            elif text == "/resetmemo":
+                memos = select(m for m in Document if m.chatId == chatId and m.type == "memo")[:]
+                for memo in memos:
+                    memo.delete()
+                bot.sendMessage(chatId, "✅ Ho eliminato tutte le memo!")
+
 
             # Custom Start Parameters
             elif text.startswith("/start "):
