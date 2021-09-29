@@ -253,7 +253,7 @@ def parseAssenze(data):
 
 def parseAgenda(data, chatId):
     memos = select(m for m in Document if m.chatId == chatId and m.type == "memo")[:]
-    if ((data is None) or (not data.get('agenda'))) and not memos:
+    if (data is None) or (not data.get('agenda')):
         return "\n🗓 L'agenda è ancora vuota."
 
     result = ""
@@ -281,7 +281,7 @@ def parseAgenda(data, chatId):
 
 def parseDomani(data, chatId):
     memos = select(m for m in Document if m.chatId == chatId and m.type == "memo")[:]
-    if ((data is None) or (not data.get('agenda'))) and not memos:
+    if (data is None) or (not data.get('agenda')):
         return "\n🗓 Non hai compiti per domani."
 
     result = ""
