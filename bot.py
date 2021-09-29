@@ -336,6 +336,7 @@ def reply(msg):
                     "text": text
                 })
 
+                user.status = "normal"
                 stored.agenda = parsers.parseAgenda(userdata.agenda, chatId)
                 stored.domani = parsers.parseDomani(userdata.agenda, chatId)
                 bot.sendMessage(chatId, f"✅ Ho creato la memo per il <b>{memo.data['date']}</b>:\n"
