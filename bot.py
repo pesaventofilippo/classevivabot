@@ -340,7 +340,8 @@ def reply(msg):
                 stored.agenda = parsers.parseAgenda(userdata.agenda, chatId)
                 stored.domani = parsers.parseDomani(userdata.agenda, chatId)
                 bot.sendMessage(chatId, f"✅ Ho creato la memo per il <b>{memo.data['date']}</b>:\n"
-                                        f"{memo.data['text']}", parse_mode="HTML")
+                                        f"\"{memo.data['text']}\"\n\n"
+                                        f"Vedilo in /agenda!", parse_mode="HTML")
 
 
         elif text == "/help":
