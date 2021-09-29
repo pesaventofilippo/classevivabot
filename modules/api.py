@@ -1,6 +1,6 @@
 import re
 import json
-from datetime import datetime, timedelta
+from datetime import date, timedelta
 from http.client import RemoteDisconnected
 from requests import get, post
 from requests.exceptions import HTTPError, InvalidURL, ProxyError
@@ -109,13 +109,13 @@ class ClasseVivaAPI:
         return {}
 
     def assenze(self):
-        now = datetime.now()
-        if (now.month < 9) or (now.month == 9 and now.day < 10):
+        now = date.today()
+        if now < date(year=now.year, month=9, day=10):
             return self._request("absences/details/{0}0910".format(now.year - 1))
         return self._request("absences/details/{0}0910".format(now.year))
 
     def agenda(self, days: int=14):
-        return self._request("agenda/all/{0}/{1}".format(datetime.today().strftime("%Y%m%d"), (datetime.now() + timedelta(days=days)).strftime("%Y%m%d")))
+        return self._request("agenda/all/{0}/{1}".format(date.today().strftime("%Y%m%d"), (date.today() + timedelta(days=days)).strftime("%Y%m%d")))
 
     def didattica(self):
         return self._request("didactics")
@@ -136,7 +136,7 @@ class ClasseVivaAPI:
         return self._request("subjects")
 
     def lezioni(self, days: int=0):
-        return self._request("lessons/{0}".format((datetime.now() + timedelta(days=days)).strftime("%Y%m%d")))
+        return self._request("lessons/{0}".format((date.today() + timedelta(days=days)).strftime("%Y%m%d")))
 
     def getFile(self, fileId: int):
         return self._request("didactics/item/{0}".format(fileId), returnFile=True)

@@ -39,7 +39,7 @@ def runUserUpdate(chatId, long_fetch, runDatetime, sendMessages=True):
                 dataDidattica = parsers.parseNewDidattica(userdata.didattica, data['didattica'])
                 dataNote = parsers.parseNewNote(userdata.note, data['note'])
                 dataVoti = parsers.parseNewVoti(userdata.voti, data['voti'], chatId)
-                dataAgenda = parsers.parseNewAgenda(userdata.agenda, data['agenda'])
+                dataAgenda = parsers.parseNewAgenda(userdata.agenda, data['agenda'], chatId)
                 dataCircolari = parsers.parseNewCircolari(userdata.circolari, data['circolari'])
                 if sendMessages:
                     try:
@@ -294,6 +294,50 @@ def reply(msg):
                                         "Richiamalo con /orario.")
                 user.status = "normal"
 
+            elif user.status == "memo_date":
+                if not text:
+                    bot.sendMessage(chatId, "Inviami la data in formato GG/MM.\n"
+                                            "Premi /annulla per annullare.")
+                    return
+
+                try:
+                    now = datetime.now()
+                    when = datetime.strptime(text, "%d/%m")
+                    when.replace(year=now.year)
+
+                    if when < now:
+                        when.replace(year=now.year+1)
+                    if when > now + timedelta(days=28):
+                        bot.sendMessage(chatId, "⚠️ Data non valida.\n"
+                                                "La data non può essere oggi, nel passato oppure fra più di 4 settimane.\n"
+                                                "Premi /annulla per annullare.")
+                        return
+
+                    memoDate = when.strftime("%d/%m/%Y")
+                    user.status = f"memo_text#{memoDate}"
+
+                    bot.sendMessage(chatId, f"💡 <b>Data memo: {memoDate}</b>\n"
+                                            f"Inviami il testo del memo, o premi /annulla per annullare.",
+                                    parse_mode="HTML")
+                except ValueError:
+                    bot.sendMessage(chatId, "⚠️ Data non valida.\n"
+                                            "Inviami la data in formato GG/MM.\n"
+                                            "Premi /annulla per annullare.")
+
+            elif user.status.startswith("memo_text"):
+                if not text or len(text) > 400:
+                    bot.sendMessage(chatId, "⚠️ Inviami il testo della memo (max. 400 caratteri).\n"
+                                            "Premi /annulla per annullare.")
+                    return
+
+                memoDate = user.status.split("#")[1]
+                memo = Document(chatId=chatId, type="memo", data={
+                    "date": memoDate,
+                    "text": text
+                })
+                bot.sendMessage(chatId, f"✅ Ho creato la memo per il <b>{memo.data['date']}</b>:\n"
+                                        f"{memo.data['text']}", parse_mode="HTML")
+
 
         elif text == "/help":
             bot.sendMessage(chatId, "Ciao, sono il bot di <b>ClasseViva</b>! 👋🏻\n"
@@ -305,6 +349,7 @@ def reply(msg):
                                     "- /agenda - Visualizza agenda (compiti e verifiche)\n"
                                     "- /domani - Vedi i compiti che hai per domani\n"
                                     "- /promemoria - Vedi un promemoria con i compiti da fare per domani e le lezioni svolte oggi.\n"
+                                    "- /memo - Aggiungi un memo all'agenda\n"
                                     "- /voti - Visualizza la lista dei voti\n"
                                     "- /lezioni - Visualizza la lista delle lezioni\n"
                                     "- /didattica - Visualizza la lista dei file in didattica\n"
@@ -484,7 +529,7 @@ def reply(msg):
                         bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 70%")
                         dataVoti = parsers.parseNewVoti(userdata.voti, data['voti'], chatId)
                         bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 80%")
-                        dataAgenda = parsers.parseNewAgenda(userdata.agenda, data['agenda'])
+                        dataAgenda = parsers.parseNewAgenda(userdata.agenda, data['agenda'], chatId)
                         bot.editMessageText((chatId, sent['message_id']), "📗📗📙 Cerco aggiornamenti... 90%")
                         dataCircolari = parsers.parseNewCircolari(userdata.circolari, data['circolari'])
                         bot.editMessageText((chatId, sent['message_id']), "📗📗📗  Cerco aggiornamenti... 100%")
@@ -529,6 +574,16 @@ def reply(msg):
                     doc = Document.get(chatId=chatId, type="orario")
                     sendFunc = bot.sendPhoto if doc.data["ext"] == "photo" else bot.sendDocument
                     sendFunc(chatId, doc.data["fileId"], reply_markup=keyboards.mod_orario())
+
+            elif text == "/memo":
+                user.status = "memo_date"
+                today = datetime.now().weekday()
+                bot.sendMessage(chatId, "💡 <b>Memo personale</b>\n"
+                                        "Crea un memo personale per aggiungere i compiti da fare all'agenda!\n"
+                                        "Inviami <b>la data</b> di consegna, nel formato GG/MM, oppure scegli un'opzione "
+                                        "da quelle qui sotto.\n\n"
+                                        "Premi /annulla per annullare.",
+                                parse_mode="HTML", reply_markup=keyboards.create_memo(today))
 
 
             # Custom Start Parameters
@@ -731,6 +786,14 @@ def button_press(msg):
                                         "Inviami un documento (PDF oppure foto) da impostare come nuovo orario.\n\n"
                                         "Usa /annulla per annullare la modifica.", parse_mode="HTML", reply_markup=None)
 
+        elif user.status == "memo_date" and text.startswith("memo"):
+            when = int(text[-1])
+            memoDate = (datetime.now() + timedelta(days=when)).strftime("%d/%m/%Y")
+            user.status = f"memo_text#{memoDate}"
+            bot.editMessageText(msgIdent, f"💡 <b>Data memo: {memoDate}</b>\n"
+                                          f"Inviami il testo del memo, o premi /annulla per annullare.",
+                                parse_mode="HTML", reply_markup=None)
+
     else:
         bot.sendMessage(chatId, "ℹ️ <b>Bot in manutenzione</b>\n"
                                 "Il bot è attualmente in manutenzione per problemi con ClasseViva, e tutte le sue "
@@ -755,7 +818,6 @@ while True:
     now = datetime.now()
     doLongFetch = now.strftime("%H:%M") == js_settings["fullUpdatesTime"]
     if now.minute % updatesEvery == 0:
-        print(" *** RUNNING UPDATES ***")
         helpers.renewProxy()
         runDailyUpdates(now)
         runUpdates(long_fetch=doLongFetch)

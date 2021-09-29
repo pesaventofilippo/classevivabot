@@ -1,4 +1,6 @@
-﻿from modules.database import User
+﻿from modules.database import User, Document
+from pony.orm import select
+from datetime import date, timedelta, datetime
 
 TAB = " " * 4
 
@@ -16,8 +18,7 @@ def sanitize(dinput):
 
 def innerParseNotes(event):
     evtauthor = event['authorName'].title()
-    evttime = event['evtDate'].lower().split("-", 2)
-    evttime = f"{evttime[2]}/{evttime[1]}/{evttime[0]}"
+    evttime = date.fromisoformat(event['evtDate']).strftime("%d/%m/%Y")
     evttext = event['evtText'] if event['readStatus'] else "Vai al <a href=\"https://web.spaggiari.eu\">registo web</a> nella sezione \"annotazioni\" per leggere questa nota."
     return evtauthor, evttime, sanitize(evttext)
 
@@ -63,14 +64,14 @@ def parseInfo(data):
         return "📌 Nessuna info disponibile."
 
     info = data['cards'][0]
-    bday = info['birthDate'].lower().split("-", 2)
+    bday = date.fromisoformat(info['birthDate']).strftime("%d/%m/%Y")
     userType = "Studente" if info['usrType'] == "S" \
         else "Genitore" if info['usrType'] == "G" \
         else info['usrType']
 
     return f"👤 Nome: <b>{info['firstName']}</b>\n" \
            f"👤 Cognome: <b>{info['lastName']}</b>\n" \
-           f"📅 Nascita: <b>{bday[2]}/{bday[1]}/{bday[0]}</b>\n" \
+           f"📅 Nascita: <b>{bday}</b>\n" \
            f"💳 Codice Fiscale: <b>{info['fiscalCode']}</b>\n" \
            f"👤 Username: <b>{info['ident']}</b>\n" \
            f"\n" \
@@ -135,11 +136,11 @@ def parseVoti(data, chatId):
             materia = voto['subjectDesc']
             value = "Voto " + voto['displayValue']
             tipo = f"• {sanitize(voto['componentDesc'])} " if voto['componentDesc'] else ""
-            time = voto['evtDate'].lower().split("-", 2)
+            time = date.fromisoformat(voto['evtDate']).strftime("%d/%m/%Y")
             desc = f"\n<i>{sanitize(voto['notesForFamily'])}</i>" if voto['notesForFamily'] else ""
             colore = "📗" if voto['color'] == "green" else "📕" if voto['color'] == "red" else "📘"
 
-            str_voto = f"\n\n{colore} <b>{value}</b> {tipo}• {time[2]}/{time[1]}/{time[0]} {desc}"
+            str_voto = f"\n\n{colore} <b>{value}</b> {tipo}• {time} {desc}"
             if materia not in votiOrdinati:
                 votiOrdinati[materia] = []
             if materia not in media:
@@ -224,9 +225,8 @@ def parseAssenze(data):
     for evento in data['events']:
         desc = "Non specificato" if not evento['justifReasonDesc'] else sanitize(evento['justifReasonDesc'].lower())
         toJustify = "\n ⚠️ Da giustificare!" if not evento['isJustified'] else ""
-        date = evento['evtDate'].split("-", 2)
-        date = f"{date[2]}/{date[1]}/{date[0]}"
-        evtString = f"\n - {date}: {desc}{toJustify}"
+        time = date.fromisoformat(evento['evtDate']).strftime("%d/%m/%Y")
+        evtString = f"\n - {time}: {desc}{toJustify}"
 
         if evento['evtCode'] == "ABA0":
             if not assenze:
@@ -251,44 +251,57 @@ def parseAssenze(data):
     return assenze + ritardi + ritardiBrevi + usciteAnticipate
 
 
-def parseAgenda(data):
-    from datetime import datetime
-    if (data is None) or (not data.get('agenda')):
+def parseAgenda(data, chatId):
+    memos = select(m for m in Document if m.chatId == chatId and m.type == "memo")[:]
+    if (data is None) or (not data.get('agenda')) or (not memos):
         return "\n🗓 L'agenda è ancora vuota."
 
     result = ""
-    firstEvent = True
+    separator = "\n"
     eventslist = data['agenda']
     eventslist.sort(key=lambda x: str(x['evtDatetimeBegin']).split("T", 1)[0])
+    today = date.today()
     for event in eventslist:
-        date = str(event['evtDatetimeBegin']).split("T", 1)[0]
-        date = date.split("-", 2)
-        today = datetime.now().day
-        evtDay = int(date[2])
+        date_raw = str(event['evtDatetimeBegin']).split("T")[0]
+        evtTime = date.fromisoformat(date_raw)
 
-        if evtDay != today:
+        if evtTime > today:
             evtType = "📌" if event['evtCode'] == "AGNT" else "📝"
-            separator = "\n" if firstEvent else "\n\n\n"
-            firstEvent = False
-            result += f"{separator}{evtType} {date[2]}/{date[1]}/{date[0]} • <b>{event['authorName'].title()}</b>\n{sanitize(event['notes'])}"
+            result += f"{separator}{evtType} {evtTime.strftime('%d/%m/%Y')} • <b>{event['authorName'].title()}</b>\n{sanitize(event['notes'])}"
+            separator = "\n\n\n"
+
+    for memo in memos:
+        evtTime = datetime.strptime(memo.data["date"], "%d/%m/%Y").date()
+        if evtTime > today:
+            result += f"{separator}💡 {memo.data['date']} • <b>Memo</b>\n{sanitize(memo.data['text'])}"
+            separator = "\n\n\n"
+
     return result
 
 
-def parseDomani(data):
-    from datetime import datetime
-    if (data is None) or (not data.get('agenda')):
+def parseDomani(data, chatId):
+    memos = select(m for m in Document if m.chatId == chatId and m.type == "memo")[:]
+    if (data is None) or (not data.get('agenda')) or (not memos):
         return "\n🗓 Non hai compiti per domani."
 
     result = ""
     separator = "\n"
+    today = date.today()
+    toCheck = today + timedelta(days=(1 if today.isoweekday() != 6 else 2))
     for event in data['agenda']:
-        evtDate = str(event['evtDatetimeBegin']).split("T", 1)[0]
-        evtDay = int(evtDate.split("-", 2)[2])
-        dayToCheck = datetime.now().day+1 if datetime.now().isoweekday() != 6 else datetime.now().day+2
+        date_raw = str(event['evtDatetimeBegin']).split("T")[0]
+        evtTime = date.fromisoformat(date_raw)
 
-        if evtDay == dayToCheck:
+        if evtTime == toCheck:
             evtType = "📌" if event['evtCode'] == "AGNT" else "📝"
             result += f"{separator}{evtType} <b>{event['authorName'].title()}</b>\n{sanitize(event['notes'])}"
+            separator = "\n\n\n"
+
+    for memo in memos:
+        evtTime = datetime.strptime(memo.data["date"], "%d/%m/%Y").date()
+
+        if evtTime == toCheck:
+            result += f"{separator}💡 <b>Memo per oggi</b>\n{sanitize(memo.data['text'])}"
             separator = "\n\n\n"
 
     return "\n🗓 Non hai compiti per domani." if result == "" else result
@@ -401,17 +414,17 @@ def parseNewNote(oldData, newData):
     for nota in newData['NTCL']:
         if (not oldData.get('NTCL')) or (nota not in oldData['NTCL']):
             author, time, text = innerParseNotes(nota)
-            result += f"\n\n🚫 <b>Nota disciplinare</b> di <b>{author}</b> del {time[2]}/{time[1]}/{time[0]}:\n{text}"
+            result += f"\n\n🚫 <b>Nota disciplinare</b> di <b>{author}</b> del {time}:\n{text}"
 
     for avviso in newData['NTWN']:
         if (not oldData.get('NTWN')) or (avviso not in oldData['NTWN']):
             author, time, text = innerParseNotes(avviso)
-            result += f"\n\n⚠️ <b>Richiamo ({avviso['warningType'].lower()})</b> di <b>{author}</b> del {time[2]}/{time[1]}/{time[0]}:\n{text}"
+            result += f"\n\n⚠️ <b>Richiamo ({avviso['warningType'].lower()})</b> di <b>{author}</b> del {time}:\n{text}"
 
     for annotazione in newData['NTTE']:
         if (not oldData.get('NTTE')) or (annotazione not in oldData['NTTE']):
             author, time, text = innerParseNotes(annotazione)
-            result += f"\n\nℹ️ <b>Annotazione</b> di <b>{author}</b> del {time[2]}/{time[1]}/{time[0]}:\n{text}"
+            result += f"\n\nℹ️ <b>Annotazione</b> di <b>{author}</b> del {time}:\n{text}"
 
     return result if result != "" else None
 
@@ -431,10 +444,11 @@ def parseNewVoti(oldData, newData, chatId):
             materia = voto['subjectDesc']
             value = "Voto " + voto['displayValue']
             tipo = f"• {sanitize(voto['componentDesc'])} " if voto['componentDesc'] else ""
-            time = voto['evtDate'].lower().split("-", 2)
+
+            time = date.fromisoformat(voto['evtDate']).strftime("%d/%m/%Y")
             desc = f"\n<i>{sanitize(voto['notesForFamily'])}</i>" if voto['notesForFamily'] else ""
             colore = "📗" if voto['color'] == "green" else "📕" if voto['color'] == "red" else "📘"
-            str_voto = f"\n\n{colore} <b>{value}</b> {tipo}• {time[2]}/{time[1]}/{time[0]} {desc}"
+            str_voto = f"\n\n{colore} <b>{value}</b> {tipo}• {time} {desc}"
             if materia not in votiOrdinati:
                 votiOrdinati[materia] = []
             votiOrdinati[materia].append(str_voto)
@@ -454,22 +468,22 @@ def parseNewVoti(oldData, newData, chatId):
     return result if result != "" else None
 
 
-def parseNewAgenda(oldData, newData):
+def parseNewAgenda(oldData, newData, chatId):
     if (newData is None) or (not newData.get('agenda')):
         return None
     if (oldData is None) or (not oldData.get('agenda')):
-        return parseAgenda(newData)
+        return parseAgenda(newData, chatId)
 
     result = ""
     firstEvent = True
     for event in newData['agenda']:
         if event not in oldData['agenda']:
-            date = str(event['evtDatetimeBegin']).split("T", 1)[0]
-            date = date.split("-", 2)
+            date_raw = str(event['evtDatetimeBegin']).split("T")[0]
+            evtTime = date.fromisoformat(date_raw).strftime("%d/%m/%Y")
             evtType = "📌" if event['evtCode'] == "AGNT" else "📝"
             separator = "\n" if firstEvent else "\n\n\n"
             firstEvent = False
-            result += f"{separator}{evtType} {date[2]}/{date[1]}/{date[0]} • <b>{event['authorName'].title()}</b>\n{sanitize(event['notes'])}"
+            result += f"{separator}{evtType} {evtTime} • <b>{event['authorName'].title()}</b>\n{sanitize(event['notes'])}"
 
     return result if result != "" else None
 
