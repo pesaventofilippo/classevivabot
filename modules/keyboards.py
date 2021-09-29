@@ -98,14 +98,14 @@ def create_memo(today: int):
     keyboard = [
         [
             InlineKeyboardButton(text="Domani", callback_data=f"memo_p1"),
-            InlineKeyboardButton(text=days[(today+2)%6], callback_data=f"memo_p2"),
-            InlineKeyboardButton(text=days[(today+3)%6], callback_data=f"memo_p3")
+            InlineKeyboardButton(text=days[(today+2)%7], callback_data=f"memo_p2"),
+            InlineKeyboardButton(text=days[(today+3)%7], callback_data=f"memo_p3")
         ],
         [
-            InlineKeyboardButton(text=days[(today+4)%6], callback_data=f"memo_p4"),
-            InlineKeyboardButton(text=days[(today+5)%6], callback_data=f"memo_p5"),
-            InlineKeyboardButton(text=days[(today+6)%6], callback_data=f"memo_p6"),
-            InlineKeyboardButton(text=days[(today+7)%6] + " pross.", callback_data=f"memo_p7")
+            InlineKeyboardButton(text=days[(today+4)%7], callback_data=f"memo_p4"),
+            InlineKeyboardButton(text=days[(today+5)%7], callback_data=f"memo_p5"),
+            InlineKeyboardButton(text=days[(today+6)%7], callback_data=f"memo_p6"),
+            InlineKeyboardButton(text=days[(today+7)%7] + " pross.", callback_data=f"memo_p7")
         ]
     ]
 
