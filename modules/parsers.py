@@ -301,7 +301,7 @@ def parseDomani(data, chatId):
         evtTime = datetime.strptime(memo.data["date"], "%d/%m/%Y").date()
 
         if evtTime == toCheck:
-            result += f"{separator}💡 <b>Memo per oggi</b>\n{sanitize(memo.data['text'])}"
+            result += f"{separator}💡 <b>Memo</b>\n{sanitize(memo.data['text'])}"
             separator = "\n\n\n"
 
     return "\n🗓 Non hai compiti per domani." if result == "" else result

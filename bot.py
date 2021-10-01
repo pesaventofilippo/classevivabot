@@ -772,7 +772,7 @@ def button_press(msg):
             api = ClasseVivaAPI()
             if helpers.userLogin(chatId, api):
                 newDay = int(text.split("#")[1])
-                dateformat = "del" + (datetime.now() + timedelta(days=newDay)).strftime("%d/%m/%Y") \
+                dateformat = "del " + (datetime.now() + timedelta(days=newDay)).strftime("%d/%m/%Y") \
                              if newDay != 0 else "di oggi"
                 try:
                     apiRes = api.lezioni(newDay)
