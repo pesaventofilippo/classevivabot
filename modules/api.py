@@ -1,10 +1,11 @@
 import re
 import json
+from time import sleep
 from datetime import date, timedelta
 from http.client import RemoteDisconnected
 from requests import get, post
-from requests.exceptions import HTTPError, InvalidURL, ProxyError
-from modules.helpers import getProxy
+from requests.exceptions import HTTPError, InvalidURL, ProxyError, ConnectionError
+from modules.helpers import getProxy, renewProxy
 
 
 class AuthenticationFailedError(Exception):
@@ -81,6 +82,15 @@ class ClasseVivaAPI:
             req = req_func(url, headers=headers, proxies=self.proxy)
         except (HTTPError, InvalidURL, RemoteDisconnected, ProxyError):
             raise ApiServerError
+        except ConnectionError:
+            # Connection Error: probably classeviva throttling our IP
+            sleep(2)
+            try:
+                req = req_func(url, headers=headers, proxies=self.proxy)
+            except ConnectionError:
+                renewProxy()
+                sleep(1)
+                req = req_func(url, headers=headers, proxies=self.proxy)
 
         if returnFile:
             from io import BytesIO
